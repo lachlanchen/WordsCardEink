@@ -48,15 +48,23 @@ def transcribe_japanese(text):
 
     return result
 
-def clean_and_transcribe(word_details):
-    # Function to remove text inside parentheses
-    def remove_text_inside_parentheses(text):
-        while '(' in text and ')' in text:
-            start = text.find('(')
-            end = text.find(')') + 1
-            text = text[:start] + text[end:]
-        return text
+# Function to remove text inside parentheses
+def remove_text_inside_parentheses(text):
+    while '（' in text and '）' in text:
+        start = text.find('（')
+        end = text.find('）') + 1
+        text = text[:start] + text[end:]
+    return text
 
+def clean_english(text):
+    return text.replace(" ", "").replace(".", "·")
+
+def clean_japanese(text):
+    return text.replace(".", "").replace("·", "").replace(" ", "").replace("(", "（").replace(")", "）")
+
+
+def clean_and_transcribe(word_details):
+    
     for word in word_details:
         # Update phonetic field
         word["phonetic"] = word["phonetic"].replace(".", "·").replace(" ", "")
@@ -67,7 +75,7 @@ def clean_and_transcribe(word_details):
         # Clean and transcribe japanese_synonym
         if "japanese_synonym" in word:
             # clean_synonym = remove_text_inside_parentheses(word["japanese_synonym"])
-            clean_synonym = re.sub(r'（[ぁ-んァ-ン]+）', '', word["japanese_synonym"])  # Remove hiragana in parentheses
+            clean_synonym = re.sub(r'（[ぁ-んァ-ンー]+）', '', word["japanese_synonym"])  # Remove hiragana in parentheses
             word["japanese_synonym"] = transcribe_japanese(clean_synonym)  # Replace with your transcription function
 
     return word_details
@@ -86,54 +94,57 @@ class WordsDatabase:
             return self.cursor.fetchone()[0] > 0
         return False
 
-    # def insert_word_details(self, word_details, force=False):
-    #     if self.conn:
-    #         word = word_details['word'].lower()
-    #         syllable_word = word_details['syllable_word'].lower()
-    #         phonetic = word_details['phonetic']
-    #         japanese_synonym = word_details['japanese_synonym']
-
-    #         try:
-    #             if force:
-    #                 # Update existing record
-    #                 self.cursor.execute("""
-    #                     UPDATE words_phonetics 
-    #                     SET syllable_word = ?, phonetic = ?, japanese_synonym = ?
-    #                     WHERE word = ?;
-    #                 """, (syllable_word, phonetic, japanese_synonym, word))
-    #             else:
-    #                 # Insert new record, ignore on duplicate
-    #                 self.cursor.execute("""
-    #                     INSERT INTO words_phonetics (word, syllable_word, phonetic, japanese_synonym)
-    #                     VALUES (?, ?, ?, ?);
-    #                 """, (word, syllable_word, phonetic, japanese_synonym))
-
-    #             self.conn.commit()
-    #         except sqlite3.Error as e:
-    #             print(f"SQLite Error: {e}")
-
     def insert_word_details(self, word_details, force=False):
         if self.conn:
             word = word_details['word'].lower()
-            syllable_word = word_details['syllable_word'].lower()
-            phonetic = word_details['phonetic'].replace(".", "·").replace(" ", "")
-            japanese_synonym = word_details['japanese_synonym'].replace(".", "").replace("·", "").replace(" ", "").replace("(", "（").replace(")", "）")
-
+            syllable_word = clean_english(word_details['syllable_word'].lower())
+            phonetic = clean_english(word_details['phonetic'])
+            japanese_synonym = clean_japanese(word_details['japanese_synonym'])
 
             try:
-                # UPSERT operation: Update if exists, insert if not
-                self.cursor.execute("""
-                    INSERT INTO words_phonetics (word, syllable_word, phonetic, japanese_synonym)
-                    VALUES (?, ?, ?, ?)
-                    ON CONFLICT(word) DO UPDATE SET
-                        syllable_word = excluded.syllable_word,
-                        phonetic = excluded.phonetic,
-                        japanese_synonym = excluded.japanese_synonym;
-                """, (word, syllable_word, phonetic, japanese_synonym))
+                if force:
+                    # UPSERT operation: Update if exists, insert if not
+                    self.cursor.execute("""
+                        INSERT INTO words_phonetics (word, syllable_word, phonetic, japanese_synonym)
+                        VALUES (?, ?, ?, ?)
+                        ON CONFLICT(word) DO UPDATE SET
+                            syllable_word = excluded.syllable_word,
+                            phonetic = excluded.phonetic,
+                            japanese_synonym = excluded.japanese_synonym;
+                    """, (word, syllable_word, phonetic, japanese_synonym))
+                else:
+                    # Insert new record, ignore on duplicate
+                    self.cursor.execute("""
+                        INSERT INTO words_phonetics (word, syllable_word, phonetic, japanese_synonym)
+                        VALUES (?, ?, ?, ?);
+                    """, (word, syllable_word, phonetic, japanese_synonym))
 
                 self.conn.commit()
             except sqlite3.Error as e:
                 print(f"SQLite Error: {e}")
+
+    # def insert_word_details(self, word_details, force=False):
+    #     if self.conn:
+    #         word = word_details['word'].lower()
+    #         syllable_word = word_details['syllable_word'].lower()
+    #         phonetic = word_details['phonetic'].replace(".", "·").replace(" ", "")
+    #         japanese_synonym = word_details['japanese_synonym'].replace(".", "").replace("·", "").replace(" ", "").replace("(", "（").replace(")", "）")
+
+
+    #         try:
+    #             # UPSERT operation: Update if exists, insert if not
+    #             self.cursor.execute("""
+    #                 INSERT INTO words_phonetics (word, syllable_word, phonetic, japanese_synonym)
+    #                 VALUES (?, ?, ?, ?)
+    #                 ON CONFLICT(word) DO UPDATE SET
+    #                     syllable_word = excluded.syllable_word,
+    #                     phonetic = excluded.phonetic,
+    #                     japanese_synonym = excluded.japanese_synonym;
+    #             """, (word, syllable_word, phonetic, japanese_synonym))
+
+    #             self.conn.commit()
+    #         except sqlite3.Error as e:
+    #             print(f"SQLite Error: {e}")
 
 
     def fetch_random_words(self, num_words):
@@ -250,6 +261,7 @@ class AdvancedWordFetcher:
         self.client = client
         self.max_retries = max_retries
         self.examples = self.load_examples()
+        self.model_name = ["gpt-3.5-turbo", "gpt-4-1106-preview"]
 
     def load_examples(self):
         examples_file_path = 'word_examples.csv'
@@ -282,7 +294,7 @@ class AdvancedWordFetcher:
             try:
 
                 response = self.client.chat.completions.create(
-                    model="gpt-3.5-turbo",
+                    model=self.model_name[0],
                     messages=[
                         {"role": "system", "content": "You are an assistant with a vast vocabulary and creativity."},
                         {"role": "user", "content": f"Think wildly and provide me with a python list of {num_words} unique advanced words that are often used in formal readings. Give me only the plain python list compatible with json.loads and start with [ and end with ] WITHOUT any other words."}
@@ -322,13 +334,13 @@ class AdvancedWordFetcher:
         #     )
 
         detailed_list_message = (
-            "For each word, include syllable_word (with central dots separating syllables), "
-            "corret phonetic transcription (phonemes also separated by central dots), and a correct Japanese synonym. "
-            "Also, include a correct Japanese synonym, ensuring hiragana is placed only after kanji and katakana, as in 'その後（ご)', '実装 (じっそうする)', '押（お）し合（あ）う', 'プロトコル（ぷろとこる）', to prevent repetitive hiragana. "
+            "For each word, include syllable_word (with · separating syllables), "
+            "correct phonetic transcription and ensure equal correct separation between words and phonetic symbols. (phonemes also separated by ·), and a correct Japanese synonym. "
+            "Also, include a correct Japanese synonym, ensuring hiragana (furigana) is placed after consecutive kanji and katakana, as in 'その後（ご)', '実装 (じっそうする)', '押（お）し合（あ）う', 'プロトコル（ぷろとこる）'. "
             "For example, like 容易にする（よういにする）, もの悲しい (ものかなしい）, 美しい（うつくしい）, 極めて悪い（きわめてわるい）, 旧式の（きゅうしきの）and その後（そのご) are WRONG. The する like thing should be moved after the parenthesis 容易（ようい）にする. The CORRECT one for latter are その後（ご), 美（うつく）しい, 極（きわ）めて悪（わる）い, 旧式（きゅうしき）のand もの悲(かな）しい . "
             "Ensure NO hiragana between parenthesis and kanji or katakana. "
             "Ensure NO dots in Japanese synonym. "
-            "Ensure equal correct separation between words and phonetic symbols. "
+            
             "The output format should resemble: {}."
             "The words to process are: {}."
         ).format(json.dumps(self.examples, ensure_ascii=False, separators=(',', ':')), ', '.join(random_words))
@@ -337,7 +349,7 @@ class AdvancedWordFetcher:
             try:
                 print(f"Querying {random_words} from OpenAI...")
                 response = self.client.chat.completions.create(
-                    model="gpt-3.5-turbo",
+                    model=self.model_name[0],
                     messages=[
                         {"role": "system", "content": "You are an assistant skilled in linguistics, capable of providing detailed phonetic and linguistic attributes for given words."},
                         {"role": "user", "content": detailed_list_message}
@@ -362,22 +374,14 @@ class AdvancedWordFetcher:
                 return word_phonetics
         raise RuntimeError("Failed to parse response after maximum retries.")
 
-    def recheck_word_details(self, words, word_database, word_details=[], num_words_phonetic=10, recheck=False):
+    def recheck_word_details(self, words_detail, word_database, num_words_phonetic=10, recheck=False):
         random_words = words
         
 
-        # detailed_list_message = (
-        #     "Please recheck and provide detailed information for each word, including its syllable_word (separated by central dots), "
-        #     "phonetic transcription (also separated by central dots), and correctly placed hiragana right after Chinese characters and katakana in the Japanese synonyms like その後（ご), 実装 (じっそう）する， 押（お）し合（あ）う, プロトコル（ぷろとこる）to avoid repetitive hiragana. "
-        #     "Ensure to use central dots for both syllable and phonetic separation. "
-        #     "The expected output format should be like {}."
-        #     "This is the list of words for rechecking: {}."
-        # ).format(json.dumps(self.examples, ensure_ascii=False, separators=(',', ':')), ', '.join(random_words))
-
-        word_details = clean_and_transcribe(word_details)
+        words_detail = clean_and_transcribe(words_detail)
 
         print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
-        print(word_details)
+        print(words_detail)
 
         detailed_list_message = (
             "Please recheck and provide detailed information for each word. Include syllable_word (with central dots separating syllables), "
@@ -391,10 +395,8 @@ class AdvancedWordFetcher:
             # "Ensure NO hiragana between parenthesis and kanji or katakana. "
             "Ensure NO dots in Japanese synonym. "
             "Ensure equal correct separation between words and phonetic symbols. "
-            "Make NO changes if CORRECT. "
-            "Words for rechecking: {}."
-            "The expected output should be the same format as: {}."
-        ).format(', '.join(random_words), json.dumps(word_details, ensure_ascii=False, separators=(',', ':')))
+            "Please give me the same format as Words for rechecking: {}."
+        ).format(', '.join(random_words), json.dumps(words_detail, ensure_ascii=False, separators=(',', ':')))
         # ).format(', '.join(random_words))
 
         # print(detailed_list_message)
@@ -405,7 +407,7 @@ class AdvancedWordFetcher:
                 response = self.client.chat.completions.create(
                     # model="gpt-3.5-turbo",
                     # model="gpt-4",
-                    model="gpt-4-1106-preview",
+                    model=self.model_name[1],
                     messages=[
                         {"role": "system", "content": "You are an assistant skilled in linguistics, capable of providing detailed phonetic and linguistic attributes for given words."},
                         {"role": "user", "content": detailed_list_message}
@@ -428,6 +430,78 @@ class AdvancedWordFetcher:
                 print("Fetched and rechecked word details successfully.")
                 return word_phonetics
         raise RuntimeError("Failed to parse response after maximum retries.")
+
+
+    def recheck_syllable_and_phonetic(self, words_detail):
+         # Prepare examples excluding the Japanese synonyms
+        example_list = [{k: v for k, v in example.items() if k != 'japanese_synonym'} for example in self.examples]
+
+        # Extract the relevant parts from words_detail
+        words_detail_formatted = [{k: v for k, v in word.items() if k in ['word', 'syllable_word', 'phonetic']} for word in words_detail]
+
+
+
+        detailed_list_message = (
+            "Please recheck the correct syllable word (separated by ·) and phonetic transcription (phonemes also separated by ·) for each word. "
+            "For instance, 'abstraction' should be represented as 'ab·strac·tion' in syllable word and 'ˈæb·stræk·ʃən' in phonetic transcription. "
+            "Ensure accurate and consistent separation between syllables and phonetic symbols. "
+            "Please give me same format as the words for rechecking: {}."
+        ).format(json.dumps(words_detail_formatted, ensure_ascii=False, separators=(',', ':')))
+
+        for _ in range(self.max_retries):
+            try:
+                print(f"Rechecking syllable and phonetic for {words} from OpenAI...")
+                response = self.client.chat.completions.create(
+                    model=self.model_name[1],
+                    messages=[
+                        {"role": "system", "content": "You are an assistant skilled in linguistics, capable of providing accurate and detailed phonetic and linguistic attributes for given words. You are excellent in separate words and their phonetics into consistent and accurate separations with '·'."},
+                        {"role": "user", "content": detailed_list_message}
+                    ]
+                )
+                return json.loads(response.choices[0].message.content)
+            except json.JSONDecodeError as e:
+                print(f"JSON Decode Error: {e}")
+                continue
+            except Exception as e:
+                raise Exception(f"An unexpected error occurred: {e}")
+        raise RuntimeError("Failed to parse response after maximum retries.")
+
+    def fetch_japanese_synonym(self, words_detail):
+        # Prepare examples including only the word and Japanese synonym
+        example_list = [{k: v for k, v in example.items() if k in ['word', 'japanese_synonym']} for example in self.examples]
+
+        # Extract the relevant parts from words_detail
+        words_detail_formatted = [{k: v for k, v in word.items() if k in ['word', 'japanese_synonym']} for word in words_detail]
+
+
+
+        detailed_list_message = (
+            "Please provide the correct Japanese synonym for each word, ensuring that hiragana (furigana) is accurately placed after consecutive kanji and katakana. "
+            "The hiragana should be in parentheses following the kanji/katakana. "
+            "For example, 'インタフェース' should have the furigana as '（いんたふぇーす）'. "
+            "Avoid any unnecessary repetition of hiragana and ensure no hiragana is placed between the kanji/katakana and the parentheses. "
+            "Please give me same format as the words for rechecking : {}."
+        ).format(json.dumps(words_detail_formatted, ensure_ascii=False, separators=(',', ':')))
+
+        for _ in range(self.max_retries):
+            try:
+                print(f"Fetching Japanese synonyms for {words} from OpenAI...")
+                response = self.client.chat.completions.create(
+                    model=self.model_name[1],
+                    messages=[
+                        {"role": "system", "content": "You are an assistant skilled in linguistics, capable of providing detailed phonetic and linguistic attributes for given words."},
+                        {"role": "user", "content": detailed_list_message}
+                    ]
+                )
+                return json.loads(response.choices[0]..message.content)
+            except json.JSONDecodeError as e:
+                print(f"JSON Decode Error: {e}")
+                continue
+            except Exception as e:
+                raise Exception(f"An unexpected error occurred: {e}")
+        raise RuntimeError("Failed to parse response after maximum retries.")
+
+
 
 
 

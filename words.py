@@ -63,9 +63,6 @@ word_fetcher = AdvancedWordFetcher(client)
 
 
 
-
-
-
 # Function to count syllables based on dots
 def count_syllables(word):
     # Count dots and stress symbols, subtract one if the first character is a stress symbol
@@ -124,58 +121,14 @@ def get_text_size(text, font):
 
     return text_width, text_height
 
-# def draw_japanese_with_hiragana(draw, text, jp_font_path, small_width, y):
-#     text = text.replace(" ", "").replace("(", "（").replace(")", "）")
-#     # Regular expression to find hiragana in parentheses and corresponding kanji
-#     # regex = re.compile(r'([一-龠々]+)（([ぁ-んァ-ン]+)）')
-#     # Updated regex to include Katakana
-#     regex = re.compile(r'([一-龠々ァ-ン]+)（([ぁ-んァ-ン]+)）')
-
-#     # Determine the font size for Japanese text (excluding hiragana in parentheses)
-#     plain_text = re.sub(r'（[ぁ-んァ-ン]+）', '', text)  # Remove hiragana in parentheses
-#     font_size = find_suitable_font_size(plain_text, jp_font_path, small_width)
-#     font = ImageFont.truetype(jp_font_path, font_size)
-
-#     pos_x = (small_width - get_text_size(plain_text, font)[0]) // 2
-
-#     # Draw Japanese text with hiragana
-#     last_match_end = 0
-#     for match in regex.finditer(text):
-#         kanji, hiragana = match.groups()
-#         start, end = match.span()
-
-#         # Draw preceding text
-#         preceding_text = text[last_match_end:start]
-#         draw.text((pos_x, y), preceding_text, font=font, fill=(0, 0, 0))
-#         pos_x += get_text_size(preceding_text, font)[0]
-
-#         # Draw kanji
-#         draw.text((pos_x, y), kanji, font=font, fill=(0, 0, 0))
-#         kanji_width = get_text_size(kanji, font)[0]
-
-#         # Draw hiragana above kanji
-#         hiragana_font = ImageFont.truetype(jp_font_path, font_size // 2)  # Adjust hiragana font size as needed
-#         hiragana_x = pos_x
-#         # hiragana_y = y - hiragana_font.getsize(hiragana)[1]
-#         hiragana_y = y - get_text_size(hiragana, hiragana_font)[1]
-#         draw.text((hiragana_x, hiragana_y), hiragana, font=hiragana_font, fill=(0, 0, 0))
-
-#         pos_x += kanji_width
-#         last_match_end = end
-
-#     # Draw remaining text after last match
-#     remaining_text = text[last_match_end:]
-#     draw.text((pos_x, y), remaining_text, font=font, fill=(0, 0, 0))
-
-#     return y + get_text_size(plain_text, font)[1] + 20  # Adjust the vertical space after the Japanese text
 
 def draw_japanese_with_hiragana(draw, text, jp_font_path, small_width, y):
     text = text.replace(" ", "").replace("(", "（").replace(")", "）")
     # Updated regex to include Katakana
-    regex = re.compile(r'([一-龠々ァ-ン]+)（([ぁ-んァ-ン]+)）')
+    regex = re.compile(r'([一-龠々ァ-ンー]+)（([ぁ-んァ-ンー]+)）')
 
     # Determine the font size for Japanese text (excluding hiragana in parentheses)
-    plain_text = re.sub(r'（[ぁ-んァ-ン]+）', '', text)  # Remove hiragana in parentheses
+    plain_text = re.sub(r'（[ぁ-んァ-ンー]+）', '', text)  # Remove hiragana in parentheses
     font_size = find_suitable_font_size(plain_text, jp_font_path, small_width)
     font = ImageFont.truetype(jp_font_path, font_size)
 
@@ -193,7 +146,7 @@ def draw_japanese_with_hiragana(draw, text, jp_font_path, small_width, y):
         pos_x += get_text_size(preceding_text, font)[0]
 
         # Draw kanji or katakana
-        draw.text((pos_x, y), re.sub(r'（[ぁ-んァ-ン]+）', '', kanji_or_katakana), font=font, fill=(0, 0, 0))
+        draw.text((pos_x, y), re.sub(r'（[ぁ-んァ-ンー]+）', '', kanji_or_katakana), font=font, fill=(0, 0, 0))
         kanji_or_katakana_width = get_text_size(kanji_or_katakana, font)[0]
 
         # Adjust hiragana font size to fit the width of kanji or katakana
@@ -210,7 +163,7 @@ def draw_japanese_with_hiragana(draw, text, jp_font_path, small_width, y):
 
     # Draw remaining text after last match
     remaining_text = text[last_match_end:]
-    draw.text((pos_x, y), re.sub(r'（[ぁ-んァ-ン]+）', '', remaining_text), font=font, fill=(0, 0, 0))
+    draw.text((pos_x, y), re.sub(r'（[ぁ-んァ-ンー]+）', '', remaining_text), font=font, fill=(0, 0, 0))
 
     return y + get_text_size(plain_text, font)[1] + 20  # Adjust the vertical space after the Japanese text
 
