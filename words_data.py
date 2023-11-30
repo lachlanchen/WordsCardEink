@@ -33,11 +33,13 @@ import re
 
 class JSONParsingError(Exception):
     """Exception raised for errors in the JSON parsing."""
-    def __init__(self, message, json_string):
+    def __init__(self, message, json_string, error_pos=None):
         self.message = message
         self.json_string = json_string
-        super().__init__(f"{self.message}\nJSON String: {self.json_string}")
-
+        self.error_pos = error_pos
+        self.error_details = f"{self.message}\nError Position: {self.error_pos}" if self.error_pos else f"{self.message}"
+        full_message = f"{self.error_details}\nJSON String: {self.json_string}"
+        super().__init__(full_message)
 
 def remove_second_parentheses(text):
     regex = re.compile(r'(（[^）]*）)(（[^）]*）)')
@@ -545,7 +547,7 @@ class AdvancedWordFetcher:
     #         #     continue
 
     #         except JSONParsingError as jpe:
-    #             print(f"JSON parsing failed: {jpe.message}, String: {jpe.json_string}")
+    #             print(f"JSON parsing failed: {jpe.error_details}, String: {jpe.json_string}")
     #             # Continue to the next iteration if parsing error occurs
     #             continue
     #         except Exception as e:  # General exception catch
@@ -566,31 +568,35 @@ class AdvancedWordFetcher:
         unique_words = []
         messages = []
 
+        # Choose the appropriate prompt based on whether propensities are available
+        if propensities:
+            criteria_list = "\n".join([f"{i+1}) {propensity}" for i, propensity in enumerate(propensities)])
+            user_message = (
+                f"Generate a python list of {num_words*5} unique advanced lowercase words that meet one or more of the following criteria:\n"
+                f"{criteria_list}\n"
+                "Format the list for compatibility with json.loads, starting with [ and ending with ]. "
+                # "and include the word's tendency or special characteristic next to each word."
+                "The output should be like ['word 1', 'word 2', ..., 'word N']."
+            )
+        else:
+            user_message = (
+                f"Think wildly and provide me with a python list of {num_words*5} unique advanced lowercase words that are often used in formal readings. "
+                "Give me only the plain python list compatible with json.loads and start with [ and end with ]."
+                "The output should be like ['word 1', 'word 2', ..., 'word N']. "
+            )
+
+        messages = [
+            {"role": "system", "content": "You are an assistant with a vast vocabulary and creativity. You are excellent in providing python list of words without any extra information. "},
+            {"role": "user", "content": user_message}
+        ]
+
         for _ in range(self.max_retries):
             try:
-                # Choose the appropriate prompt based on whether propensities are available
-                if propensities:
-                    criteria_list = "\n".join([f"{i+1}) {propensity}" for i, propensity in enumerate(propensities)])
-                    user_message = (
-                        f"Generate a python list of {num_words*5} unique advanced lowercase words that meet one or more of the following criteria:\n"
-                        f"{criteria_list}\n"
-                        "Format the list for compatibility with json.loads, starting with [ and ending with ]. "
-                        # "and include the word's tendency or special characteristic next to each word."
-                        "The output should be like ['word 1', 'word 2', ..., 'word N']."
-                    )
-                else:
-                    user_message = (
-                        f"Think wildly and provide me with a python list of {num_words*5} unique advanced lowercase words that are often used in formal readings. "
-                        "Give me only the plain python list compatible with json.loads and start with [ and end with ]."
-                        "The output should be like ['word 1', 'word 2', ..., 'word N']. "
-                    )
+                
 
                 response = self.client.chat.completions.create(
                     model=self.model_name[1],
-                    messages=[
-                        {"role": "system", "content": "You are an assistant with a vast vocabulary and creativity. You are excellent in providing python list of words without any extra information. "},
-                        {"role": "user", "content": user_message}
-                    ]
+                    messages=messages
                 )
 
                 words_list = self.extract_and_parse_json(response.choices[0].message.content)
@@ -599,10 +605,10 @@ class AdvancedWordFetcher:
                     break
 
             except JSONParsingError as jpe:
-                print(f"JSON parsing failed: {jpe.message}")
+                print(f"JSON parsing failed: {jpe.error_details}")
                 # messages.append({"role": "system", "content": response.choices[0].message.content})
                 messages.append({"role": "system", "content": jpe.json_string})
-                messages.append({"role": "user", "content": f"JSON parsing failed: {jpe.message}"})
+                messages.append({"role": "user", "content": f"JSON parsing failed: {jpe.error_details}"})
                 continue
             except Exception as e:
                 print(f"An unexpected error occurred: {e}")
@@ -628,16 +634,25 @@ class AdvancedWordFetcher:
             "The words to process are: {}."
         ).format(json.dumps(self.examples, ensure_ascii=False, separators=(',', ':')), ', '.join(random_words))
 
+
+                
+        messages = [
+            {"role": "system", "content": "You are an assistant skilled in linguistics, capable of providing detailed phonetic and linguistic attributes for given words."},
+            {"role": "user", "content": detailed_list_message}
+        ]
+
+        
+
         for _ in range(self.max_retries):
             try:
+
                 print(f"Querying {random_words} from OpenAI...")
+
                 response = self.client.chat.completions.create(
                     model=self.model_name[1],
-                    messages=[
-                        {"role": "system", "content": "You are an assistant skilled in linguistics, capable of providing detailed phonetic and linguistic attributes for given words."},
-                        {"role": "user", "content": detailed_list_message}
-                    ]
+                    messages=messages
                 )
+                
                 word_phonetics = self.extract_and_parse_json(response.choices[0].message.content)
 
 
@@ -652,10 +667,10 @@ class AdvancedWordFetcher:
                 self.save_examples()
                 return word_phonetics
             except JSONParsingError as jpe:
-                print(f"JSON parsing failed: {jpe.message}")
+                print(f"JSON parsing failed: {jpe.error_details}")
                 # messages.append({"role": "system", "content": response.choices[0].message.content})
                 messages.append({"role": "system", "content": jpe.json_string})
-                messages.append({"role": "user", "content": f"JSON parsing failed: {jpe.message}"})
+                messages.append({"role": "user", "content": f"JSON parsing failed: {jpe.error_details}"})
                 continue
             except Exception as e:
                 print(f"An unexpected error occurred: {e}")
@@ -686,17 +701,22 @@ class AdvancedWordFetcher:
         ).format(json.dumps(word_details, ensure_ascii=False, separators=(',', ':')))
 
 
+        messages = [
+            {"role": "system", "content": "You are an assistant skilled in linguistics, capable of providing detailed phonetic and linguistic attributes for given words."},
+            {"role": "user", "content": detailed_list_message}
+        ]
+
         for _ in range(self.max_retries):
             try:
                 print(f"Rechecking {words} from OpenAI...")
+                
+                
+
                 response = self.client.chat.completions.create(
                     # model="gpt-3.5-turbo",
                     # model="gpt-4",
                     model=self.model_name[1],
-                    messages=[
-                        {"role": "system", "content": "You are an assistant skilled in linguistics, capable of providing detailed phonetic and linguistic attributes for given words."},
-                        {"role": "user", "content": detailed_list_message}
-                    ]
+                    messages=messages
                 )
                 word_phonetics = self.extract_and_parse_json(response.choices[0].message.content)
                 print("Parsed rechecked result: ", word_phonetics)
@@ -711,10 +731,10 @@ class AdvancedWordFetcher:
                 return word_phonetics
 
             except JSONParsingError as jpe:
-                print(f"JSON parsing failed: {jpe.message}")
+                print(f"JSON parsing failed: {jpe.error_details}")
                 # messages.append({"role": "system", "content": response.choices[0].message.content})
                 messages.append({"role": "system", "content": jpe.json_string})
-                messages.append({"role": "user", "content": f"JSON parsing failed: {jpe.message}"})
+                messages.append({"role": "user", "content": f"JSON parsing failed: {jpe.error_details}"})
                 continue
             except Exception as e:
                 print(f"An unexpected error occurred: {e}")
@@ -748,15 +768,20 @@ class AdvancedWordFetcher:
             "Please output as SAME FORMAT and correct these words in the list as needed: {}."
         ).format(json.dumps(word_details_formatted, ensure_ascii=False, separators=(',', ':')))
 
+        messages = [
+            {"role": "system", "content": "You are an assistant skilled in linguistics, capable of providing accurate and detailed phonetic and linguistic attributes for given words. You are excellent in separate words and their phonetics into consistent and accurate separations with '·'."},
+            {"role": "user", "content": detailed_list_message}
+        ]
+
         for _ in range(self.max_retries):
             try:
                 print(f"Rechecking syllable and phonetic for {words} from OpenAI...")
+                
+                
+
                 response = self.client.chat.completions.create(
                     model=self.model_name[1],
-                    messages=[
-                        {"role": "system", "content": "You are an assistant skilled in linguistics, capable of providing accurate and detailed phonetic and linguistic attributes for given words. You are excellent in separate words and their phonetics into consistent and accurate separations with '·'."},
-                        {"role": "user", "content": detailed_list_message}
-                    ]
+                    messages=messages
                 )
 
                 print("Rechecked result: ", response.choices[0].message.content)
@@ -770,10 +795,10 @@ class AdvancedWordFetcher:
                         word_database.update_word_details(detail)
                 return word_phonetics
             except JSONParsingError as jpe:
-                print(f"JSON parsing failed: {jpe.message}")
+                print(f"JSON parsing failed: {jpe.error_details}")
                 # messages.append({"role": "system", "content": response.choices[0].message.content})
                 messages.append({"role": "system", "content": jpe.json_string})
-                messages.append({"role": "user", "content": f"JSON parsing failed: {jpe.message}"})
+                messages.append({"role": "user", "content": f"JSON parsing failed: {jpe.error_details}"})
                 continue
             except Exception as e:
                 print(f"An unexpected error occurred: {e}")
@@ -813,15 +838,20 @@ class AdvancedWordFetcher:
             "Please output as SAME FORMAT python list of dict and correct these words in the list as needed : {}."
         ).format(json.dumps(word_details_formatted, ensure_ascii=False, separators=(',', ':')))
 
+        messages = [
+            {"role": "system", "content": "You are an assistant skilled in linguistics, capable of providing detailed phonetic and linguistic attributes for given words. You are excellent in providing hiragana (furigana) for consecutive kanji/katakana. "},
+            {"role": "user", "content": detailed_list_message}
+        ]
+
         for _ in range(self.max_retries):
             try:
                 print(f"Fetching Japanese synonyms for {word_details_formatted} from OpenAI...")
+                
+                
+
                 response = self.client.chat.completions.create(
                     model=self.model_name[1],
-                    messages=[
-                        {"role": "system", "content": "You are an assistant skilled in linguistics, capable of providing detailed phonetic and linguistic attributes for given words. You are excellent in providing hiragana (furigana) for consecutive kanji/katakana. "},
-                        {"role": "user", "content": detailed_list_message}
-                    ]
+                    messages=messages
                 )
 
                 print("Rechecked Japanese synonym: ", response.choices[0].message.content)
@@ -836,10 +866,10 @@ class AdvancedWordFetcher:
 
                 return word_phonetics
             except JSONParsingError as jpe:
-                print(f"JSON parsing failed: {jpe.message}")
+                print(f"JSON parsing failed: {jpe.error_details}")
                 # messages.append({"role": "system", "content": response.choices[0].message.content})
                 messages.append({"role": "system", "content": jpe.json_string})
-                messages.append({"role": "user", "content": f"JSON parsing failed: {jpe.message}"})
+                messages.append({"role": "user", "content": f"JSON parsing failed: {jpe.error_details}"})
                 continue
             except Exception as e:
                 print(f"An unexpected error occurred: {e}")
@@ -847,7 +877,7 @@ class AdvancedWordFetcher:
             else:
                 print("Fetched and rechecked word details successfully.")
                 return word_phonetics                
-                
+
         raise RuntimeError("Failed to parse response after maximum retries.")
 
 

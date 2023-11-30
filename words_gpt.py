@@ -350,9 +350,9 @@ if __name__=="__main__":
             item = chooser.choose()
             # item = chooser.choose()
             print("word: ", item)
-            # content_image = epd_display.create_content_layout(item)
-            # epd_hardware.display_image(content_image)
-            # time.sleep(600)  # Display each word for 5 minutes
+            content_image = epd_display.create_content_layout(item)
+            epd_hardware.display_image(content_image)
+            time.sleep(600)  # Display each word for 5 minutes
 
     except Exception as e:
         print("Exception: ", str(e))
