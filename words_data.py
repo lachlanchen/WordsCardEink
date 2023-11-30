@@ -651,12 +651,15 @@ class AdvancedWordFetcher:
                 self.examples= word_phonetics[0:2]
                 self.save_examples()
                 return word_phonetics
-            except json.JSONDecodeError as e:
-                print(f"JSON Decode Error: {e}")
+            except JSONParsingError as jpe:
+                print(f"JSON parsing failed: {jpe.message}")
+                # messages.append({"role": "system", "content": response.choices[0].message.content})
+                messages.append({"role": "system", "content": jpe.json_string})
+                messages.append({"role": "user", "content": f"JSON parsing failed: {jpe.message}"})
                 continue
-            except Exception as e:  # General exception catch
+            except Exception as e:
                 print(f"An unexpected error occurred: {e}")
-                raise Exception(f"An unexpected error occurred: {e}")
+                raise e
             else:
                 print("Fetched word details successfully.")
                 return word_phonetics
@@ -707,12 +710,15 @@ class AdvancedWordFetcher:
                 # self.recheck_japanese_synonym(word_phonetics, word_database)
                 return word_phonetics
 
-            except json.JSONDecodeError as e:
-                print(f"JSON Decode Error: {e}")
+            except JSONParsingError as jpe:
+                print(f"JSON parsing failed: {jpe.message}")
+                # messages.append({"role": "system", "content": response.choices[0].message.content})
+                messages.append({"role": "system", "content": jpe.json_string})
+                messages.append({"role": "user", "content": f"JSON parsing failed: {jpe.message}"})
                 continue
-            except Exception as e:  # General exception catch
-                # print(f"An unexpected error occurred: {e}")
-                raise Exception(f"An unexpected error occurred: {e}")
+            except Exception as e:
+                print(f"An unexpected error occurred: {e}")
+                raise e
             else:
                 print("Fetched and rechecked word details successfully.")
                 return word_phonetics
@@ -763,11 +769,15 @@ class AdvancedWordFetcher:
                     if word_database:
                         word_database.update_word_details(detail)
                 return word_phonetics
-            except json.JSONDecodeError as e:
-                print(f"JSON Decode Error: {e}")
+            except JSONParsingError as jpe:
+                print(f"JSON parsing failed: {jpe.message}")
+                # messages.append({"role": "system", "content": response.choices[0].message.content})
+                messages.append({"role": "system", "content": jpe.json_string})
+                messages.append({"role": "user", "content": f"JSON parsing failed: {jpe.message}"})
                 continue
             except Exception as e:
-                raise Exception(f"An unexpected error occurred: {e}")
+                print(f"An unexpected error occurred: {e}")
+                raise e
             else:
                 print("Fetched and rechecked word details successfully.")
                 return word_phonetics
@@ -825,15 +835,19 @@ class AdvancedWordFetcher:
                         word_database.update_word_details(detail)
 
                 return word_phonetics
-            except json.JSONDecodeError as e:
-                print(f"JSON Decode Error: {e}")
+            except JSONParsingError as jpe:
+                print(f"JSON parsing failed: {jpe.message}")
+                # messages.append({"role": "system", "content": response.choices[0].message.content})
+                messages.append({"role": "system", "content": jpe.json_string})
+                messages.append({"role": "user", "content": f"JSON parsing failed: {jpe.message}"})
                 continue
             except Exception as e:
-                raise Exception(f"An unexpected error occurred: {e}")
-
+                print(f"An unexpected error occurred: {e}")
+                raise e
             else:
                 print("Fetched and rechecked word details successfully.")
                 return word_phonetics                
+                
         raise RuntimeError("Failed to parse response after maximum retries.")
 
 
