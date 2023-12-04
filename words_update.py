@@ -145,6 +145,28 @@ def batch_update_japanese_synonyms(database, fetcher, batch_size=10):
 
         processed += len(words_batch)
 
+def batch_update_arabic_synonyms(database, fetcher, batch_size=10):
+    total_words = database.get_total_word_count()
+    processed = 0
+
+    while processed < total_words:
+        words_batch = database.fetch_words_batch(processed, batch_size)
+
+        # Extract just the word and Japanese synonym details
+        # words_detail = [{'word': word['word'], 'japanese_synonym': word['japanese_synonym']} for word in words_batch]
+
+        # Fetch new Japanese synonyms
+        updated_synonyms = fetcher.fetch_arabic_synonyms([word['word'] for word in words_batch], database)
+
+        # Update the database with the new synonyms
+        # for details in updated_synonyms:
+        #     database.update_word_details(details, force=True)
+            # pass
+
+        # break
+
+        processed += len(words_batch)
+
 
 def fetch_and_recheck_words(database, fetcher, words_list):
     for word in words_list:
@@ -153,53 +175,108 @@ def fetch_and_recheck_words(database, fetcher, words_list):
         # Fetch word details from database or OpenAI
         word_detail = database.find_word_details(word)
         if not word_detail:
-            # # Fetch details if not found in database
-            # fetched_details = fetcher.fetch_word_details([word], database)
-            # if fetched_details:
-            #     word_detail = fetched_details[0]
-            # else:
-            #     print(f"Failed to fetch details for word: {word}")
-            #     continue
+            # Fetch details if not found in database
+            fetched_details = fetcher.fetch_word_details([word], database)
+            if fetched_details:
+                word_detail = fetched_details[0]
+            else:
+                print(f"Failed to fetch details for word: {word}")
+                continue
 
-            continue
+            # continue
 
         # Apply recheck functions
         # rechecked_details_all = fetcher.recheck_word_details([word_detail], database)[0]
+
         # rechecked_syllable_phonetic = fetcher.recheck_syllable_and_phonetic([word_detail], database)[0]
-        rechecked_japanese_synonym = fetcher.recheck_japanese_synonym([word_detail], database)[0]
+        # database.update_word_details(rechecked_syllable_phonetic, force=True)
 
-        # Update the database with the final rechecked details
-        database.update_word_details(rechecked_japanese_synonym, force=True)
+        # # Update the database with the final rechecked details
+        # rechecked_japanese_synonym = fetcher.recheck_japanese_synonym([word_detail], database)[0]
+        # database.update_word_details(rechecked_japanese_synonym, force=True)
+
+        
+
+        
+
+def update_database_in_batches_with_conditions(database, fetcher, batch_size=10):
+    logged_words = get_logged_words()
+    total_words = database.get_total_word_count()
+    processed = 0
+
+    while processed < total_words:
+        words_batch = database.fetch_words_batch(processed, batch_size)
+        # print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
+        # print("before update: ", words_batch)
+        words_to_recheck = [word_detail for word_detail in words_batch if word_detail['word'] not in logged_words]
+
+        if len(words_to_recheck) > 0:
+            # print("The words are all processed. ")
+            # continue
+
+            # rechecked_details = fetcher.recheck_word_details(words_batch, database)
+            # print("after update: ", rechecked_details)
+            # print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+
+            rechecked_syllable_phonetic = fetcher.split_and_compare_phonetic_syllable(words_to_recheck, database)
+            # database.update_word_details(rechecked_syllable_phonetic, force=True)
+
+            # Update the database with the final rechecked details
+            rechecked_japanese_synonym = fetcher.recheck_japanese_synonym_with_conditions(words_to_recheck, database)
+            # database.update_word_details(rechecked_japanese_synonym, force=True)
+
+            updated_words = []
+            for details in words_to_recheck:
+                # database.insert_word_details(details, force=True)
+                updated_words.append(details['word'])
+
+            log_updated_words(updated_words)
+        processed += len(words_batch)
 
 
 
-# Usage example
-client = OpenAI()  # Assuming you have initialized OpenAI client
+if __name__ == "__main__":
+    # Usage example
+    client = OpenAI()  # Assuming you have initialized OpenAI client
 
-# Database path
-db_path = 'words_phonetics.db'
+    # Database path
+    db_path = 'words_phonetics.db'
 
-# Initialize database and word fetcher
-words_db = WordsDatabase(db_path)
-word_fetcher = AdvancedWordFetcher(client)
+    # Initialize database and word fetcher
+    words_db = WordsDatabase(db_path)
+    word_fetcher = AdvancedWordFetcher(client)
 
-# # Update the last 10 words
-# update_last_10_words(words_db, word_fetcher)
+    # # Update the last 10 words
+    # update_last_10_words(words_db, word_fetcher)
 
-# remove_consecutive_parenthesis_in_batches(words_db, word_fetcher)
+    # remove_consecutive_parenthesis_in_batches(words_db, word_fetcher)
 
-# Update the database in batches
-# update_database_in_batches(words_db, word_fetcher, 5)
-# words_db.update_all_words(batch_size=10)
+    # Update the database in batches
+    # update_database_in_batches(words_db, word_fetcher, 5)
+    # words_db.update_all_words(batch_size=10)
 
-# batch_update_syllable_and_phonetic(words_db, word_fetcher, 5)
-# batch_update_japanese_synonyms(words_db, word_fetcher, 5)
-
-
-# words_list = ["baguette"]
-words_list = ["circumlocution"]
-fetch_and_recheck_words(words_db, word_fetcher, words_list)
+    # batch_update_syllable_and_phonetic(words_db, word_fetcher, 5)
+    # batch_update_japanese_synonyms(words_db, word_fetcher, 5)
 
 
-# Close the database connection
-words_db.close()
+    # words_list = ["baguette"]
+    # words_list = ["circumlocution"]
+    words_list = [
+        # "test",
+        # "pneumohydropericardium"，
+        # "prediscuss",
+        # "how",
+        # "ubiquitous"
+    ]
+    # fetch_and_recheck_words(words_db, word_fetcher, words_list)
+
+    # batch_update_arabic_synonyms(words_db, word_fetcher)
+
+
+    # words_db.update_kanji_for_all_words()
+
+    update_database_in_batches_with_conditions(words_db, word_fetcher)
+
+
+    # Close the database connection
+    words_db.close()

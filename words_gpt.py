@@ -50,6 +50,7 @@ logging.basicConfig(level=logging.DEBUG)
 import json
 from openai import OpenAI
 from words_data import WordsDatabase, AdvancedWordFetcher, OpenAiChooser
+from words_data import split_word, split_word_with_color, count_syllables
 
 import sqlite3
 import os
@@ -58,6 +59,8 @@ from datetime import datetime
 import pytz
 import re
 
+
+import numpy as np
 
 # Usage example
 client = OpenAI()
@@ -71,15 +74,6 @@ word_fetcher = AdvancedWordFetcher(client)
 
 
 
-# Function to count syllables based on dots
-def count_syllables(word):
-    # Count dots and stress symbols, subtract one if the first character is a stress symbol
-    count = word.count('·') + word.count('ˈ') + word.count('ˌ')
-    if word.startswith('ˈ') or word.startswith('ˌ'):
-        count -= 1
-    return count + 1
-
-# Function to split words into syllables and get color for each syllable
 
 
 
@@ -104,6 +98,63 @@ class EPaperHardware:
     def clear_display(self):
         self.epd.Clear()
 
+
+class GradientTextureGenerator:
+    def __init__(self, width=1024, height=1024, base_color=(255, 255, 255), noise_intensity_range=(0.01, 0.05)):
+        self.width = width
+        self.height = height
+        self.base_color = base_color  # Base color for the gradient, default is white
+        self.noise_intensity_range = noise_intensity_range
+
+    def create_gradient(self):
+        # Start with a base color array
+        Z = np.full((self.height, self.width, 3), self.base_color, dtype=np.uint8)
+
+        # Create a slight linear gradient
+        for i in range(3):  # For each color channel
+            gradient = np.linspace(0, 1, self.width) * 10  # Adjust the factor for the gradient effect
+            Z[:, :, i] = np.clip(Z[:, :, i] - gradient[None, :], 0, 255).astype(np.uint8)
+
+        # Add noise with varying intensity to each channel
+        for i in range(3):  # For each color channel
+            noise_intensity = np.random.uniform(*self.noise_intensity_range)
+            noise = np.random.normal(0, noise_intensity * 255, (self.height, self.width))
+            Z[:, :, i] = np.clip(Z[:, :, i] + noise, 0, 255).astype(np.uint8)
+
+        return Z
+
+    def get_pil_image(self, Z):
+        try:
+            # Create a PIL Image from the numpy array
+            image = Image.fromarray(Z, 'RGB')
+            return image
+        except Exception as e:
+            print(f"Error in creating PIL image: {e}")
+            return None
+
+    def save_image(self, Z, file_path):
+        """
+        Save the generated gradient as an image using PIL.
+
+        :param Z: The numpy array representing the gradient texture.
+        :param file_path: Path to save the image.
+        """
+        # Convert the numpy array to an image and save it
+        image = self.get_pil_image(Z)
+        if image:
+            image.save(file_path)
+
+
+# # Example usage
+# generator = GradientTextureGenerator()
+# Z = generator.create_gradient()
+# image = generator.get_pil_image(Z)  # Now you have a PIL Image object
+
+# # Displaying the image for demonstration
+# image.show()
+
+
+
 class EPaperDisplay:
     def __init__(self, hardware, font_root, scale_factor=2):
         self.hardware = hardware
@@ -114,50 +165,66 @@ class EPaperDisplay:
         self.pallete = [(0, 0, 0), (255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 165, 0), (255, 0, 165), (0, 255, 165)]
         self.setup_fonts()
 
+        self.word = None
+        self.image = None
+        self.intermediate_images = []
+
+    def save_intermediate_image(self):
+        # Save a copy of the current image
+        self.intermediate_images.append(self.image.copy())
+
+    def save_all_images(self, base_path='images'):
+        word = self.word
+        """Saves all intermediate images to files."""
+        print("word_path: ", word)
+        word_path = os.path.join(base_path, word)
+        if not os.path.exists(word_path):
+            os.makedirs(word_path)
+        for i, img in enumerate(self.intermediate_images):
+            img = img.resize((self.width * self.scale_factor, self.height * self.scale_factor), Resampling.LANCZOS)
+            img.save(os.path.join(word_path, f"{i+1:02d}.jpg"))
+            if i == len(self.intermediate_images) - 1:
+                img.save(os.path.join(base_path, f"{word}.jpg"))
+
+
+    def clear_intermediate_images(self):
+        self.intermediate_images = []
+
     def setup_fonts(self):
         self.jp_font_path = os.path.join(self.font_root, 'HolidayMDJP.otf')
+        self.jp_font_path_fallback = os.path.join(self.font_root, 'KouzanMouhituFontOTF.otf')
         self.ipa_font_path = os.path.join(self.font_root, 'arial.ttf')
         self.default_font_path = os.path.join(self.font_root, 'Font.ttc')
 
     def create_content_layout(self, item):
-        image = Image.new('RGB', (self.width, self.height), (255,255,255))
-        draw = ImageDraw.Draw(image)
+        self.word = item["word"]
+        self.image = Image.new('RGB', (self.width, self.height), (255,255,255))
+
+        # generator = GradientTextureGenerator(width=self.width, height=self.height, base_color=(230, 230, 230))
+        # Z = generator.create_gradient()
+        # self.image = generator.get_pil_image(Z)
+
+        draw = ImageDraw.Draw(self.image)
 
         # Divide the display into 4 rows
         row_height = self.height // 4
         self.draw_phonetic(draw, item['phonetic'], 0, row_height)
+        self.save_intermediate_image()
         self.draw_word(draw, item['syllable_word'], row_height, row_height)
+        self.save_intermediate_image()
         self.draw_japanese(draw, item['japanese_synonym'], 2 * row_height, 2 * row_height)
+        self.save_intermediate_image()
+
+        self.save_all_images()
+        self.clear_intermediate_images()
 
         # Scale the image up to fit the display
-        return image.resize((self.width * self.scale_factor, self.height * self.scale_factor), Resampling.LANCZOS)
-
-    # def draw_phonetic(self, draw, phonetic_text, start_y, row_height):
-    #     phonetic_text_cleaned = phonetic_text.replace('·', '')
-    #     font = ImageFont.truetype(self.ipa_font_path, self.find_font_size(phonetic_text_cleaned, self.ipa_font_path, self.width, row_height))
-    #     syllables = self.split_word(phonetic_text, self.pallete)
-    #     total_width = sum(self.get_text_size(syllable.replace('·', ''), font)[0] for syllable, _ in syllables)
-
-    #     x = (self.width - total_width) / 2
-    #     for syllable, color in syllables:
-    #         draw.text((x, start_y + (row_height - self.get_text_size(syllable.replace('·', ''), font)[1]) / 2), syllable.replace('·', ''), font=font, fill=color)
-    #         x += self.get_text_size(syllable.replace('·', ''), font)[0]
-
-    # def draw_word(self, draw, word_text, start_y, row_height):
-    #     word_text_cleaned = word_text.replace('·', '')
-    #     font = ImageFont.truetype(self.default_font_path, self.find_font_size(word_text_cleaned, self.default_font_path, self.width, row_height))
-    #     syllables = self.split_word(word_text, self.pallete)
-    #     total_width = sum(self.get_text_size(syllable.replace('·', ''), font)[0] for syllable, _ in syllables)
-
-    #     x = (self.width - total_width) / 2
-    #     for syllable, color in syllables:
-    #         draw.text((x, start_y + (row_height - self.get_text_size(syllable.replace('·', ''), font)[1]) / 2), syllable.replace('·', ''), font=font, fill=color)
-    #         x += self.get_text_size(syllable.replace('·', ''), font)[0]
+        return self.image.resize((self.width * self.scale_factor, self.height * self.scale_factor), Resampling.LANCZOS)
 
     def draw_phonetic(self, draw, phonetic_text, start_y, row_height):
         phonetic_text_cleaned = phonetic_text.replace('·', '')
         font = ImageFont.truetype(self.ipa_font_path, self.find_font_size(phonetic_text_cleaned, self.ipa_font_path, self.width, row_height))
-        syllables = self.split_word(phonetic_text, self.pallete)
+        syllables = split_word_with_color(phonetic_text, self.pallete)
         
         # Calculate the total width of the line
         total_width = sum(self.get_text_size(syllable.replace('·', ''), font)[0] for syllable, _ in syllables)
@@ -169,12 +236,13 @@ class EPaperDisplay:
         x = (self.width - total_width) / 2
         for syllable, color in syllables:
             draw.text((x, line_y), syllable.replace('·', ''), font=font, fill=color)
+            self.save_intermediate_image()
             x += self.get_text_size(syllable.replace('·', ''), font)[0]
 
     def draw_word(self, draw, word_text, start_y, row_height):
         word_text_cleaned = word_text.replace('·', '')
         font = ImageFont.truetype(self.default_font_path, self.find_font_size(word_text_cleaned, self.default_font_path, self.width, row_height))
-        syllables = self.split_word(word_text, self.pallete)
+        syllables = split_word_with_color(word_text, self.pallete)
         
         # Calculate the total width of the line
         total_width = sum(self.get_text_size(syllable.replace('·', ''), font)[0] for syllable, _ in syllables)
@@ -186,6 +254,7 @@ class EPaperDisplay:
         x = (self.width - total_width) / 2
         for syllable, color in syllables:
             draw.text((x, line_y), syllable.replace('·', ''), font=font, fill=color)
+            self.save_intermediate_image()
             x += self.get_text_size(syllable.replace('·', ''), font)[0]
 
 
@@ -194,20 +263,20 @@ class EPaperDisplay:
         self.draw_japanese_with_hiragana(draw, japanese_text, self.jp_font_path, self.width, start_y, row_height)
 
 
-    # def split_word(self, word):
+    # def split_word_with_color(self, word):
     #     color_cycle = itertools.cycle(self.pallete)
     #     return [(part, next(color_cycle)) for part in re.split(r'([·ˈˌ])', word) if part]
 
-    def split_word(self, word, colors):
-        # Replace stress symbols with a preceding dot, except at the beginning
-        if word.startswith('ˈ') or word.startswith('ˌ'):
-            word = word[0] + word[1:].replace('ˈ', '·ˈ').replace('ˌ', '·ˌ')
-        else:
-            word = word.replace('ˈ', '·ˈ').replace('ˌ', '·ˌ')
+    # def split_word_with_color(self, word, colors):
+    #     # Replace stress symbols with a preceding dot, except at the beginning
+    #     if word.startswith('ˈ') or word.startswith('ˌ'):
+    #         word = word[0] + word[1:].replace('ˈ', '·ˈ').replace('ˌ', '·ˌ')
+    #     else:
+    #         word = word.replace('ˈ', '·ˈ').replace('ˌ', '·ˌ')
 
-        syllables = word.split('·')
-        color_syllables = [(syllable, colors[i % len(colors)]) for i, syllable in enumerate(syllables)]
-        return color_syllables
+    #     syllables = word.split('·')
+    #     color_syllables = [(syllable, colors[i % len(colors)]) for i, syllable in enumerate(syllables)]
+    #     return color_syllables
 
     def find_font_size(self, text, font_path, max_width, max_height, start_size=60, step=2):
         font_size = start_size
@@ -227,42 +296,36 @@ class EPaperDisplay:
         draw = ImageDraw.Draw(dummy_image)
         return draw.textbbox((0, 0), text, font=font)[2:]
 
-    # def find_suitable_font_size(self, text, font_path, max_width, start_size=60, step=2):
-    #     """
-    #     Find the largest font size that allows the text to fit within max_width.
-    #     """
-    #     font_size = start_size
-    #     font = ImageFont.truetype(font_path, font_size)
-    #     print("text: ", text)
-    #     # text_width = font.getsize(text)[0]
 
-    #     # Create a dummy image and draw object to measure text
-    #     dummy_image = Image.new('RGB', (100, 100))
-    #     draw = ImageDraw.Draw(dummy_image)
-    #     text_bbox = draw.textbbox((0, 0), text, font=font)
-    #     text_width = text_bbox[2] - text_bbox[0]  # Calculate the text width
+    def is_char_supported(self, character, font_path, background_color=(255, 255, 255)):
+        font = ImageFont.truetype(font_path, 20)
+        image = Image.new('RGB', (40, 40), background_color)
+        draw = ImageDraw.Draw(image)
+        draw.text((5, 5), character, font=font, fill=(0, 0, 0))
 
-    #     while text_width > max_width and font_size > 0:
-    #         font_size -= step
-    #         font = ImageFont.truetype(font_path, font_size)
-    #         # text_width = font.getsize(text)[0]
+        for x in range(image.width):
+            for y in range(image.height):
+                if image.getpixel((x, y)) != background_color:
+                    return True
+        return False
 
-    #         # dummy_image = Image.new('RGB', (100, 100))
-    #         # draw = ImageDraw.Draw(dummy_image)
-    #         text_bbox = draw.textbbox((0, 0), text, font=font)
-    #         text_width = text_bbox[2] - text_bbox[0]  # Calculate the text width
+    def draw_kanji(self, draw, text, x, y, font_paths, font_size):
 
-    #     return font_size
+        get_text_size = self.get_text_size
 
-    # def get_text_size(self, text, font):
-    #     # Create a dummy image and draw object to measure text
-    #     dummy_image = Image.new('RGB', (100, 100))
-    #     draw = ImageDraw.Draw(dummy_image)
-    #     text_bbox = draw.textbbox((0, 0), text, font=font)
-    #     text_width = text_bbox[2] - text_bbox[0]  # Calculate the text width
-    #     text_height = text_bbox[3] - text_bbox[1]
+        for char in text:
+            for font_path in font_paths:
+                if self.is_char_supported(char, font_path):
+                    font = ImageFont.truetype(font_path, font_size)
+                    break
+                else:
+                    # If no font supports the character, use the last font in the list
+                    font = ImageFont.truetype(font_paths[-1], font_size)
 
-    #     return text_width, text_height
+            draw.text((x, y), char, font=font, fill=(0, 0, 0))
+            print("text: ", text)
+            # x += font.getsize(char)[0]  # Update x position for next character
+            x += get_text_size(char, font)[0]  # Update x position for next character
 
 
     def draw_japanese_with_hiragana(self, draw, text, jp_font_path, max_width, y, max_height):
@@ -288,7 +351,10 @@ class EPaperDisplay:
             draw.text((pos_x, y), preceding_text, font=font, fill=(0, 0, 0))
             pos_x += get_text_size(preceding_text, font)[0]
 
-            draw.text((pos_x, y), re.sub(r'（[ぁ-んァ-ンー-]+）', '', kanji_or_katakana), font=font, fill=(0, 0, 0))
+            # draw.text((pos_x, y), re.sub(r'（[ぁ-んァ-ンー-]+）', '', kanji_or_katakana), font=font, fill=(0, 0, 0))
+            font_paths = [self.jp_font_path, self.jp_font_path_fallback]
+            self.draw_kanji(draw, re.sub(r'（[ぁ-んァ-ンー-]+）', '', kanji_or_katakana), pos_x, y, font_paths, font_size)
+
             kanji_or_katakana_width = get_text_size(kanji_or_katakana, font)[0]
             kanji_or_katakana_height = get_text_size(kanji_or_katakana, font)[1]
 
@@ -320,26 +386,11 @@ if __name__=="__main__":
     epd_display = EPaperDisplay(epd_hardware, font_root)
 
 
-    words_list = []
-    # words_list = ["benevolent"]
-    # words_list = ["obstreperous"]
-    # words_list = ["peregrinate"]
+
     words_list = [
-        # "incontrovertible", "benevolent", 
-        # "peregrinate", "obstreperous", "hiraeth", "idyllic", "chimerical", 
-        # "cacophony", 
-        # "serendipity", "sacrosanct", 
-        # "reticent", "do", "accolade", "jingoism", 
-        # "facilitate", 
-        # "infallible", "rescind", 
-        # "trepidation", 
-        # "raconteur", 
-        # "xenophobia", 
-        # "indubitable", 
-        # "propensity", 
-        # "gregarious", 
-        # "magnate",
-        # "perambulation", 
+        # "impeccable"
+        # "gratitude",
+        # "appreciation"
     ]
 
     chooser = OpenAiChooser(words_db, word_fetcher, words_list=words_list)
@@ -352,7 +403,7 @@ if __name__=="__main__":
             print("word: ", item)
             content_image = epd_display.create_content_layout(item)
             epd_hardware.display_image(content_image)
-            time.sleep(600)  # Display each word for 5 minutes
+            time.sleep(300)  # Display each word for 5 minutes
 
     except Exception as e:
         print("Exception: ", str(e))
