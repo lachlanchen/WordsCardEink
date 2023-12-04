@@ -170,7 +170,7 @@ def batch_update_arabic_synonyms(database, fetcher, batch_size=10):
 
 def fetch_and_recheck_words(database, fetcher, words_list):
     for word in words_list:
-        word = word.lower()  # Standardize the word to lowercase
+        word = word #.lower()  # Standardize the word to lowercase
 
         # Fetch word details from database or OpenAI
         word_detail = database.find_word_details(word)
@@ -273,7 +273,7 @@ if __name__ == "__main__":
     # batch_update_arabic_synonyms(words_db, word_fetcher)
 
 
-    # words_db.update_kanji_for_all_words()
+    words_db.update_kanji_for_all_words()
 
     update_database_in_batches_with_conditions(words_db, word_fetcher)
 
