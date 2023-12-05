@@ -192,7 +192,7 @@ def fetch_and_recheck_words(database, fetcher, words_list):
         # database.update_word_details(rechecked_syllable_phonetic, force=True)
 
         # # Update the database with the final rechecked details
-        # rechecked_japanese_synonym = fetcher.recheck_japanese_synonym([word_detail], database)[0]
+        rechecked_japanese_synonym = fetcher.recheck_japanese_synonym([word_detail], database)[0]
         # database.update_word_details(rechecked_japanese_synonym, force=True)
 
         
@@ -218,12 +218,16 @@ def update_database_in_batches_with_conditions(database, fetcher, batch_size=10)
             # print("after update: ", rechecked_details)
             # print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
-            rechecked_syllable_phonetic = fetcher.split_and_compare_phonetic_syllable(words_to_recheck, database)
+            # rechecked_syllable_phonetic = fetcher.split_and_compare_phonetic_syllable(words_to_recheck, database)
             # database.update_word_details(rechecked_syllable_phonetic, force=True)
 
             # Update the database with the final rechecked details
             rechecked_japanese_synonym = fetcher.recheck_japanese_synonym_with_conditions(words_to_recheck, database)
             # database.update_word_details(rechecked_japanese_synonym, force=True)
+
+            # rechecked_arabic_synonym = fetcher.recheck_arabic_synonym(words_to_recheck, database)
+
+            # break
 
             updated_words = []
             for details in words_to_recheck:
@@ -267,15 +271,26 @@ if __name__ == "__main__":
         # "prediscuss",
         # "how",
         # "ubiquitous"
+        # "dauntless",
+        # "tantalize",
+        # "austerity",
+        # "decadence",
+        # "undulate",
+        # "yearning",
+        "juggernaut",
+        "treacle",
+        # "quirk",
+        # "flabbergasted",
+        # "resonate",
     ]
-    # fetch_and_recheck_words(words_db, word_fetcher, words_list)
+    fetch_and_recheck_words(words_db, word_fetcher, words_list)
 
     # batch_update_arabic_synonyms(words_db, word_fetcher)
 
 
-    words_db.update_kanji_for_all_words()
 
     update_database_in_batches_with_conditions(words_db, word_fetcher)
+    words_db.update_kanji_for_all_words()
 
 
     # Close the database connection

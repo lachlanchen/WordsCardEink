@@ -333,9 +333,9 @@ class EPaperDisplay:
         get_text_size = self.get_text_size
 
         text = text.replace(" ", "").replace("(", "（").replace(")", "）")
-        regex = re.compile(r'([一-龠々ァ-ンー-]+)（([ぁ-んァ-ンー-]+)）')
+        regex = re.compile(r'([一-龠ァ-ヴガ-ドㇰ-ㇿヵヶヰヱ々〆〤ー\-]+)（([ぁ-ゔー\-]+)）')
 
-        plain_text = re.sub(r'（[ぁ-んァ-ンー-]+）', '', text)
+        plain_text = re.sub(r'（[ぁ-ゔー\-ー\-]+）', '', text)
         font_size = find_font_size(plain_text, jp_font_path, max_width, max_height)
         font = ImageFont.truetype(jp_font_path, font_size)
 
@@ -353,7 +353,7 @@ class EPaperDisplay:
 
             # draw.text((pos_x, y), re.sub(r'（[ぁ-んァ-ンー-]+）', '', kanji_or_katakana), font=font, fill=(0, 0, 0))
             font_paths = [self.jp_font_path, self.jp_font_path_fallback]
-            self.draw_kanji(draw, re.sub(r'（[ぁ-んァ-ンー-]+）', '', kanji_or_katakana), pos_x, y, font_paths, font_size)
+            self.draw_kanji(draw, re.sub(r'（[ぁ-ゔー\-（）]+）', '', kanji_or_katakana), pos_x, y, font_paths, font_size)
 
             kanji_or_katakana_width = get_text_size(kanji_or_katakana, font)[0]
             kanji_or_katakana_height = get_text_size(kanji_or_katakana, font)[1]
@@ -368,7 +368,7 @@ class EPaperDisplay:
             last_match_end = end
 
         remaining_text = text[last_match_end:]
-        draw.text((pos_x, y), re.sub(r'（[ぁ-んァ-ンー-]+）', '', remaining_text), font=font, fill=(0, 0, 0))
+        draw.text((pos_x, y), re.sub(r'（[ぁ-ゔー\-]+）', '', remaining_text), font=font, fill=(0, 0, 0))
 
 
 
