@@ -28,6 +28,8 @@ contributions from the community to further enrich this learning experience.
 # from gpiozero.pins.mock import MockFactory
 # gpiozero.Device.pin_factory = MockFactory()
 
+import argparse
+
 import sys
 import os
 pic_root = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'pic')
@@ -62,6 +64,10 @@ import re
 
 import numpy as np
 
+import arabic_reshaper
+from bidi.algorithm import get_display
+
+
 # Usage example
 client = OpenAI()
 # Database path
@@ -71,10 +77,6 @@ words_db = WordsDatabase(db_path)
 # Initialize word fetcher
 words_db = WordsDatabase(db_path)
 word_fetcher = AdvancedWordFetcher(client)
-
-
-
-
 
 
 class EPaperHardware:
@@ -130,6 +132,9 @@ class GradientTextureGenerator:
             return image
         except Exception as e:
             print(f"Error in creating PIL image: {e}")
+
+            traceback.print_exc()
+
             return None
 
     def save_image(self, Z, file_path):
@@ -156,14 +161,57 @@ class GradientTextureGenerator:
 
 
 class EPaperDisplay:
-    def __init__(self, hardware, font_root, scale_factor=2):
+    # def __init__(self, hardware, font_root, scale_factor=2):
+    def __init__(self, hardware, font_root, scale_factor=1, background_texture="white", content_type='japanese_synonym', image_folder='images', emoji_path=None):
         self.hardware = hardware
         self.scale_factor = scale_factor
         self.width, self.height = [dim // scale_factor for dim in hardware.get_display_size()]
         self.font_root = font_root
         # Colors: Black, Red, Green, Blue, Red, Yellow, Orange
-        self.pallete = [(0, 0, 0), (255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 165, 0), (255, 0, 165), (0, 255, 165)]
+        # self.pallete = [(0, 0, 0), (255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 165, 0), (255, 0, 165), (0, 255, 165)]
+        # crimson   #DC143C (220,20,60)
+        # dark orange   #FF8C00 (255,140,0)
+        # sandy brown   #F4A460 (244,164,96)
+        # dark violet #9400D3 (148,0,211)
+        # saddle brown  #8B4513 (139,69,19)
+        self.pallete = [
+            (0, 0, 0), # Black
+            # (135, 37, 24), # R
+            # (160, 37, 24), # R
+            (220, 20, 60), # R
+            # (55, 84, 6), # G
+            (55, 120, 6), # G
+            # (68, 48, 108), # Blue
+            # (68, 48, 160), # B
+            # (153, 92, 233), # B
+            # (101, 40, 66), # P
+            # (153, 151, 255), # Purple
+            (148, 0, 211), # P
+            # (144, 63, 22), # Y
+            # (255, 178, 102), # Y
+            (244, 164, 96), # Y
+            (139, 69, 19), # Brown
+        ]
         self.setup_fonts()
+
+
+        self.background_texture = background_texture
+        self.content_type = content_type
+        print("content_type: ", content_type)
+        # Format the current date and time to use in the folder name
+        # timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now().strftime("%Y%m%d")
+        # self.image_folder = os.path.join(image_folder, timestamp)
+        # self.image_folder = f"{image_folder}-{timestamp}"
+        # self.image_folder = image_folder
+
+        if emoji_path:
+            self.image_folder = os.path.join(emoji_path, timestamp)
+        else:
+            # self.image_folder = os.path.join("images", image_folder, timestamp)
+            # self.image_folder = os.path.join("images", timestamp)
+            self.image_folder = os.path.join("images", self.background_texture)
+
 
         self.word = None
         self.image = None
@@ -173,18 +221,18 @@ class EPaperDisplay:
         # Save a copy of the current image
         self.intermediate_images.append(self.image.copy())
 
-    def save_all_images(self, base_path='images'):
+    def save_all_images(self):
         word = self.word
         """Saves all intermediate images to files."""
-        print("word_path: ", word)
-        word_path = os.path.join(base_path, word)
+        # print("word_path: ", word)
+        word_path = os.path.join(self.image_folder, f"{word}-{self.content_type}")
         if not os.path.exists(word_path):
             os.makedirs(word_path)
         for i, img in enumerate(self.intermediate_images):
             img = img.resize((self.width * self.scale_factor, self.height * self.scale_factor), Resampling.LANCZOS)
             img.save(os.path.join(word_path, f"{i+1:02d}.jpg"))
             if i == len(self.intermediate_images) - 1:
-                img.save(os.path.join(base_path, f"{word}.jpg"))
+                img.save(os.path.join(self.image_folder, f"{word}-{self.content_type}.jpg"))
 
 
     def clear_intermediate_images(self):
@@ -194,32 +242,96 @@ class EPaperDisplay:
         self.jp_font_path = os.path.join(self.font_root, 'HolidayMDJP.otf')
         self.jp_font_path_fallback = os.path.join(self.font_root, 'KouzanMouhituFontOTF.otf')
         self.ipa_font_path = os.path.join(self.font_root, 'arial.ttf')
+        self.arabic_font_path = os.path.join(self.font_root, 'arial.ttf')
+        # self.chinese_font_path = os.path.join(self.font_root, 'HanyiSentySeaSpray.ttf')
+        # self.chinese_font_path = os.path.join(self.font_root, 'HanyiSentyDew.ttf')
+        # self.chinese_font_path = os.path.join(self.font_root, 'HanyiSentyBubbleTea.ttf')
+        self.chinese_font_path = os.path.join(self.font_root, 'HanyiSenty Candy-color-mono.ttf')
+        # self.chinese_font_path = os.path.join(self.font_root, 'HanyiSentyLotus.ttf')
+        # self.chinese_font_path = os.path.join(self.font_root, 'KouzanMouhituFontOTF.otf')
         self.default_font_path = os.path.join(self.font_root, 'Font.ttc')
 
     def create_content_layout(self, item):
         self.word = item["word"]
-        self.image = Image.new('RGB', (self.width, self.height), (255,255,255))
 
-        # generator = GradientTextureGenerator(width=self.width, height=self.height, base_color=(230, 230, 230))
-        # Z = generator.create_gradient()
-        # self.image = generator.get_pil_image(Z)
+        if self.background_texture == "white":
+            self.image = Image.new('RGB', (self.width, self.height), (255,255,255))
+        else:
+            generator = GradientTextureGenerator(width=self.width, height=self.height, base_color=(230, 230, 230))
+            Z = generator.create_gradient()
+            self.image = generator.get_pil_image(Z)
 
         draw = ImageDraw.Draw(self.image)
 
         # Divide the display into 4 rows
         row_height = self.height // 4
-        self.draw_phonetic(draw, item['phonetic'], 0, row_height)
+
+        self.used_height = 2
+
+        if self.content_type != "japanese_and_arabic":
+            self.draw_phonetic(draw, item['phonetic'], 0, row_height)
+            self.save_intermediate_image()
+            self.draw_word(draw, item['syllable_word'], row_height, row_height)
+            self.save_intermediate_image()
+
+            self.used_height = 2
+
+        else:
+
+            self.draw_phonetic(draw, item['phonetic'], 0, 0.85 * row_height)
+            self.save_intermediate_image()
+            self.draw_word(draw, item['syllable_word'], 0.8 * row_height, 0.85 * row_height)
+            self.save_intermediate_image()
+
+            self.used_height = 1.7
+
+
+        # self.draw_japanese(draw, item['japanese_synonym'], 2 * row_height, 2 * row_height)
+        # self.save_intermediate_image()
+
+
+        # Using the selected content type
+        if self.content_type == 'japanese_synonym':
+            self.draw_japanese(draw, item['japanese_synonym'], 2 * row_height, 2 * row_height, start_size=120)
+        elif self.content_type == 'kanji':
+            self.draw_kanji_only(draw, item['kanji'], 2 * row_height, 2 * row_height)
+        elif self.content_type == 'kanji_synonym':
+            self.draw_kanji_only(draw, item['kanji_synonym'], 2 * row_height, 2 * row_height)
+        elif self.content_type == 'arabic_synonym':
+            self.draw_arabic_synonym(draw, item['arabic_synonym'], 2 * row_height, 2 * row_height)
+        elif self.content_type == "chinese_synonym":
+            self.draw_chinese_synonym(draw, item['chinese_synonym'], 2 * row_height, 2 * row_height)
+        elif self.content_type == "japanese_and_arabic":
+            print("Drawing japanese and arabic...")
+            self.draw_japanese(draw, item['japanese_synonym'], 1.7 * row_height, 1.8 * row_height, start_size=120)
+            self.draw_arabic_synonym(draw, item['arabic_synonym'], 2.9 * row_height, 1 * row_height)
         self.save_intermediate_image()
-        self.draw_word(draw, item['syllable_word'], row_height, row_height)
-        self.save_intermediate_image()
-        self.draw_japanese(draw, item['japanese_synonym'], 2 * row_height, 2 * row_height)
-        self.save_intermediate_image()
+
 
         self.save_all_images()
         self.clear_intermediate_images()
 
         # Scale the image up to fit the display
         return self.image.resize((self.width * self.scale_factor, self.height * self.scale_factor), Resampling.LANCZOS)
+
+    def find_font_size(self, text, font_path, max_width, max_height, start_size=120, step=2):
+        font_size = start_size
+        font = ImageFont.truetype(font_path, font_size)
+        while True:
+            text_width, text_height = self.get_text_size(text, font)
+            if text_width <= max_width and text_height <= max_height:
+                break
+            font_size -= step
+            if font_size <= 0:
+                break
+            font = ImageFont.truetype(font_path, font_size)
+        return font_size
+
+    def get_text_size(self, text, font):
+        dummy_image = Image.new('RGB', (100, 100))
+        draw = ImageDraw.Draw(dummy_image)
+        return draw.textbbox((0, 0), text, font=font)[2:]
+
 
     def draw_phonetic(self, draw, phonetic_text, start_y, row_height):
         phonetic_text_cleaned = phonetic_text.replace('·', '')
@@ -259,42 +371,74 @@ class EPaperDisplay:
 
 
 
-    def draw_japanese(self, draw, japanese_text, start_y, row_height):
-        self.draw_japanese_with_hiragana(draw, japanese_text, self.jp_font_path, self.width, start_y, row_height)
+    def draw_japanese(self, draw, japanese_text, start_y, row_height, start_size=120):
+        self.draw_japanese_with_hiragana(draw, japanese_text, self.jp_font_path, self.width, start_y, row_height, start_size=start_size)
 
 
-    # def split_word_with_color(self, word):
-    #     color_cycle = itertools.cycle(self.pallete)
-    #     return [(part, next(color_cycle)) for part in re.split(r'([·ˈˌ])', word) if part]
 
-    # def split_word_with_color(self, word, colors):
-    #     # Replace stress symbols with a preceding dot, except at the beginning
-    #     if word.startswith('ˈ') or word.startswith('ˌ'):
-    #         word = word[0] + word[1:].replace('ˈ', '·ˈ').replace('ˌ', '·ˌ')
-    #     else:
-    #         word = word.replace('ˈ', '·ˈ').replace('ˌ', '·ˌ')
+    def draw_kanji_only(self, draw, kanji_text, start_y, row_height):
+        """
+        Draws kanji characters, stripping away any non-kanji characters.
+        """
+        kanji_text = re.sub(r'[^\u4e00-\u9faf]', '', kanji_text)  # Strip non-kanji characters
+        if not kanji_text:  # Skip if no kanji characters are present
+            return
 
-    #     syllables = word.split('·')
-    #     color_syllables = [(syllable, colors[i % len(colors)]) for i, syllable in enumerate(syllables)]
-    #     return color_syllables
-
-    def find_font_size(self, text, font_path, max_width, max_height, start_size=60, step=2):
-        font_size = start_size
+        font_path = self.jp_font_path  # Assuming this is set in setup_fonts
+        font_size = self.find_font_size(kanji_text, font_path, self.width, row_height)
         font = ImageFont.truetype(font_path, font_size)
-        while True:
-            text_width, text_height = self.get_text_size(text, font)
-            if text_width <= max_width and text_height <= max_height:
-                break
-            font_size -= step
-            if font_size <= 0:
-                break
-            font = ImageFont.truetype(font_path, font_size)
-        return font_size
 
-    def get_text_size(self, text, font):
-        dummy_image = Image.new('RGB', (100, 100))
-        draw = ImageDraw.Draw(dummy_image)
-        return draw.textbbox((0, 0), text, font=font)[2:]
+        text_width, text_height = self.get_text_size(kanji_text, font)
+        x = (self.width - text_width) / 2
+        y = start_y + (row_height - text_height) / 2
+
+        # draw.text((x, y), kanji_text, font=font, fill=(0, 0, 0))
+        font_paths = [self.jp_font_path, self.jp_font_path_fallback]
+        self.draw_kanji_char(draw, kanji_text, x, y, font_paths, font_size)
+        self.save_intermediate_image()
+
+
+    def draw_kanji_synonym_only(self, draw, kanji_text, start_y, row_height):
+        """
+        Draws kanji characters, stripping away any non-kanji characters.
+        """
+        kanji_text = re.sub(r'[^\u4e00-\u9faf]', '', kanji_text)  # Strip non-kanji characters
+        if not kanji_text:  # Skip if no kanji characters are present
+            return
+
+        font_path = self.jp_font_path  # Assuming this is set in setup_fonts
+        font_size = self.find_font_size(kanji_text, font_path, self.width, row_height)
+        font = ImageFont.truetype(font_path, font_size)
+
+        text_width, text_height = self.get_text_size(kanji_text, font)
+        x = (self.width - text_width) / 2
+        y = start_y + (row_height - text_height) / 2
+
+        # draw.text((x, y), kanji_text, font=font, fill=(0, 0, 0))
+        font_paths = [self.jp_font_path, self.jp_font_path_fallback]
+        self.draw_kanji_char(draw, kanji_text, x, y, font_paths, font_size)
+        self.save_intermediate_image()
+
+    def draw_chinese_synonym(self, draw, chinese_text, start_y, row_height):
+        """
+        Draws kanji characters, stripping away any non-kanji characters.
+        """
+        # kanji_text = re.sub(r'[^\u4e00-\u9faf]', '', kanji_text)  # Strip non-kanji characters
+        if not chinese_text:  # Skip if no kanji characters are present
+            return
+
+        font_path = self.chinese_font_path  # Assuming this is set in setup_fonts
+        font_size = self.find_font_size(chinese_text, font_path, self.width, row_height, start_size=180)
+        font = ImageFont.truetype(font_path, font_size)
+
+        text_width, text_height = self.get_text_size(chinese_text, font)
+        x = (self.width - text_width) / 2
+        y = start_y + (row_height - text_height) / 2
+
+        draw.text((x, y), chinese_text, font=font, fill=(0, 0, 0))
+        self.save_intermediate_image()
+
+
 
 
     def is_char_supported(self, character, font_path, background_color=(255, 255, 255)):
@@ -309,7 +453,7 @@ class EPaperDisplay:
                     return True
         return False
 
-    def draw_kanji(self, draw, text, x, y, font_paths, font_size):
+    def draw_kanji_char(self, draw, text, x, y, font_paths, font_size):
 
         get_text_size = self.get_text_size
 
@@ -323,12 +467,12 @@ class EPaperDisplay:
                     font = ImageFont.truetype(font_paths[-1], font_size)
 
             draw.text((x, y), char, font=font, fill=(0, 0, 0))
-            print("text: ", text)
+            # print("text: ", text)
             # x += font.getsize(char)[0]  # Update x position for next character
             x += get_text_size(char, font)[0]  # Update x position for next character
 
 
-    def draw_japanese_with_hiragana(self, draw, text, jp_font_path, max_width, y, max_height):
+    def draw_japanese_with_hiragana(self, draw, text, jp_font_path, max_width, y, max_height, start_size=120):
         find_font_size = self.find_font_size
         get_text_size = self.get_text_size
 
@@ -336,7 +480,7 @@ class EPaperDisplay:
         regex = re.compile(r'([一-龠ァ-ヴガ-ドㇰ-ㇿヵヶヰヱ々〆〤ー\-]+)（([ぁ-ゔー\-]+)）')
 
         plain_text = re.sub(r'（[ぁ-ゔー\-ー\-]+）', '', text)
-        font_size = find_font_size(plain_text, jp_font_path, max_width, max_height)
+        font_size = find_font_size(plain_text, jp_font_path, max_width, max_height, start_size=start_size)
         font = ImageFont.truetype(jp_font_path, font_size)
 
         pos_x = (max_width - get_text_size(plain_text, font)[0]) / 2
@@ -353,7 +497,7 @@ class EPaperDisplay:
 
             # draw.text((pos_x, y), re.sub(r'（[ぁ-んァ-ンー-]+）', '', kanji_or_katakana), font=font, fill=(0, 0, 0))
             font_paths = [self.jp_font_path, self.jp_font_path_fallback]
-            self.draw_kanji(draw, re.sub(r'（[ぁ-ゔー\-（）]+）', '', kanji_or_katakana), pos_x, y, font_paths, font_size)
+            self.draw_kanji_char(draw, re.sub(r'（[ぁ-ゔー\-（）]+）', '', kanji_or_katakana), pos_x, y, font_paths, font_size)
 
             kanji_or_katakana_width = get_text_size(kanji_or_katakana, font)[0]
             kanji_or_katakana_height = get_text_size(kanji_or_katakana, font)[1]
@@ -361,7 +505,7 @@ class EPaperDisplay:
             hiragana_font_size = find_font_size(hiragana, jp_font_path, kanji_or_katakana_width, (max_height - kanji_or_katakana_height) / 2)
             hiragana_font = ImageFont.truetype(jp_font_path, hiragana_font_size)
             hiragana_x = pos_x + (kanji_or_katakana_width - get_text_size(hiragana, hiragana_font)[0]) / 2
-            hiragana_y = y - get_text_size(hiragana, hiragana_font)[1] - 2
+            hiragana_y = y - get_text_size(hiragana, hiragana_font)[1] - self.used_height
             draw.text((hiragana_x, hiragana_y), hiragana, font=hiragana_font, fill=(0, 0, 0))
 
             pos_x += kanji_or_katakana_width
@@ -370,7 +514,157 @@ class EPaperDisplay:
         remaining_text = text[last_match_end:]
         draw.text((pos_x, y), re.sub(r'（[ぁ-ゔー\-]+）', '', remaining_text), font=font, fill=(0, 0, 0))
 
+    # def draw_arabic_synonym(self, draw, arabic_text, start_y, row_height):
+    #     """
+    #     Draws Arabic text with different colors from the palette.
+    #     """
 
+    #     if not arabic_text:  # Skip if no kanji characters are present
+    #         return
+    #     # Define the font path for Arabic text
+    #     arabic_font_path = self.arabic_font_path  # Replace with your Arabic font file
+
+    #     # Determine the font size
+    #     font_size = self.find_font_size(arabic_text, arabic_font_path, self.width, row_height)
+    #     font = ImageFont.truetype(arabic_font_path, font_size)
+
+    #     # Initialize color cycle
+    #     color_cycle = itertools.cycle(self.pallete)
+
+    #     # Split the text into characters
+    #     characters = list(arabic_text)
+    #     total_width = sum(self.get_text_size(char, font)[0] for char in characters)
+
+    #     # Calculate starting x position
+    #     x = (self.width - total_width) / 2
+    #     y = start_y + (row_height - self.get_text_size(arabic_text, font)[1]) / 2
+
+    #     # Draw each character with a color from the palette
+    #     for char in characters:
+    #         draw.text((x, y), char, font=font, fill=next(color_cycle))
+    #         self.save_intermediate_image()
+    #         x += self.get_text_size(char, font)[0]
+
+    # def draw_arabic_synonym(self, draw, arabic_text, start_y, row_height):
+    #     """
+    #     Draws Arabic text with different colors from the palette, accounting for right-to-left writing.
+    #     """
+
+    #     if not arabic_text:  # Skip if no Arabic characters are present
+    #         return
+
+    #     # Define the font path for Arabic text
+    #     arabic_font_path = self.arabic_font_path  # Replace with your Arabic font file
+
+    #     # Determine the font size
+    #     font_size = self.find_font_size(arabic_text, arabic_font_path, self.width, row_height)
+    #     font = ImageFont.truetype(arabic_font_path, font_size)
+
+    #     # Initialize color cycle
+    #     color_cycle = itertools.cycle(self.pallete)
+
+    #     # Split the text into characters
+    #     characters = list(arabic_text)
+    #     total_width = sum(self.get_text_size(char, font)[0] for char in characters)
+
+    #     # Calculate starting x position (starting from right)
+    #     x = (self.width + total_width) / 2
+
+    #     # Draw each character with a color from the palette, moving right to left
+    #     for char in reversed(characters):
+    #         char_width, char_height = self.get_text_size(char, font)
+    #         x -= char_width
+    #         y = start_y + (row_height - char_height) / 2
+    #         draw.text((x, y), char, font=font, fill=next(color_cycle))
+    #         self.save_intermediate_image()
+
+    # def draw_arabic_synonym(self, draw, arabic_text, start_y, row_height):
+    #     """
+    #     Draws Arabic text with different colors from the palette, respecting the correct form of each character.
+    #     """
+
+    #     if not arabic_text:  # Skip if no Arabic characters are present
+    #         return
+
+    #     # Reshape and apply RTL to the Arabic text
+    #     reshaped_text = arabic_reshaper.reshape(arabic_text)
+    #     bidi_text = get_display(reshaped_text)
+
+    #     # Define the font path for Arabic text
+    #     arabic_font_path = self.arabic_font_path  # Replace with your Arabic font file
+
+    #     # Determine the font size
+    #     font_size = self.find_font_size(bidi_text, arabic_font_path, self.width, row_height)
+    #     font = ImageFont.truetype(arabic_font_path, font_size)
+
+    #     # Initialize color cycle
+    #     color_cycle = itertools.cycle(self.pallete)
+
+    #     # Split the reshaped and reordered text into characters
+    #     characters = list(bidi_text)
+    #     total_width = sum(self.get_text_size(char, font)[0] for char in characters)
+
+    #     # Calculate starting x position (starting from right)
+    #     x = (self.width + total_width) / 2
+
+    #     # Draw each character with a color from the palette, moving right to left
+    #     for char in reversed(characters):
+    #         char_width, char_height = self.get_text_size(char, font)
+    #         x -= char_width
+    #         y = start_y + (row_height - char_height) / 2
+    #         draw.text((x, y), char, font=font, fill=next(color_cycle))
+    #         self.save_intermediate_image()
+
+    def draw_arabic_synonym(self, draw, arabic_text, start_y, row_height):
+        """
+        Draws Arabic text with different colors from the palette, with characters aligned at the same height.
+        """
+
+        if not arabic_text:  # Skip if no Arabic characters are present
+            return
+
+        # Reshape and apply RTL to the Arabic text
+        reshaped_text = arabic_reshaper.reshape(arabic_text)
+        bidi_text = get_display(reshaped_text)
+
+        # Define the font path for Arabic text
+        arabic_font_path = self.arabic_font_path  # Replace with your Arabic font file
+
+        # Determine the font size
+        font_size = self.find_font_size(bidi_text, arabic_font_path, self.width, row_height)
+        font = ImageFont.truetype(arabic_font_path, font_size)
+
+        # Initialize color cycle
+        color_cycle = itertools.cycle(self.pallete)
+
+        # Split the reshaped and reordered text into characters
+        characters = list(bidi_text)
+        total_width = sum(self.get_text_size(char, font)[0] for char in characters)
+
+        # Find the maximum character height to align all characters
+        max_char_height = max(self.get_text_size(char, font)[1] for char in characters)
+
+        # Calculate starting x position (starting from right)
+        x = (self.width + total_width) / 2
+
+        # Fixed y-position based on maximum character height
+        y = start_y + (row_height - max_char_height) / 2
+
+        # # Draw each character with a color from the palette, moving right to left
+        # for char in reversed(characters):
+        #     char_width, _ = self.get_text_size(char, font)
+        #     x -= char_width
+        #     draw.text((x, y), char, font=font, fill=next(color_cycle))
+        #     self.save_intermediate_image()
+
+        # Draw each character with a color from the palette, moving right to left
+        for char in reversed(characters):
+            char_width, _ = self.get_text_size(char, font)
+            x -= char_width
+            if char == ' ':  # Reset the color cycle when encountering a space
+                color_cycle = itertools.cycle(self.pallete)
+            draw.text((x, y), char, font=font, fill=next(color_cycle))
+            self.save_intermediate_image()
 
 
 
@@ -379,11 +673,45 @@ if __name__=="__main__":
     # from waveshare_epd import epd7in3f
     # import time
 
+    # Create the parser
+    parser = argparse.ArgumentParser(description='Run script with OpenAI option.')
+
+    # Add an argument
+    parser.add_argument('--enable_openai', action='store_true', help='Enable OpenAI features')
+    parser.add_argument('--make_emoji', action='store_true', default=False, help='Enable emoji making feature')
+
+    # Parse the arguments
+    args = parser.parse_args()
+
+    # Set variable based on the argument
+    enable_openai = args.enable_openai
+
+    # make_emoji = False
+    make_emoji = args.make_emoji
+
     logging.basicConfig(level=logging.DEBUG)
+
+    
 
     epd_module = epd7in3f
     epd_hardware = EPaperHardware(epd_module)
-    epd_display = EPaperDisplay(epd_hardware, font_root)
+    # epd_display = EPaperDisplay(epd_hardware, font_root, content_type="japanese_synonym", image_folder="images-japanese-synonym")
+    epd_display = EPaperDisplay(epd_hardware, font_root, content_type="japanese_and_arabic", image_folder="images-japanese-synonym")
+    epd_display.pallete = [(0, 0, 0), (255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 165, 0), (255, 0, 165), (0, 255, 165)]
+    if make_emoji:
+        epd_display_virtual_kanji = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="kanji", image_folder="virtual-images-grey-kanji", emoji_path="emoji")
+        epd_display_virtual_kanji_synonym = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="kanji_synonym", image_folder="virtual-images-grey-kanji-synonym", emoji_path="emoji")
+        epd_display_virtual_japanese = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="japanese_synonym", image_folder="virtual-images-grey-japanese-synonym", emoji_path="emoji")
+        epd_display_virtual_arabic = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="arabic_synonym", image_folder="virtual-images-grey-arabic-synonym", emoji_path="emoji")
+        epd_display_virtual_japanese_and_arabic = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="japanese_and_arabic", image_folder="virtual-images-grey-japanese-and-arabic", emoji_path="emoji")
+        epd_display_virtual_chinese = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="chinese_synonym", image_folder="virtual-images-grey-chinese", emoji_path="emoji")
+    else:
+        epd_display_virtual_kanji = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="kanji", image_folder="virtual-images-grey-kanji")
+        epd_display_virtual_kanji_synonym = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="kanji_synonym", image_folder="virtual-images-grey-kanji-synonym")
+        epd_display_virtual_japanese = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="japanese_synonym", image_folder="virtual-images-grey-japanese-synonym")
+        epd_display_virtual_arabic = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="arabic_synonym", image_folder="virtual-images-grey-arabic-synonym")
+        epd_display_virtual_japanese_and_arabic = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="japanese_and_arabic", image_folder="virtual-images-grey-japanese-and-arabic")
+        epd_display_virtual_chinese = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="chinese_synonym", image_folder="virtual-images-grey-chinese")
 
 
 
@@ -391,22 +719,85 @@ if __name__=="__main__":
         # "impeccable"
         # "gratitude",
         # "appreciation"
+        # "amalgamate"
     ]
 
+    words_list = [
+        # "incontrovertible", "benevolent", 
+        # "peregrinate", "obstreperous", "hiraeth", "idyllic", "chimerical", 
+        # "cacophony", 
+        # "serendipity", "sacrosanct", 
+        # "reticent", "do", "accolade", "jingoism", 
+        # "facilitate", 
+        # "infallible", "rescind", 
+        # "trepidation", 
+        # "raconteur", 
+        # "xenophobia", 
+        # "indubitable", 
+        # "propensity", 
+        # "gregarious", 
+        # "magnate",
+        # "perambulation", 
+        # "wanderlust",
+        # "apoplectic",
+        # "xenial",
+        # "metamorphosis",
+        # "misanthrope",
+        # "fairydom",
+        # "subgyrus",
+        # "rescind",
+        # "raconteur",
+        # "malaise",
+        # "insouciance",
+        # "inarticulately",
+        # "opulence",
+        # "mundane",
+        # "prosaic",
+        # "gratitude",
+        # "appreciation",
+        # "dry"，
+        # "stem",
+        # "run"
+    ]
+
+
     chooser = OpenAiChooser(words_db, word_fetcher, words_list=words_list)
+    # Set the openaichooser.enable_openai based on the command line argument
+    chooser.enable_openai = enable_openai
 
-
+    words_set = set(words_list)
     try:
         while True:
             item = chooser.choose()
             # item = chooser.choose()
             print("word: ", item)
             content_image = epd_display.create_content_layout(item)
-            epd_hardware.display_image(content_image)
-            time.sleep(300)  # Display each word for 5 minutes
+            epd_display_virtual_kanji.create_content_layout(item)
+            epd_display_virtual_kanji_synonym.create_content_layout(item)
+            epd_display_virtual_japanese.create_content_layout(item)
+            epd_display_virtual_arabic.create_content_layout(item)
+            epd_display_virtual_japanese_and_arabic.create_content_layout(item)
+            epd_display_virtual_chinese.create_content_layout(item)
+
+            if not make_emoji:
+                epd_hardware.display_image(content_image)
+                time.sleep(300)  # Display each word for 5 minutes
+
+
+            if len(words_list) > 0:
+                try: 
+                    words_set.discard(item["word"])
+                except:
+                    continue
+
+                if len(words_set) == 0:
+                    break
 
     except Exception as e:
         print("Exception: ", str(e))
+
+        traceback.print_exc()
+
         logging.info(e)
     finally:
         epd_hardware.clear_and_sleep()

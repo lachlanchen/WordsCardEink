@@ -33,6 +33,9 @@ import re
 import nltk
 from nltk.corpus import words
 from pprint import pprint
+import traceback
+import numpy as np
+
 
 
 
@@ -59,7 +62,32 @@ class NotEnoughUniqueWordsError(Exception):
         super().__init__(self.message)
 
 
+def random_shuffle(input_list):
+    # Convert the input list to a NumPy array
+    array = np.array(input_list, dtype=object)
 
+    # Shuffle the array in-place
+    np.random.shuffle(array)
+
+    # Convert the shuffled array back to a list
+    shuffled_list = array.tolist()
+
+    return shuffled_list
+
+def random_sample(input_list, sample_size):
+    # Ensure the sample size is not larger than the list size
+    sample_size = min(sample_size, len(input_list))
+
+    # Convert the input list to a NumPy array if it's not already one
+    if not isinstance(input_list, np.ndarray):
+        input_array = np.array(input_list)
+    else:
+        input_array = input_list
+
+    # Randomly sample elements without replacement
+    sampled_elements = np.random.choice(input_array, size=sample_size, replace=False)
+
+    return list(sampled_elements)
 
 # Function to count syllables based on dots
 def count_syllables(word):
@@ -72,7 +100,7 @@ def count_syllables(word):
 
 
 def clean_english(text):
-    return text.replace(".", "·").replace("·ˈ", "ˈ").replace("·ˌ", "ˌ") #.replace(" ", "")
+    return text.replace(".", "·").replace("·ˈ", "ˈ").replace("·ˌ", "ˌ").replace(" ", "")
 
 def clean_japanese(text):
     return text.replace(".", "").replace("·", "").replace("(", "（").replace(")", "）").replace(" ", "")
@@ -180,7 +208,7 @@ def remove_hiragana_and_parentheses(text):
     str: The text with Hiragana and parentheses removed.
     """
     # Regex pattern to remove Hiragana, related letters, and full-width parentheses
-    pattern = r'[（）ぁ-ゔ-゚ー\-]'
+    pattern = r'[（）ぁ-ゔ-゚〜ー\-]'
 
     return re.sub(pattern, '', text)
 
@@ -316,6 +344,7 @@ class WordsDatabase:
                 self.conn.commit()
             except sqlite3.Error as e:
                 print(f"SQLite Error: {e}")
+                traceback.print_exc()
 
     def create_field_if_not_exists(self, table_name, field_name, field_type, default_value=None):
         """
@@ -349,6 +378,7 @@ class WordsDatabase:
                     self.conn.commit()
             except sqlite3.Error as e:
                 print(f"SQLite Error: {e}")
+                traceback.print_exc()
 
     def delete_column_if_exists(self, table_name, column_name):
         """
@@ -384,6 +414,7 @@ class WordsDatabase:
                     self.conn.commit()
             except sqlite3.Error as e:
                 print(f"SQLite Error: {e}")
+                traceback.print_exc()
 
 
 
@@ -398,7 +429,7 @@ class WordsDatabase:
 
             for key in ['syllable_word', 'phonetic', 'japanese_synonym', 'arabic_synonym', 'french_synonym', 'chinese_synonym', 'kanji_synonym']:
                 if key in word_details:
-                    print("word_details to be updated: ", word_details)
+                    # print("word_details to be updated: ", word_details)
                     if word_details[key]:
                         cleaned_value = clean_english(word_details[key]) if key != 'japanese_synonym' else clean_japanese(word_details[key])
                         data_to_update.append(cleaned_value)
@@ -418,6 +449,7 @@ class WordsDatabase:
                 self.conn.commit()
             except sqlite3.Error as e:
                 print(f"SQLite Error: {e}")
+                traceback.print_exc()
 
 
 
@@ -447,6 +479,7 @@ class WordsDatabase:
                     self.conn.commit()
                 except sqlite3.Error as e:
                     print(f"SQLite Error: {e}")
+                    traceback.print_exc()
 
  
 
@@ -466,6 +499,8 @@ class WordsDatabase:
                     self.cursor.execute(update_query, (kanji, word))
                 except sqlite3.Error as e:
                     print(f"SQLite Error: {e}")
+                    traceback.print_exc()
+
             self.conn.commit()
 
 
@@ -605,15 +640,38 @@ class WordsDatabase:
                 return self.process_word_rows(result, field_names)
         return None
 
+    # def fetch_random_words(self, num_words, fields=None, excluded=["id"]):
+    #     if self.conn:
+    #         all_fields = self.get_table_fields('words_phonetics', excluded)
+    #         selected_fields = ', '.join(fields if fields else all_fields)
+
+    #         query = f"SELECT {selected_fields} FROM words_phonetics ORDER BY RANDOM() LIMIT ?"
+    #         self.cursor.execute(query, (num_words,))
+    #         rows = self.cursor.fetchall()
+    #         return [self.process_word_rows(row, fields if fields else all_fields) for row in rows]
+
     def fetch_random_words(self, num_words, fields=None, excluded=["id"]):
         if self.conn:
             all_fields = self.get_table_fields('words_phonetics', excluded)
             selected_fields = ', '.join(fields if fields else all_fields)
 
-            query = f"SELECT {selected_fields} FROM words_phonetics ORDER BY RANDOM() LIMIT ?"
-            self.cursor.execute(query, (num_words,))
+            # Fetch all rows
+            query = f"SELECT {selected_fields} FROM words_phonetics ORDER BY RANDOM()"
+            # query = f"SELECT {selected_fields} FROM words_phonetics ORDER BY RANDOM() LIMIT ?"
+            self.cursor.execute(query)
+            # self.cursor.execute(query, (num_words*10,))
             rows = self.cursor.fetchall()
-            return [self.process_word_rows(row, fields if fields else all_fields) for row in rows]
+
+            # Convert rows to a NumPy array and shuffle
+            rows_array = np.array(rows)
+            # np.random.shuffle(rows_array)
+            rows_array = random_shuffle(rows_array)
+
+            # Select the first 'num_words' rows
+            selected_rows = rows_array[:num_words]
+
+            # Convert each row back to the original format if needed
+            return [self.process_word_rows(tuple(row), fields if fields else all_fields) for row in selected_rows]
 
     def fetch_last_10_words(self, fields=None, excluded=["id"]):
         if self.conn:
@@ -791,7 +849,9 @@ class AdvancedWordFetcher:
             
             return parsed_json
         except json.JSONDecodeError as e:
+            traceback.print_exc()
             raise JSONParsingError(f"JSON Decode Error: {e}", json_string)
+
 
     def extract_and_parse_words(self, text, num_words, word_database):
         bracket_pattern = r'\[.*?\]'
@@ -815,6 +875,7 @@ class AdvancedWordFetcher:
 
             return parsed_json
         except json.JSONDecodeError as e:
+            traceback.print_exc()
             raise JSONParsingError(f"JSON Decode Error: {e}", json_string)
 
 
@@ -847,7 +908,8 @@ class AdvancedWordFetcher:
         # Filter out words that already exist in the database
         unique_words = [word for word in nltk_word_list if not word_database.word_exists(word)]
 
-        random.shuffle(unique_words)
+        # random.shuffle(unique_words)
+        unique_words = random_shuffle(unique_words)
 
         # Check if there are enough unique words
         if len(unique_words) < num_words:
@@ -922,6 +984,10 @@ class AdvancedWordFetcher:
 
                 # print(f"Retrying: try the {try_num+2} times...")
 
+                traceback.print_exc()
+
+                print('Ignoring the error, continuing...')
+
                 continue
 
             except NotEnoughUniqueWordsError as not_enough_error:
@@ -938,11 +1004,18 @@ class AdvancedWordFetcher:
 
                 # print(f"Retrying: try the {try_num+2} times...")
 
+                traceback.print_exc()
+
+                print('Ignoring the error, continuing...')
+
                 continue
 
 
             except Exception as e:
                 print(f"An unexpected error occurred: {e}")
+
+                traceback.print_exc()
+
                 raise e
 
         if not unique_words:
@@ -951,7 +1024,8 @@ class AdvancedWordFetcher:
         return unique_words
 
     def fetch_word_details(self, words, word_database, num_words_phonetic=10):
-        random_words = random.sample(words, min(num_words_phonetic, len(words)))
+        # random_words = random.sample(words, min(num_words_phonetic, len(words)))
+        random_words = random_sample(words, num_words_phonetic)
 
         # Directly create the mismatch message here
         syllables = split_word(self.examples[0].get("syllable_word", ""))
@@ -998,12 +1072,16 @@ class AdvancedWordFetcher:
                 # self.recheck_syllable_and_phonetic(word_phonetics, word_database)
                 # self.recheck_japanese_synonym(word_phonetics, word_database)
 
+                words_list = [word["word"] for word in word_phonetics]
+
                 print("Starting comparing separation...")
                 self.split_and_compare_phonetic_syllable(word_phonetics.copy(), word_database)
                 print("Starting check Japanese...")
                 self.recheck_japanese_synonym_with_conditions(word_phonetics.copy(), word_database)
                 print("Starting fetching Arabic...")
-                self.fetch_arabic_synonyms([word["word"] for word in word_phonetics], word_database)
+                self.fetch_arabic_synonyms(words_list.copy(), word_database)
+                print("Starting fetching pure kanji...")
+                self.fetch_pure_kanji_synonyms(words_list.copy(), word_database)
                 print("Generating kanji...")
                 word_database.update_kanji_for_all_words()
 
@@ -1013,13 +1091,22 @@ class AdvancedWordFetcher:
                 self.save_examples()
                 return word_phonetics
             except JSONParsingError as jpe:
-                # print(f"JSON parsing failed: {jpe.error_details}")
+                print(f"JSON parsing failed: {jpe.error_details}")
+                traceback.print_exc()
+
                 # messages.append({"role": "system", "content": response.choices[0].message.content})
                 messages.append({"role": "system", "content": jpe.json_string})
                 messages.append({"role": "user", "content": f"JSON parsing failed: {jpe.error_details}"})
+
+                print("Ignoring the error, continuing...")
+                
+
                 continue
             except Exception as e:
-                # print(f"An unexpected error occurred: {e}")
+                print(f"An unexpected error occurred: {e}")
+
+                traceback.print_exc()
+
                 raise e
             else:
                 # print("Fetched word details successfully.")
@@ -1073,10 +1160,18 @@ class AdvancedWordFetcher:
                 return word_phonetics
 
             except JSONParsingError as jpe:
-                # print(f"JSON parsing failed: {jpe.error_details}")
+                print(f"JSON parsing failed: {jpe.error_details}")
+
+                traceback.print_exc()
+
                 # messages.append({"role": "system", "content": response.choices[0].message.content})
                 messages.append({"role": "system", "content": jpe.json_string})
                 messages.append({"role": "user", "content": f"JSON parsing failed: {jpe.error_details}"})
+
+
+                
+                print("Ignoring the error, continuing...")
+
                 continue
             except Exception as e:
                 # print(f"An unexpected error occurred: {e}")
@@ -1150,18 +1245,27 @@ class AdvancedWordFetcher:
                 # Save word details to database
                 for detail in word_phonetics:
                     if word_database:
-                        print(f"Updating word with", json.dumps(detail, ensure_ascii=False, separators=(",", ":")))
+                        print(f"Updating syllable and phonetic of word with", json.dumps(detail, ensure_ascii=False, separators=(",", ":")))
                         print("\n")
                         word_database.update_word_details(detail)
                 return word_phonetics
             except JSONParsingError as jpe:
-                # print(f"JSON parsing failed: {jpe.error_details}")
+                print(f"JSON parsing failed: {jpe.error_details}")
+
+                traceback.print_exc()
+
                 # messages.append({"role": "system", "content": response.choices[0].message.content})
                 messages.append({"role": "system", "content": jpe.json_string})
                 messages.append({"role": "user", "content": f"JSON parsing failed: {jpe.error_details}"})
+
+                
+                print("Ignoring the error, continuing...")
                 continue
             except Exception as e:
-                # print(f"An unexpected error occurred: {e}")
+                print(f"An unexpected error occurred: {e}")
+
+                traceback.print_exc()
+
                 raise e
             else:
                 # print("Fetched and rechecked word details successfully.")
@@ -1190,6 +1294,8 @@ class AdvancedWordFetcher:
 
         for word_detail in word_details:
             for n_try in range(self.max_retries):
+                print(f"Trying the {n_try} time(s)...")
+
                 word = word_detail.get('word', '')
                 syllable_word = word_detail.get('syllable_word', '')
                 phonetic = word_detail.get('phonetic', '')
@@ -1238,6 +1344,11 @@ class AdvancedWordFetcher:
                     word_detail = self.recheck_syllable_and_phonetic([word_detail], word_database, messages)[0]
                     messages.append({"role": "system", "content": json.dumps([word_detail], ensure_ascii=False, separators=(',', ':'))})
                 else:
+                    if n_try == 0:
+                        print("No need to update: ", word_detail["word"])
+                    else: 
+                        print("Successfully updated: ", word_detail["word"])
+
                     rechecked_word_details.append(word_detail)
                     break
 
@@ -1319,19 +1430,28 @@ class AdvancedWordFetcher:
                 # Save word details to database
                 for detail in word_phonetics:
                     if word_database:
-                        print("Updating word with ", json.dumps(detail, ensure_ascii=False, separators=(",", ":")))
+                        print("Updating japanese synonym of word with ", json.dumps(detail, ensure_ascii=False, separators=(",", ":")))
                         print("\n")
                         word_database.update_word_details(detail)
 
                 return word_phonetics
             except JSONParsingError as jpe:
-                # print(f"JSON parsing failed: {jpe.error_details}")
+                print(f"JSON parsing failed: {jpe.error_details}")
+                traceback.print_exc()
+
                 # messages.append({"role": "system", "content": response.choices[0].message.content})
                 messages.append({"role": "system", "content": jpe.json_string})
                 messages.append({"role": "user", "content": f"JSON parsing failed: {jpe.error_details}"})
+
+                
+                print("Ignoring the error, continuing...")
+
                 continue
             except Exception as e:
-                # print(f"An unexpected error occurred: {e}")
+                print(f"An unexpected error occurred: {e}")
+
+                traceback.print_exc()
+
                 raise e
             else:
                 # print("Fetched and rechecked word details successfully.")
@@ -1356,6 +1476,7 @@ class AdvancedWordFetcher:
             
 
             for n_try in range(self.max_retries):
+                print(f"Trying the {n_try} time(s)...")
 
                 japanese_synonym = word_detail.get('japanese_synonym', '')
                 # print("original japanese_synonym: ", japanese_synonym)
@@ -1388,7 +1509,7 @@ class AdvancedWordFetcher:
                 cleaned_synonym = remove_hiragana_and_parentheses(japanese_synonym).replace("（", "").replace("）", "")
 
                 if cleaned_synonym == '':
-                    # print("All hiragana!")
+                    print("All hiragana!")
                     clean_synonym = remove_hiragana_including_parentheses(japanese_synonym)
                     word_detail['japanese_synonym'] = clean_synonym
                     word_database.update_word_details(word_detail)
@@ -1421,6 +1542,10 @@ class AdvancedWordFetcher:
                         messages.append({"role": "system", "content": json.dumps([word_detail], ensure_ascii=False, separators=(",", ":"))})
                         # rechecked_word_details.append(word_detail)
                     else:
+                        if n_try == 0:
+                            print("No need to update: ", word_detail["word"])
+                        else: 
+                            print("Successfully updated: ", word_detail["word"])
                         rechecked_word_details.append(word_detail)
                         # print("Updated word: ", word_detail["word"])
                         break
@@ -1431,8 +1556,101 @@ class AdvancedWordFetcher:
 
         return rechecked_word_details
 
+    def fetch_pure_kanji_synonyms(self, words, word_database, messages=None):
+        # Prepare examples in the required format
+        example_list = [
+            {"word": "sun", "kanji_synonym": "太陽", "chinese_synonym": "太陽"},
+            {"word": "moon", "kanji_synonym": "月", "chinese_synonym": "月亮"}
+        ]
 
-    def fetch_arabic_synonyms(self, words, word_database):
+        examples_json = json.dumps(example_list, ensure_ascii=False, separators=(',', ':'))
+
+        if not messages:
+            # Prepare the prompt with examples
+            detailed_list_message = (
+                "Based on the following examples, provide the pure kanji synonym with as least Japanese letters as possible for each word in the list. "
+                "If it's hard just give some loosely related or use traditional Chinese as kanji_synonym field. "
+                "The output should be in a plain JSON format, as a list of dictionaries, "
+                "where each dictionary contains 'word', 'kanji_synonym' and 'chinese_synonym'. "
+                # "Format the list for compatibility with json.loads, starting with [ and ending with ]. "
+                "Examples: {}\n"
+                "The words to process are: {}."
+            ).format(examples_json, ', '.join(words))
+
+            messages = [
+                {"role": "system", "content": "You are an assistant skilled in linguistics, capable of providing detailed linguistic attributes for given words. You are excellent in providing pure kanji synonyms."},
+                {"role": "user", "content": detailed_list_message}
+            ]
+
+        # Fetch Arabic synonyms using OpenAI
+        return self.attempt_to_fetch_synonyms(messages, word_database)
+
+    def recheck_pure_kanji_synonym(self, word_details, word_database=None):
+
+        print('Checking pure kanji synonym for these words: ')
+        # pprint(word_details)
+        print("\n")
+
+        rechecked_word_details = []
+
+        basic_message = {
+            "role": "system", 
+            "content": "\
+                You are an assistant skilled in linguistics, \
+                knowledgeable in Japanese and Traditional Chinese language. \
+                You are excellent in providing pure kanji and Traditional Chinese synonyms for English words."
+        }
+
+        for word_detail in word_details:
+            if 'word' not in word_detail:
+                raise ValueError(f"Missing 'word' key in word_detail: {word_detail}")
+
+
+            for n_try in range(self.max_retries):
+                print(f"Trying the {n_try} time(s)...")
+                
+                kanji_synonym = word_detail.get('kanji_synonym', '')
+                chinese_synonym = word_detail.get('chinese_synonym', '')
+
+                # Check if kanji synonym is empty
+                if not (kanji_synonym and chinese_synonym):
+                    # print("n_try: ", n_try, "word_detail: ", word_detail)
+
+                    # print("n_try: ", n_try)
+                    # print(word_detail)
+                    word = word_detail['word']
+                    detailed_list_message = (
+                        f"Please provide the pure kanji synonym and Chinese synonym for the word '{word}' as it is currently missing. "
+                        "Try you best to get pure kanji, if no pure kanji found, you can make up some homonym or use traditional Chinese as kanji_synonym field. "
+                        "Format the output in a plain JSON format, as a list of dictionaries, "
+                        "where each dictionary contains 'word', 'kanji_synonym' and 'chinese_synonym'. "
+                        "Output in this format [{'word':'', 'kanji_synonym': '', 'chinese_synonym': ''}]"
+                    )
+
+                    # break
+
+                    messages = [basic_message, {"role": "user", "content": detailed_list_message}]
+
+                    print("Updating pure kanji of word: ", word_detail["word"])
+                    word_detail = self.fetch_pure_kanji_synonyms([word_detail['word']], word_database, messages=messages)[0]
+                    # print("n_try: ", n_try, "word_detail: ", word_detail)
+                    messages.append({"role": "system", "content": json.dumps([word_detail], ensure_ascii=False, separators=(",", ":"))})
+                else:
+                    if n_try == 0:
+                        print("No need to update: ", word_detail["word"])
+                    else:
+                        print("Successfully updated: ", word_detail["word"])
+                    rechecked_word_details.append(word_detail)
+                    break
+
+                if n_try == self.max_retries - 1:
+                    print(f"Max retries reached for word '{word_detail['word']}'. Final attempt may still have issues.")
+
+        return rechecked_word_details
+
+
+    def fetch_arabic_synonyms(self, words, word_database, messages=None):
+        print("Words to fetch arabic: ", words)
         # Prepare examples in the required format
         example_list = [
             {"word": "sun", "arabic_synonym": "شمس"},
@@ -1440,20 +1658,21 @@ class AdvancedWordFetcher:
         ]
         examples_json = json.dumps(example_list, ensure_ascii=False, separators=(',', ':'))
 
-        # Prepare the prompt with examples
-        detailed_list_message = (
-            "Based on the following examples, provide the Arabic synonym for each word in the list. "
-            "The output should be in a plain JSON format, as a list of dictionaries, "
-            "where each dictionary contains 'word' and 'arabic_synonym'. "
-            "Format the list for compatibility with json.loads, starting with [ and ending with ]. "
-            "Examples: {}\n"
-            "The words to process are: {}."
-        ).format(examples_json, ', '.join(words))
+        if not messages:
+            # Prepare the prompt with examples
+            detailed_list_message = (
+                "Based on the following examples, provide the Arabic synonym for each word in the list. "
+                "The output should be in a plain JSON format, as a list of dictionaries, "
+                "where each dictionary contains 'word' and 'arabic_synonym'. "
+                "Format the list for compatibility with json.loads, starting with [ and ending with ]. "
+                "Examples: {}\n"
+                "The words to process are: {}."
+            ).format(examples_json, ', '.join(words))
 
-        messages = [
-            {"role": "system", "content": "You are an assistant skilled in linguistics, capable of providing detailed linguistic attributes for given words. You are excellent in providing Arabic synonyms."},
-            {"role": "user", "content": detailed_list_message}
-        ]
+            messages = [
+                {"role": "system", "content": "You are an assistant skilled in linguistics, capable of providing detailed linguistic attributes for given words. You are excellent in providing Arabic synonyms."},
+                {"role": "user", "content": detailed_list_message}
+            ]
 
         # Fetch Arabic synonyms using OpenAI
         return self.attempt_to_fetch_synonyms(messages, word_database)
@@ -1502,11 +1721,14 @@ class AdvancedWordFetcher:
 
                     messages = [basic_message, {"role": "user", "content": detailed_list_message}]
 
-                    print("Updating word: ", word_detail["word"])
-                    word_detail = self.fetch_arabic_synonyms([word_detail['word']], word_database)[0]
+                    print("Updating arabic of word: ", word_detail["word"])
+                    word_detail = self.fetch_arabic_synonyms([word_detail['word']], word_database, messages)[0]
                     messages.append({"role": "system", "content": json.dumps([word_detail], ensure_ascii=False, separators=(",", ":"))})
                 else:
-                    print("No need to update or successfully updated: ", word_detail["word"])
+                    if n_try == 0:
+                        print("No need to update: ", word_detail["word"])
+                    else: 
+                        print("Successfully updated: ", word_detail["word"])
                     rechecked_word_details.append(word_detail)
                     break
 
@@ -1586,12 +1808,22 @@ class AdvancedWordFetcher:
 
                 return synonyms
             except JSONParsingError as jpe:
-                # print(f"JSON parsing failed: {jpe.error_details}")
+                print(f"JSON parsing failed: {jpe.error_details}")
+
+                traceback.print_exc()
+
                 messages.append({"role": "system", "content": jpe.json_string})
                 messages.append({"role": "user", "content": f"JSON parsing failed: {jpe.error_details}"})
+
+                
+                print("Ignoring the error, continuing...")
+
                 continue
             except Exception as e:
-                # print(f"An unexpected error occurred: {e}")
+                print(f"An unexpected error occurred: {e}")
+
+                traceback.print_exc()
+
                 raise e
             else:
                 # print("Fetched synonyms successfully.")
@@ -1620,6 +1852,7 @@ class OpenAiChooser:
         self.original_words_list = words_list
         self.current_words = []
         self.words_iterator = iter([])
+        self.enable_openai = False
 
         # Process the provided words_list only if it's not None
         if self.original_words_list:
@@ -1637,9 +1870,12 @@ class OpenAiChooser:
     def _is_daytime_in_hk(self):
         hk_timezone = pytz.timezone('Asia/Hong_Kong')
         hk_time = datetime.now(hk_timezone)
-        # return 8 <= hk_time.hour < 24  # Daytime hours in Hong Kong
+        if self.enable_openai:
+            return 8 <= hk_time.hour < 24  # Daytime hours in Hong Kong
+        else:
+            return False
         # return True
-        return False
+        # return False
 
     def fetch_new_words(self):
         # If original_words_list is None, fetch new words dynamically
@@ -1650,10 +1886,12 @@ class OpenAiChooser:
                 db_words = self.db.fetch_random_words(10)
             else:
                 db_words = self.db.fetch_random_words(20)
+                # db_words = []
                 openai_words = []
 
             self.current_words = openai_words + db_words
-            random.shuffle(self.current_words)
+            # random.shuffle(self.current_words)
+            self.current_words= random_shuffle(self.current_words)
         else:
             # Repopulate current_words using original_words_list
             self.process_words_list()
