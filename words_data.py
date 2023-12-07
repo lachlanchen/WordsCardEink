@@ -51,13 +51,18 @@ class JSONParsingError(Exception):
 
 class NotEnoughUniqueWordsError(Exception):
     """Exception raised when not enough unique words are fetched."""
-    def __init__(self, required_num, fetched_num, duplicated_words, json_string):
+    def __init__(self, required_num, fetched_num, unique_words, duplicated_words, json_string):
         self.required_num = required_num
         self.fetched_num = fetched_num
+        self.unique_words = unique_words
         self.duplicated_words = duplicated_words
         self.json_string = json_string
-        self.error_details = (f"Error: Required {self.required_num} unique words, but only {self.fetched_num} non-duplicated words were fetched. "
-                        f"Duplicated words in local database: {', '.join(self.duplicated_words)}.")
+        self.error_details = (
+            f"Error: Required {self.required_num} unique words, "
+            f"but only {self.fetched_num} non-duplicated words were fetched. "
+            # f"Duplicated words in local database: {', '.join(self.duplicated_words)}."
+            f"These non-duplicated words I love are: {', '.join(self.unique_words)}. "
+        )
         self.message = f"JSON String: {self.json_string}\n{self.error_details}"
         super().__init__(self.message)
 
@@ -870,10 +875,11 @@ class AdvancedWordFetcher:
             unique_words = [word for word in parsed_json if not word_database.word_exists(word)]
             if len(unique_words) < num_words // 2:
                 duplicated_words = set(parsed_json) - set(unique_words)
-                fetched_num = len(unique_words)
-                raise NotEnoughUniqueWordsError(len(parsed_json), fetched_num, list(duplicated_words), json_string)
 
-            return parsed_json
+                fetched_num = len(unique_words)
+                raise NotEnoughUniqueWordsError(len(parsed_json), fetched_num, unique_words, list(duplicated_words), json_string)
+
+            return unique_words
         except json.JSONDecodeError as e:
             traceback.print_exc()
             raise JSONParsingError(f"JSON Decode Error: {e}", json_string)
@@ -936,19 +942,22 @@ class AdvancedWordFetcher:
             user_message = (
                 f"Generate a python list of {num_words_scaled} unique advanced words that meet one or more of the following criteria:\n"
                 f"{criteria_list}\n"
-                "Format the list for compatibility with json.loads, starting with [ and ending with ]. "
+                # "Format the list for compatibility with json.loads, starting with [ and ending with ]. "
                 # "and include the word's tendency or special characteristic next to each word."
                 "The output should be like ['word 1', 'word 2', ..., 'word N']."
             )
         else:
             user_message = (
-                # f"Think wildly and provide me with a python list of {num_words_scaled} unique advanced lowercase words that are often used in formal readings. "
-                f"Take a deep breath and think wildly with your imagination and provide me with {num_words_scaled} words. "
+                # # f"Think wildly and provide me with a python list of {num_words_scaled} unique advanced lowercase words that are often used in formal readings. "
+                # f"Take a deep breath and think wildly with your imagination and provide me with {num_words_scaled} words. "
+                # "Choose commonly used to advanced that are often used in daily expression or formal readings in various areas. "
+                # # "The output plain json should be like ['word 1', 'word 2', ..., 'word N'] starts with [ and end with ]. "
+                # f"To provide some randomness, a list of words not existing in our local database is provided below. "
+                # "You can ignore or use it if your output have duplications. "
+                # f"Output non-capitalized wordes if not necessary and same format as: \n{json.dumps(local_words)}."
                 "Choose commonly used to advanced that are often used in daily expression or formal readings in various areas. "
-                # "The output plain json should be like ['word 1', 'word 2', ..., 'word N'] starts with [ and end with ]. "
-                f"To provide some randomness, a list of words not existing in our local database is provided below. "
-                "You can ignore or use it if your output have duplications. "
-                f"Output non-capitalized wordes if not necessary and same format as: \n{json.dumps(local_words)}."
+                f"Could you take a deep breath, think widly and give me a list of {num_words_scaled} words with similar list (compatible to json.loads) FORMAT: \n"
+                f"\n{json.dumps(local_words)}. "
             )
 
         messages = [
@@ -997,7 +1006,7 @@ class AdvancedWordFetcher:
                 # messages.append({"role": "system", "content": response.choices[0].message.content})
 
                 messages.append({"role": "system", "content": not_enough_error.json_string})
-                messages.append({"role": "user", "content": f"{not_enough_error.error_details}. Please take a deep breath and use your imagination to think more widely. "})
+                messages.append({"role": "user", "content": f"{not_enough_error.error_details} Please take a deep breath and use your imagination to think more widely. "})
 
                 # messages.insert(0, {"role": "user", "content": f"{not_enough_error.error_details}. Please take a deep breath and use your imagination to think more widely. "})
                 # messages.insert(0, {"role": "system", "content": not_enough_error.json_string})
@@ -1028,21 +1037,34 @@ class AdvancedWordFetcher:
         random_words = random_sample(words, num_words_phonetic)
 
         # Directly create the mismatch message here
+        example_word = self.examples[0].get("word", "")
         syllables = split_word(self.examples[0].get("syllable_word", ""))
         phonetics = split_word(self.examples[0].get("phonetic", ""))
         mappings = self.map_syllables_phonetics(syllables, phonetics)
+
+
+        example_string = json.dumps(self.examples, ensure_ascii=False, separators=(',', ':'))
+        words_string = ', '.join(random_words).lower()
         
 
+        # detailed_list_message = (
+        #     "For each word, we need to correctly format the syllable_word (with · separating syllables), phonetic transcription (phonemes also separated by ·), and the Japanese synonym. "
+        #     "Ensure the word syllables and phonetic separation are syncronized: \n {}"
+        #     "In the case of Japanese synonyms, the hiragana (furigana) should follow directly after the kanji and katakana. For example, 'その後' should be followed by its furigana '（ご)', instead of repeating the kanji as in 'その後（そのご)'. "
+        #     "Consider '容易にする' – the correct form is '容易（ようい）にする', placing 'する' outside the parentheses to align with standard formatting. "
+        #     "In 'もの悲しい', the proper format is 'もの悲（かな）しい', where the hiragana directly follows its respective kanji. "
+        #     "Remember, no dots in the Japanese synonym and hiragana should be placed inside parentheses right after the kanji/katakana. "
+        #     "The output plain json format should RESEMBLE: {}. "
+        #     "The words to process are: {}."
+        # ).format(mappings, example_string, words_string)
+
         detailed_list_message = (
-            "For each word, we need to correctly format the syllable_word (with · separating syllables), phonetic transcription (phonemes also separated by ·), and the Japanese synonym. "
-            "Ensure the word syllables and phonetic separation are syncronized: \n {}"
-            "In the case of Japanese synonyms, the hiragana (furigana) should follow directly after the kanji and katakana. For example, 'その後' should be followed by its furigana '（ご)', instead of repeating the kanji as in 'その後（そのご)'. "
-            "Consider '容易にする' – the correct form is '容易（ようい）にする', placing 'する' outside the parentheses to align with standard formatting. "
-            "In 'もの悲しい', the proper format is 'もの悲（かな）しい', where the hiragana directly follows its respective kanji. "
-            "Remember, no dots in the Japanese synonym and hiragana should be placed inside parentheses right after the kanji/katakana. "
-            "The output plain json format should RESEMBLE: {}. "
-            "The words to process are: {}."
-        ).format(mappings, json.dumps(self.examples, ensure_ascii=False, separators=(',', ':')), ', '.join(random_words))
+            "For each word, we need to correctly format the syllable_word (with · separating syllables) which is scncronized with its phonetic transcription (phonemes also separated by ·), "
+            f"For the word in the first example below, the separation of {example_word} should reflect the correspondence: \n {mappings}"
+            "the japanese_synonym, pure kanji_synonym, arabic_synonym, chinese_synonym and french_synonym. "
+            f"Similar to this json.loads compatible FORMAT: \n {example_string}. "
+            f"Could you provide me the details for words [ {words_string} ] ?"
+        )
 
         messages = [
                 {"role": "system", "content": "You are an assistant skilled in linguistics, capable of providing detailed phonetic and linguistic attributes for given words."},
@@ -1570,10 +1592,11 @@ class AdvancedWordFetcher:
             detailed_list_message = (
                 "Based on the following examples, provide the pure kanji synonym with as least Japanese letters as possible for each word in the list. "
                 "If it's hard just give some loosely related or use traditional Chinese as kanji_synonym field. "
-                "The output should be in a plain JSON format, as a list of dictionaries, "
-                "where each dictionary contains 'word', 'kanji_synonym' and 'chinese_synonym'. "
+                # "The output should be in a plain JSON format, as a list of dictionaries, "
+                # "where each dictionary contains 'word', 'kanji_synonym' and 'chinese_synonym'. "
+                "Each dictionary contains 'word', 'kanji_synonym' and 'chinese_synonym'. "
                 # "Format the list for compatibility with json.loads, starting with [ and ending with ]. "
-                "Examples: {}\n"
+                "Output the json.loads compatible format as the examples: {}\n"
                 "The words to process are: {}."
             ).format(examples_json, ', '.join(words))
 
@@ -1622,9 +1645,10 @@ class AdvancedWordFetcher:
                     detailed_list_message = (
                         f"Please provide the pure kanji synonym and Chinese synonym for the word '{word}' as it is currently missing. "
                         "Try you best to get pure kanji, if no pure kanji found, you can make up some homonym or use traditional Chinese as kanji_synonym field. "
-                        "Format the output in a plain JSON format, as a list of dictionaries, "
-                        "where each dictionary contains 'word', 'kanji_synonym' and 'chinese_synonym'. "
-                        "Output in this format [{'word':'', 'kanji_synonym': '', 'chinese_synonym': ''}]"
+                        # "Format the output in a plain JSON format, as a list of dictionaries, "
+                        # "where each dictionary contains 'word', 'kanji_synonym' and 'chinese_synonym'. "
+                        "Each dictionary contains 'word', 'kanji_synonym' and 'chinese_synonym'. "
+                        "Output the json.loads compatible format as [{'word':'', 'kanji_synonym': '', 'chinese_synonym': ''}]"
                     )
 
                     # break
@@ -1662,10 +1686,11 @@ class AdvancedWordFetcher:
             # Prepare the prompt with examples
             detailed_list_message = (
                 "Based on the following examples, provide the Arabic synonym for each word in the list. "
-                "The output should be in a plain JSON format, as a list of dictionaries, "
-                "where each dictionary contains 'word' and 'arabic_synonym'. "
-                "Format the list for compatibility with json.loads, starting with [ and ending with ]. "
-                "Examples: {}\n"
+                # "The output should be in a plain JSON format, as a list of dictionaries, "
+                # "where each dictionary contains 'word' and 'arabic_synonym'. "
+                "Each dictionary contains 'word' and 'arabic_synonym'. "
+                # "Format the list for compatibility with json.loads, starting with [ and ending with ]. "
+                "Output the json.loads compatible format as examples: {}\n"
                 "The words to process are: {}."
             ).format(examples_json, ', '.join(words))
 
@@ -1712,9 +1737,10 @@ class AdvancedWordFetcher:
                     detailed_list_message = (
                         f"Please provide the Arabic synonym ANYWAY for the word '{word}' as it is currently missing. "
                         "If not found, you can make up some homonym. "
-                        "Format the output in a plain JSON format, as a list of dictionaries, "
-                        "where each dictionary contains 'word' and 'arabic_synonym'. "
-                        "Output in this format [{'word':'', 'arabic_synonym': ''}]"
+                        # "Format the output in a plain JSON format, as a list of dictionaries, "
+                        # "where each dictionary contains 'word' and 'arabic_synonym'. "
+                        "Each dictionary contains 'word' and 'arabic_synonym'. "
+                        "Output in this json.loads compatible format [{'word':'', 'arabic_synonym': ''}]"
                     )
 
                     # break
@@ -1913,7 +1939,7 @@ class OpenAiChooser:
                 # print("Fetching new words as original_words_list is None.")
                 self.fetch_new_words()
                 word = next(self.words_iterator)
-        word = clean_and_transcribe([word])[0]
+        # word = clean_and_transcribe([word])[0]
         return word
 
     def get_current_words(self):

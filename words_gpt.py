@@ -302,7 +302,7 @@ class EPaperDisplay:
         elif self.content_type == "chinese_synonym":
             self.draw_chinese_synonym(draw, item['chinese_synonym'], 2 * row_height, 2 * row_height)
         elif self.content_type == "japanese_and_arabic":
-            print("Drawing japanese and arabic...")
+            # print("Drawing japanese and arabic...")
             self.draw_japanese(draw, item['japanese_synonym'], 1.7 * row_height, 1.8 * row_height, start_size=120)
             self.draw_arabic_synonym(draw, item['arabic_synonym'], 2.9 * row_height, 1 * row_height)
         self.save_intermediate_image()
