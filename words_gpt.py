@@ -50,6 +50,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 # from grossary import words_phonetics
 import json
+import json5
 from openai import OpenAI
 from words_data import WordsDatabase, AdvancedWordFetcher, OpenAiChooser
 from words_data import split_word, split_word_with_color, count_syllables
@@ -380,7 +381,11 @@ class EPaperDisplay:
         """
         Draws kanji characters, stripping away any non-kanji characters.
         """
+        if not kanji_text:  # Skip if no kanji characters are present
+            return
+
         kanji_text = re.sub(r'[^\u4e00-\u9faf]', '', kanji_text)  # Strip non-kanji characters
+
         if not kanji_text:  # Skip if no kanji characters are present
             return
 
@@ -402,6 +407,8 @@ class EPaperDisplay:
         """
         Draws kanji characters, stripping away any non-kanji characters.
         """
+        if not kanji_text:  # Skip if no kanji characters are present
+            return
         kanji_text = re.sub(r'[^\u4e00-\u9faf]', '', kanji_text)  # Strip non-kanji characters
         if not kanji_text:  # Skip if no kanji characters are present
             return
