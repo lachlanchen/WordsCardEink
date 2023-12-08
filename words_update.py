@@ -210,7 +210,7 @@ def update_database_in_batches_with_conditions(database, fetcher, batch_size=10)
         # print("before update: ", words_batch)
         words_to_recheck = [word_detail for word_detail in words_batch if word_detail['word'] not in logged_words]
 
-        words_to_recheck = [word_detail for word_detail in words_to_recheck if not word_detail.get("french_synonym", "")]
+        # words_to_recheck = [word_detail for word_detail in words_to_recheck if not word_detail.get("french_synonym", "")]
 
         if len(words_to_recheck) > 0:
             # print("The words are all processed. ")
@@ -220,16 +220,16 @@ def update_database_in_batches_with_conditions(database, fetcher, batch_size=10)
             # print("after update: ", rechecked_details)
             # print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
-            rechecked_syllable_phonetic = fetcher.split_and_compare_phonetic_syllable(words_to_recheck, database)
+            # rechecked_syllable_phonetic = fetcher.split_and_compare_phonetic_syllable(words_to_recheck, database)
             # # database.update_word_details(rechecked_syllable_phonetic, force=True)
 
             # # Update the database with the final rechecked details
             rechecked_japanese_synonym = fetcher.recheck_japanese_synonym_with_conditions(words_to_recheck, database)
             # # database.update_word_details(rechecked_japanese_synonym, force=True)
             
-            rechecked_arabic_synonym = fetcher.recheck_pure_kanji_synonym(words_to_recheck, database)
+            # rechecked_arabic_synonym = fetcher.recheck_pure_kanji_synonym(words_to_recheck, database)
 
-            rechecked_arabic_synonym = fetcher.recheck_arabic_synonym(words_to_recheck, database)
+            # rechecked_arabic_synonym = fetcher.recheck_arabic_synonym(words_to_recheck, database)
 
             # fetcher.fetch_french_synonyms([word["word"] for word in words_to_recheck], database)
 

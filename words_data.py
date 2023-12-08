@@ -44,7 +44,7 @@ class JSONParsingError(Exception):
     """Exception raised for errors in the JSON parsing."""
     def __init__(self, error_message, json_string, error_pos=None):
         self.error_message = error_message
-        self.json_string = json_string
+        self.json_string = json_string.lower()
         self.error_pos = error_pos
         self.error_details = f"{self.error_message}\nError Position: {self.error_pos}" if self.error_pos else f"{self.error_message}"
         self.message = f"JSON String: {self.json_string}\n{self.error_details}"
@@ -55,9 +55,9 @@ class NotEnoughUniqueWordsError(Exception):
     def __init__(self, required_num, fetched_num, unique_words, duplicated_words, json_string):
         self.required_num = required_num
         self.fetched_num = fetched_num
-        self.unique_words = unique_words
+        self.unique_words = [word.lower() for word in unique_words]
         self.duplicated_words = duplicated_words
-        self.json_string = json_string
+        self.json_string = json_string.lower()
         self.error_details = (
             f"Error: Required {self.required_num} unique words, "
             f"but only {self.fetched_num} non-duplicated words comparing to my local database were fetched. "
@@ -268,7 +268,78 @@ def transcribe_japanese(text):
 
     return result
 
+def count_hiragana_repetitions(japanese_string):
+    # Regex pattern to find kanji followed by parentheses containing hiragana
+    # pattern = r'([一-龠]+)\（([ぁ-んァ-ン]+)\）'
+    pattern = r'([一-龠ァ-ヴガ-ドㇰ-ㇿヵヶヰヱ々〆〤ー\-]+)（([ぁ-ゔー\-]+)）'
+    
+    results = []
+    prev_end = 0
+    for match in re.finditer(pattern, japanese_string):
+        kanji, hiragana_in_parentheses = match.groups()
+        kanji_start, _ = match.span(1)
 
+        # Extracting the preceding hiragana substring
+        preceding_hiragana = japanese_string[prev_end:kanji_start]
+
+        # Counting the overlap of hiragana before kanji and hiragana inside the parenthesis
+        overlap_count = 0
+        for i in range(1, min(len(preceding_hiragana), len(hiragana_in_parentheses)) + 1):
+            if preceding_hiragana[-i:] == hiragana_in_parentheses[:i]:
+                overlap_count = i
+
+        results.append((kanji, overlap_count))
+
+        prev_end = kanji_start + len(kanji)
+
+    return results
+
+def smallest_non_zero_repetition(japanese_string):
+    """
+    Find the smallest non-zero repetition count in the results.
+
+    :param repetition_results: List of tuples with kanji and repetition count.
+    :return: The smallest non-zero repetition count, or None if all are zero.
+    """
+    repetition_results = count_hiragana_repetitions(japanese_string)
+
+    print("repetition_results: ", repetition_results)
+
+
+    smallest_non_zero = None
+    for _, count in repetition_results:
+        if count > 0 and (smallest_non_zero is None or count < smallest_non_zero):
+            smallest_non_zero = count
+    return 0 if smallest_non_zero is None else smallest_non_zero
+
+def compare_repetition_results(string1, string2):
+    """
+    Compares two sets of hiragana repetition results and identifies discrepancies.
+
+    :param results1: First set of repetition results.
+    :param results2: Second set of repetition results.
+    :return: A list of tuples indicating discrepancies. Each tuple contains the kanji and the two different counts.
+    """
+
+    results1 = count_hiragana_repetitions(string1)
+    results2 = count_hiragana_repetitions(string2)
+
+
+    discrepancies = []
+
+    # Convert results to dictionaries for easier comparison
+    dict1 = {kanji: count for kanji, count in results1}
+    dict2 = {kanji: count for kanji, count in results2}
+
+    # Compare the two dictionaries
+    for kanji in set(dict1.keys()).union(dict2.keys()):
+        count1 = dict1.get(kanji, None)
+        count2 = dict2.get(kanji, None)
+
+        if count1 != count2:
+            discrepancies.append((kanji, count1, count2))
+
+    return discrepancies
 
 
 def clean_and_transcribe(word_details):
@@ -319,6 +390,7 @@ class WordsDatabase:
 
             self.create_field_if_not_exists("words_phonetics", "kanji_synonym", "TEXT")
             self.create_field_if_not_exists("words_phonetics", "chinese_synonym", "TEXT")
+            self.create_field_if_not_exists("words_phonetics", "simplified_chinese_synonym", "TEXT")
             self.create_field_if_not_exists("words_phonetics", "arabic_synonym", "TEXT")
             self.create_field_if_not_exists("words_phonetics", "french_synonym", "TEXT")
 
@@ -332,9 +404,23 @@ class WordsDatabase:
                     if old_value != new_value:
                         history_writer.writerow([key, old_value, "→", new_value])
 
+    # def word_exists(self, word):
+    #     if self.conn:
+    #         self.cursor.execute("SELECT COUNT(*) FROM words_phonetics WHERE word = ?", (word.strip(),))
+    #         return self.cursor.fetchone()[0] > 0
+    #     return False
+
     def word_exists(self, word):
         if self.conn:
-            self.cursor.execute("SELECT COUNT(*) FROM words_phonetics WHERE word = ?", (word,))
+            # print("Checking existence: ", word)
+
+            # Prepare the word in lowercase
+            word_lower = word.strip().lower()
+            
+            # Update the SQL query to check for both exact and lowercase match
+            # self.cursor.execute("SELECT COUNT(*) FROM words_phonetics WHERE word = ? OR LOWER(word) = ?", (word.strip(), word_lower))
+            self.cursor.execute("SELECT COUNT(*) FROM words_phonetics WHERE word = ? OR word = ?", (word.strip(), word_lower))
+            
             return self.cursor.fetchone()[0] > 0
         return False
 
@@ -444,9 +530,9 @@ class WordsDatabase:
     def insert_word_details(self, word_details, force=False):
         if self.conn:
             # Extracting word details
-            word = word_details.get('word', '')
+            word = word_details.get('word', '').lower()
             fields_to_update = ['syllable_word', 'phonetic', 'japanese_synonym', 'arabic_synonym', 
-                                'french_synonym', 'chinese_synonym', 'kanji_synonym']
+                                'french_synonym', 'chinese_synonym', 'simplified_chinese_synonym', 'kanji_synonym']
 
             # Cleaning and preparing data for insertion
             data_to_insert = [word]
@@ -462,6 +548,8 @@ class WordsDatabase:
                         value = clean_japanese(word_details[field])
                     elif field in ['syllable_word', 'phonetic']:
                         value = clean_english(word_details[field])
+                    # elif field == "word":
+                    #     value = word_details[field].lower()
                     else:
                         value = word_details[field]  # No cleaning function for other fields
                     data_to_insert.append(value)
@@ -493,25 +581,64 @@ class WordsDatabase:
                 traceback.print_exc()
 
 
+    # def update_word_details(self, word_details, force=False):
+    #     if self.conn:
+    #         word = word_details.get('word', '') # .lower()
+
+    #         # Prepare data and query for dynamic update
+    #         data_to_update = []
+    #         update_parts = []
+
+    #         for key in ['syllable_word', 'phonetic', 'japanese_synonym', 'arabic_synonym', 'french_synonym', 'chinese_synonym', 'kanji_synonym']:
+    #             if key in word_details:
+    #                 # print("word_details to be updated: ", word_details)
+    #                 if word_details[key]:
+    #                     cleaned_value = clean_english(word_details[key]) if key != 'japanese_synonym' else clean_japanese(word_details[key])
+    #                     data_to_update.append(cleaned_value)
+    #                     update_parts.append(f"{key} = ?")
+    #                 # print(f"Updated {word}. ")
+
+    #         if not update_parts:
+    #             # print("No data to update.")
+    #             return
+
+    #         query = f"UPDATE words_phonetics SET {', '.join(update_parts)} WHERE word = ?"
+    #         data_to_update.append(word)
+
+    #         try:
+    #             # Execute the query with the values
+    #             self.cursor.execute(query, data_to_update)
+    #             self.conn.commit()
+    #         except sqlite3.Error as e:
+    #             print(f"SQLite Error: {e}")
+    #             traceback.print_exc()
+
     def update_word_details(self, word_details, force=False):
         if self.conn:
-            word = word_details.get('word', '') # .lower()
+            word = word_details.get('word', '').lower()  # Ensure the word is in lowercase
 
             # Prepare data and query for dynamic update
             data_to_update = []
             update_parts = []
 
-            for key in ['syllable_word', 'phonetic', 'japanese_synonym', 'arabic_synonym', 'french_synonym', 'chinese_synonym', 'kanji_synonym']:
+            for key in ['syllable_word', 'phonetic', 'japanese_synonym', 'arabic_synonym', 'french_synonym', 'chinese_synonym', 'simplified_chinese_synonym', 'kanji_synonym']:
                 if key in word_details:
-                    # print("word_details to be updated: ", word_details)
-                    if word_details[key]:
-                        cleaned_value = clean_english(word_details[key]) if key != 'japanese_synonym' else clean_japanese(word_details[key])
+                    # Choose the appropriate cleaning function based on the field
+                    if key == 'japanese_synonym':
+                        cleaned_value = clean_japanese(word_details[key])
+                    elif key in ['syllable_word', 'phonetic']:
+                        cleaned_value = clean_english(word_details[key])
+                    # elif key == "word":
+                    #     cleaned_value = word_details[key].lower()
+                    else:
+                        cleaned_value = word_details[key]  # No cleaning function for other fields
+
+                    if cleaned_value:
                         data_to_update.append(cleaned_value)
                         update_parts.append(f"{key} = ?")
-                    # print(f"Updated {word}. ")
 
             if not update_parts:
-                # print("No data to update.")
+                # No data to update
                 return
 
             query = f"UPDATE words_phonetics SET {', '.join(update_parts)} WHERE word = ?"
@@ -994,6 +1121,22 @@ class AdvancedWordFetcher:
         # Return the specified number of unique words
         return unique_words[:num_words]
 
+    def save_unused_words(self, words, random_words, file_path='data/unused_words.csv'):
+        """
+        Saves the words that were not selected by random_sample to a CSV file.
+
+        :param random_words: The list of words selected by random_sample.
+        :param file_path: The path to the CSV file where the unused words will be saved.
+        """
+        # Calculate the unused words
+        unused_words = set(words) - set(random_words)
+
+        # Write the unused words to a CSV file
+        with open(file_path, 'a', newline='', encoding='utf-8') as file:
+            writer = csv.writer(file)
+            for word in unused_words:
+                writer.writerow([word])
+
 
     def fetch_words_openai(self, num_words, word_database):
         propensities = self.load_propensities()
@@ -1026,7 +1169,7 @@ class AdvancedWordFetcher:
                 # "You can ignore or use it if your output have duplications. "
                 # f"Output non-capitalized wordes if not necessary and same format as: \n{json.dumps(local_words)}."
                 "Choose English words commonly used to advanced that are often used in daily expression or formal readings in various areas. "
-                f"Could you take a deep breath, think widly and give me a list of {num_words_scaled} words with similar list (compatible to json5.loads) FORMAT: \n"
+                f"Could you take a deep breath, think widly and give me a list of {num_words_scaled} words with similar list (compatible to json.loads) FORMAT: \n"
                 f"\n{json.dumps(local_words)}. "
             )
 
@@ -1106,6 +1249,8 @@ class AdvancedWordFetcher:
         # random_words = random.sample(words, min(num_words_phonetic, len(words)))
         random_words = random_sample(words, num_words_phonetic)
 
+        self.save_unused_words(words, random_words)
+
         # Directly create the mismatch message here
         example_word = self.examples[0].get("word", "")
         syllables = split_word(self.examples[0].get("syllable_word", ""))
@@ -1128,12 +1273,28 @@ class AdvancedWordFetcher:
         #     "The words to process are: {}."
         # ).format(mappings, example_string, words_string)
 
+        # detailed_list_message = (
+        #     "For each English word, we need to correctly format the syllable_word (with · separating syllables) "
+        #     "which is scncronized with its English phonetic transcription (phonemes also separated by ·). "
+        #     "That ˈ and ˌ are always treated as separator regardless if '·' exists or not. "
+        #     f"For example, the separation of {example_word} should reflect the correspondence: \n {mappings}. \n"
+        #     "Also provide the japanese_synonym with hiragana pronounciation of kanji inside parentheses, pure kanji_synonym, arabic_synonym, chinese_synonym and french_synonym. "
+        #     f"Similar to this json.loads compatible FORMAT: \n {example_string}. "
+        #     f"Could you provide me the linguistic details for words [ {words_string} ] ?"
+        # )
+
         detailed_list_message = (
-            "For each English word, we need to correctly format the syllable_word (with · separating syllables) "
-            "which is scncronized with its English phonetic transcription (phonemes also separated by ·). "
-            "That ˈ and ˌ are always treated as separator regardless if '·' exists or not. "
-            "For example, the separation of {example_word} should reflect the correspondence: \n {mappings}. \n"
-            "Also provide the japanese_synonym with hiragana pronounciation of kanji inside parentheses, pure kanji_synonym, arabic_synonym, chinese_synonym and french_synonym. "
+            # "For each English word, we need to correctly format the syllable_word (with · separating syllables) "
+            # "which is aligned with its English phonetic transcription (phonemes also separated by ·). "
+            # "That ˈ and ˌ are always treated as separator regardless if '·' exists or not. "
+            "Could you provide a detailed syllable (using ·) and phonetic separation (also using ·) "
+            "ensuring a one-to-one correspondence between syllable_word and its IPA phonetic? "
+            "Please adjust the syllable or phonetic divisions if necessary "
+            "to ensure each syllable directly matches/aligns with its corresponding phonetic element, "
+            "even if this means altering the conventional syllable breakdown."
+            f"For example, the separation of {example_word} should reflect the correspondence: \n {mappings}. \n"
+            "Also provide the japanese_synonym with hiragana pronounciation of kanji inside parentheses, pure kanji_synonym, arabic_synonym, chinese_synonym in traditional Taiwan/Hong Kong , simplified_chinese_synonym and french_synonym. "
+            # "For the traditional and simplified Chinese, please consider habits and context of HK, Taiwan, Macau and  China mainland. "
             f"Similar to this json.loads compatible FORMAT: \n {example_string}. "
             f"Could you provide me the linguistic details for words [ {words_string} ] ?"
         )
@@ -1643,15 +1804,30 @@ class AdvancedWordFetcher:
                 else:
 
                     without_hiragana_original = remove_hiragana_inside_parentheses(japanese_synonym)
+                    # n_hiragana_repetitions_original = smallest_non_zero_repetition(japanese_synonym)
 
                     word_detail_transribed = clean_and_transcribe([word_detail])[0]
                     japanese_synonym_cleaned_and_transcribed = word_detail_transribed["japanese_synonym"]
+                    # n_hiragana_repetitions_transcribed = smallest_non_zero_repetition(japanese_synonym_cleaned_and_transcribed)
                     without_hiragana_transcribed = remove_hiragana_inside_parentheses(japanese_synonym_cleaned_and_transcribed)
+
+                    discrepancies = compare_repetition_results(japanese_synonym, japanese_synonym_cleaned_and_transcribed)
+                    # n_hiragana_repetitions_original = discrepancies[0][1]
+                    # n_hiragana_repetitions_transcribed = discrepancies[0][2]
+
+                    print(
+                        "###############\n"
+                        f"Furigana position incorrect, rechecking for word '{word_detail['word']}':\n"
+                        f"Full: {json.dumps(japanese_synonym, ensure_ascii=False, separators=(',', ':'))}\n"
+                        f"Original: {without_hiragana_original}\n"
+                        f"Kakasi: {without_hiragana_transcribed}\n"
+                    )
 
 
                     # print(without_hiragana_original, " ? ", without_hiragana_transcribed)
 
-                    if without_hiragana_original != without_hiragana_transcribed or not japanese_synonym:
+                    # if (n_hiragana_repetitions_original > n_hiragana_repetitions_transcribed) or (without_hiragana_original != without_hiragana_transcribed) or (not japanese_synonym):
+                    if (len(discrepancies) > 0) or (without_hiragana_original != without_hiragana_transcribed) or (not japanese_synonym):
 
                         word_detail_blanked = [{
                                 k: (v if k != 'japanese_synonym' else remove_hiragana_inside_parentheses(v))
@@ -1666,20 +1842,33 @@ class AdvancedWordFetcher:
                                 else (
                                     "The hiragana inside the parentheses is generated by pykakasi. Please recheck."
                                     "Could you provide the furigana/hiragana of kanji/katakana inside the parentheses as needed and output SAME format? \n {}"
-                                ).format(json.dumps(word_detail_blanked, ensure_ascii=False, separators=(',', ':')))
+                                ).format(
+                                    json.dumps(word_detail_blanked, ensure_ascii=False, separators=(',', ':')),
+                                )
                         
+                        if (len(discrepancies) > 0):
+                            message = (
+                                "There are possible repetitions of hiragana before the kanji inside the parentheses: {} ."
+                                "Like pykakasi, please remove the possible repeated hiragana inside the parentheses: {} . "
+                                "Could you provide the correct furigana/hiragana of kanji/katakana inside the parentheses as needed and output SAME format? \n {}"
+                            ).format(
+                                word_detail["japanese_synonym"],
+                                word_detail_transribed["japanese_synonym"],
+                                json.dumps(word_detail_blanked, ensure_ascii=False, separators=(',', ':'))
+                            )
+
                         if n_try == 0:
                             messages.append({"role": "user", "content": detailed_list_message + message})
                         else:
                             messages.append({"role": "user", "content": message})
 
-                        print(
-                            "###############"
-                            f"Furigana position incorrect, rechecking for word '{word_detail['word']}':\n"
-                            f"Full: {json.dumps(japanese_synonym, ensure_ascii=False, separators=(',', ':'))}\n"
-                            f"Original: {without_hiragana_original}\n"
-                            f"Kakasi: {without_hiragana_transcribed}\n"
-                        )
+                        # print(
+                        #     "###############"
+                        #     f"Furigana position incorrect, rechecking for word '{word_detail['word']}':\n"
+                        #     f"Full: {json.dumps(japanese_synonym, ensure_ascii=False, separators=(',', ':'))}\n"
+                        #     f"Original: {without_hiragana_original}\n"
+                        #     f"Kakasi: {without_hiragana_transcribed}\n"
+                        # )
 
                         word_detail = self.recheck_japanese_synonym([word_detail], word_database, messages)[0]
                         messages.append({"role": "system", "content": json.dumps([word_detail], ensure_ascii=False, separators=(",", ":"))})
@@ -1702,8 +1891,8 @@ class AdvancedWordFetcher:
     def fetch_pure_kanji_synonyms(self, words, word_database, messages=None):
         # Prepare examples in the required format
         example_list = [
-            {"word": "sun", "kanji_synonym": "太陽", "chinese_synonym": "太陽"},
-            {"word": "moon", "kanji_synonym": "月", "chinese_synonym": "月亮"}
+            {"word": "sun", "kanji_synonym": "太陽", "chinese_synonym": "太陽", "simplified_chinese_synonym": "太阳"},
+            {"word": "moon", "kanji_synonym": "月", "chinese_synonym": "月亮", "simplified_chinese_synonym": "月亮"}
         ]
 
         examples_json = json.dumps(example_list, ensure_ascii=False, separators=(',', ':'))
@@ -1715,7 +1904,7 @@ class AdvancedWordFetcher:
                 "If it's hard just give some loosely related or use traditional Chinese as kanji_synonym field. "
                 # "The output should be in a plain JSON format, as a list of dictionaries, "
                 # "where each dictionary contains 'word', 'kanji_synonym' and 'chinese_synonym'. "
-                "Each dictionary contains 'word', 'kanji_synonym' and 'chinese_synonym'. "
+                "Each dictionary contains 'word', 'kanji_synonym', (traditional) 'chinese_synonym' and 'simplified_chinese_synonym'. "
                 # "Format the list for compatibility with json.loads, starting with [ and ending with ]. "
                 "Output the json.loads compatible format as the examples: {}\n"
                 "The words to process are: {}."
@@ -1742,7 +1931,7 @@ class AdvancedWordFetcher:
             "role": "system", 
             "content": (
                 "You are an assistant skilled in linguistics, "
-                "knowledgeable in Japanese and Traditional Chinese language. "
+                "knowledgeable in Japanese, traditional Chinese and simplified Chinese language. "
                 "You are excellent in providing pure kanji and Traditional Chinese synonyms for English words."
             )
         }
@@ -1758,8 +1947,8 @@ class AdvancedWordFetcher:
                 "Try you best to get pure kanji, if no pure kanji found, you can make up some homonym or use traditional Chinese as kanji_synonym field. "
                 # "Format the output in a plain JSON format, as a list of dictionaries, "
                 # "where each dictionary contains 'word', 'kanji_synonym' and 'chinese_synonym'. "
-                "Each dictionary contains 'word', 'kanji_synonym' and 'chinese_synonym'. "
-                "Output the json.loads compatible format as [{'word':'', 'kanji_synonym': '', 'chinese_synonym': ''}]"
+                "Each dictionary contains 'word', 'kanji_synonym', (traditional) 'chinese_synonym' and 'simplified_chinese_synonym'. "
+                "Output the json.loads compatible format as [{'word':'', 'kanji_synonym': '', 'chinese_synonym': '', 'simplified_chinese_synonym':''}]"
             )
 
             # break
@@ -2114,7 +2303,7 @@ class OpenAiChooser:
         hk_timezone = pytz.timezone('Asia/Hong_Kong')
         hk_time = datetime.now(hk_timezone)
         if self.enable_openai:
-            return 8 <= hk_time.hour < 24  # Daytime hours in Hong Kong
+            return 8 <= hk_time.hour < 23  # Daytime hours in Hong Kong
         else:
             return False
         # return True
