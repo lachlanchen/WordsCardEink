@@ -231,6 +231,8 @@ def update_database_in_batches_with_conditions(database, fetcher, batch_size=10)
 
             # rechecked_arabic_synonym = fetcher.recheck_arabic_synonym(words_to_recheck, database)
 
+
+
             # fetcher.fetch_french_synonyms([word["word"] for word in words_to_recheck], database)
 
             # break
@@ -293,8 +295,9 @@ if __name__ == "__main__":
 
     # batch_update_arabic_synonyms(words_db, word_fetcher)
 
-    update_database_in_batches_with_conditions(words_db, word_fetcher, 50)
+    words_db.convert_and_update_chinese_synonyms()
     words_db.update_kanji_for_all_words()
+    update_database_in_batches_with_conditions(words_db, word_fetcher, 50)
 
 
     # Close the database connection
