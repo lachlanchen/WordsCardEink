@@ -69,6 +69,8 @@ import arabic_reshaper
 from bidi.algorithm import get_display
 
 import opencc
+import csv
+
 
 
 # Usage example
@@ -739,6 +741,27 @@ class EPaperDisplay:
             self.save_intermediate_image()
 
 
+def read_words_list(file_path):
+    """
+    Reads a CSV file containing words and returns a list of words.
+    Ignores empty lines and trims spaces from the words.
+
+    :param file_path: Path to the CSV file.
+    :return: List of words from the CSV file.
+    """
+    words = []
+    try:
+        with open(file_path, mode='r', encoding='utf-8') as file:
+            reader = csv.reader(file)
+            for row in reader:
+                # Each row is expected to have one word
+                if row:  # checks if row is not empty
+                    word = row[0].strip()  # trims spaces
+                    if word:  # checks if the word is not empty after trimming
+                        words.append(word)
+    except Exception as e:
+        print(f"Error reading the file: {e}")
+    return words
 
 if __name__=="__main__":
     # import logging
@@ -753,6 +776,7 @@ if __name__=="__main__":
     parser.add_argument('--make_emoji', action='store_true', default=False, help='Enable emoji making feature')
     parser.add_argument('--ignore_list', action='store_true', default=False, help='Ignore the words list')
     parser.add_argument('--simplify', action='store_true', default=False, help='Simplify kanji and traditional Chinese')
+    parser.add_argument('--use_csv', action='store_true', default=False, help='Simplify kanji and traditional Chinese')
 
     # Parse the arguments
     args = parser.parse_args()
@@ -767,6 +791,8 @@ if __name__=="__main__":
     ignore_list = args.ignore_list
 
     simplify = args.simplify
+
+    use_csv = args.use_csv
 
     logging.basicConfig(level=logging.DEBUG)
 
@@ -871,6 +897,9 @@ if __name__=="__main__":
 
     words_list = list(set(words_list))
 
+    if use_csv:
+        words_list = read_words_list("data/words_list.csv")
+
 
     chooser = OpenAiChooser(words_db, word_fetcher, words_list=words_list if not ignore_list else [])
     # Set the openaichooser.enable_openai based on the command line argument
@@ -899,7 +928,7 @@ if __name__=="__main__":
 
 
             if (not words_list is None) and len(words_list) > 0:
-                print("Remain words: ", len(words_list))
+                print("Remain words: ", len(words_set))
                 try: 
                     words_set.remove(item["word"])
                 except:

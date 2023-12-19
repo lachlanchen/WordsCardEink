@@ -127,6 +127,7 @@ def split_word(word):
     return syllables
 
 
+# Function to split words into syllables and get color for each syllable
 def split_word_with_color(word, colors):
         # Replace stress symbols with a preceding dot, except at the beginning
 
@@ -138,14 +139,16 @@ def split_word_with_color(word, colors):
 
 
 
-# Function to split words into syllables and get color for each syllable
 def extract_kanji(japanese_text):
     """
     Remove parentheses, hiragana, and katakana from Japanese text, leaving only kanji.
     """
     # Regex to match hiragana, katakana, and characters in parentheses
     regex = u"[\u3040-\u309F\u30A0-\u30FF]|[（(].*?[)）]"
-    return re.sub(regex, '', japanese_text)
+    kanji = re.sub(regex, '', japanese_text)
+    if kanji.startswith("、"):
+        kanji = kanji[1:]
+    return kanji
 
 def remove_second_parentheses(text):
     regex = re.compile(r'(（[^）]*）)(（[^）]*）)')
