@@ -36,6 +36,7 @@ from nltk.corpus import words
 from pprint import pprint
 import traceback
 import numpy as np
+import pandas as pd
 import opencc
 
 
@@ -114,17 +115,50 @@ def clean_japanese(text):
     return text.replace(".", "").replace("·", "").replace("(", "（").replace(")", "）").replace(" ", "")
 
 
-def split_word(word):
-    word = clean_english(word)
+# def split_word(word):
+#     # print("word before clean: ", word)
+#     word = clean_english(word)
+#     # print("word after clean: ", word)
 
-    if word.startswith('ˈ') or word.startswith('ˌ'):
-        word = word[0] + word[1:].replace('ˈ', '·ˈ').replace('ˌ', '·ˌ')
-    else:
-        word = word.replace('ˈ', '·ˈ').replace('ˌ', '·ˌ').replace("-", "·-").replace(" ", "· ")
+#     if word.startswith('ˈ') or word.startswith('ˌ'):
+#         word = word[0] + word[1:].replace('ˈ', '·ˈ').replace('ˌ', '·ˌ').replace(" ", " ·")
+#     else:
+#         word = word.replace('ˈ', '·ˈ').replace('ˌ', '·ˌ').replace("-", "·-").replace(" ", " ·")
 
-    syllables = word.split('·')
+#     # print("word after add dot: ", word)
 
-    return syllables
+#     syllables = word.split('·')
+
+#     # print(word)
+
+#     # if word.startswith("Hippocratic"):
+#     #     print("syllables: ")
+
+#     #     pprint(syllables)
+
+#     return syllables
+
+def split_word(text):
+    # Split the text into words by space
+    words = text.split(' ')
+    
+    all_syllables = []
+    for word in words:
+        # Clean each word
+        cleaned_word = clean_english(word)
+
+        # Apply the existing logic to each word
+        if cleaned_word.startswith('ˈ') or cleaned_word.startswith('ˌ'):
+            syllable_word = cleaned_word[0] + cleaned_word[1:].replace('ˈ', '·ˈ').replace('ˌ', '·ˌ').replace(" ", " ·")
+        else:
+            syllable_word = cleaned_word.replace('ˈ', '·ˈ').replace('ˌ', '·ˌ').replace("-", "·-").replace(" ", " ·")
+
+        # Split into syllables
+        syllables = syllable_word.split('·')
+        syllables[-1] = syllables[-1] + " "
+        all_syllables.extend(syllables)
+
+    return all_syllables
 
 
 # Function to split words into syllables and get color for each syllable
@@ -233,54 +267,7 @@ def remove_hiragana_and_parentheses(text):
 
     return re.sub(pattern, '', text)
 
-# def transcribe_japanese(text):
-#     from pykakasi import kakasi
 
-#     text = remove_hiragana_including_parentheses(text)
-
-#     kks = kakasi()
-#     kks.setMode("J", "H")  # Japanese to Hiragana
-#     kks.setMode("K", "H")  # Katakana to Hiragana
-#     conv = kks.getConverter()
-
-#     result = ""
-#     current_chunk = ""
-#     last_kanji_hiragana = ""
-#     is_kanji_or_katakana = False
-
-#     for char in text:
-#         if '\u4E00' <= char <= '\u9FFF':  # Kanji
-#             hiragana = conv.do(char)
-#             last_kanji_hiragana = hiragana  # Store the hiragana of the current kanji
-#             if not is_kanji_or_katakana:
-#                 is_kanji_or_katakana = True
-#                 current_chunk = ""
-#             current_chunk += hiragana
-#             result += char
-#         elif char == '々':  # Ideographic Iteration Mark
-#             if not is_kanji_or_katakana:
-#                 is_kanji_or_katakana = True
-#                 current_chunk = ""
-#             current_chunk += last_kanji_hiragana
-#             result += char
-#         elif '\u30A0' <= char <= '\u30FF':  # Katakana
-#             hiragana = conv.do(char)
-#             if not is_kanji_or_katakana:
-#                 is_kanji_or_katakana = True
-#                 current_chunk = ""
-#             current_chunk += hiragana
-#             result += char
-#         else:  # Hiragana or others
-#             if is_kanji_or_katakana:
-#                 result += f"({current_chunk}){char}"
-#                 is_kanji_or_katakana = False
-#             else:
-#                 result += char
-
-#     if is_kanji_or_katakana:  # Remaining kanji or katakana chunk at the end
-#         result += f"({current_chunk})"
-
-#     return result
 
 def transcribe_japanese(text):
     from pykakasi import kakasi
@@ -479,48 +466,172 @@ def clean_word_details(word_details):
     return word_details
 
 class WordsDatabase:
-    def __init__(self, db_path):
+    # def __init__(self, db_path):
+    #     self.db_path = db_path
+    #     self.conn = None
+    #     if os.path.exists(db_path):
+    #         self.conn = sqlite3.connect(db_path)
+    #         self.cursor = self.conn.cursor()
+
+    #         self.create_field_if_not_exists("words_phonetics", "kanji_synonym", "TEXT")
+    #         self.create_field_if_not_exists("words_phonetics", "chinese_synonym", "TEXT")
+    #         self.create_field_if_not_exists("words_phonetics", "simplified_chinese_synonym", "TEXT")
+    #         self.create_field_if_not_exists("words_phonetics", "arabic_synonym", "TEXT")
+    #         self.create_field_if_not_exists("words_phonetics", "french_synonym", "TEXT")
+
+    def __init__(self, db_path, table_name='words_phonetics', fields=None):
         self.db_path = db_path
+        self.table_name = table_name
+        self.fields = fields
         self.conn = None
+
         if os.path.exists(db_path):
             self.conn = sqlite3.connect(db_path)
             self.cursor = self.conn.cursor()
 
-            self.create_field_if_not_exists("words_phonetics", "kanji_synonym", "TEXT")
-            self.create_field_if_not_exists("words_phonetics", "chinese_synonym", "TEXT")
-            self.create_field_if_not_exists("words_phonetics", "simplified_chinese_synonym", "TEXT")
-            self.create_field_if_not_exists("words_phonetics", "arabic_synonym", "TEXT")
-            self.create_field_if_not_exists("words_phonetics", "french_synonym", "TEXT")
+            self.create_table_if_not_exists()
+            if fields:
+                self.create_fields_if_not_exists()
 
-    def log_history_update(self, old_new_word_details_pairs, history_csv_path='data/words_update_history.csv'):
-        with open(history_csv_path, 'a', newline='', encoding='utf-8') as history_file:
-            history_writer = csv.writer(history_file)
-            for old_details, new_details in old_new_word_details_pairs:
-                for key in old_details.keys():
-                    old_value = old_details[key]
-                    new_value = new_details[key]
-                    if old_value != new_value:
-                        history_writer.writerow([key, old_value, "→", new_value])
+    def sync_database_to_csv(self, csv_file_path=None):
+        """Export the database table to a CSV file."""
+        if not csv_file_path:
+            base_name = os.path.splitext(os.path.basename(self.db_path))[0]
+            csv_file_path = f"data/{base_name}/{self.table_name}.csv"
+            os.makedirs(os.path.dirname(csv_file_path), exist_ok=True)
 
-    # def word_exists(self, word):
-    #     if self.conn:
-    #         self.cursor.execute("SELECT COUNT(*) FROM words_phonetics WHERE word = ?", (word.strip(),))
-    #         return self.cursor.fetchone()[0] > 0
-    #     return False
-
-    def word_exists(self, word):
         if self.conn:
-            # print("Checking existence: ", word)
+            try:
+                query = f"SELECT * FROM {self.table_name}"
+                df = pd.read_sql_query(query, self.conn)
+                df.to_csv(csv_file_path, index=False)
+                print(f"Database exported to {csv_file_path}")
+            except Exception as e:
+                print(f"Error during database export: {e}")
 
-            # Prepare the word in lowercase
-            word_lower = word.strip().lower()
-            
-            # Update the SQL query to check for both exact and lowercase match
-            # self.cursor.execute("SELECT COUNT(*) FROM words_phonetics WHERE word = ? OR LOWER(word) = ?", (word.strip(), word_lower))
-            self.cursor.execute("SELECT COUNT(*) FROM words_phonetics WHERE word = ? OR word = ?", (word.strip(), word_lower))
-            
-            return self.cursor.fetchone()[0] > 0
-        return False
+
+    def update_database_from_csv(self, csv_file_path=None):
+        """Update the database using data from a CSV file."""
+        if not csv_file_path:
+            base_name = os.path.splitext(os.path.basename(self.db_path))[0]
+            csv_file_path = f"data/{base_name}/{self.table_name}.csv"
+        if self.conn:
+            try:
+                # Load CSV data into a DataFrame
+                df = pd.read_csv(csv_file_path)
+
+                # Add columns from CSV to database if they don't exist
+                for column in df.columns:
+                    self.cursor.execute(f"PRAGMA table_info({self.table_name});")
+                    existing_columns = [row[1] for row in self.cursor.fetchall()]
+                    if column not in existing_columns:
+                        self.create_field_if_not_exists(self.table_name, column, "TEXT")
+
+                # Insert or update rows from the CSV
+                for _, row in df.iterrows():
+                    columns = ', '.join(row.index)
+                    placeholders = ', '.join(['?'] * len(row))
+                    update_clause = ', '.join([f"{col}=excluded.{col}" for col in row.index])
+
+                    query = f"""
+                        INSERT INTO {self.table_name} ({columns})
+                        VALUES ({placeholders})
+                        ON CONFLICT(id) DO UPDATE SET
+                        {update_clause};
+                    """
+                    self.cursor.execute(query, tuple(row))
+                    self.conn.commit()
+            except Exception as e:
+                print(f"Error during database update: {e}")
+
+    def sync_from_csv_to_database(self, csv_file_path=None, confirm=False):
+        """Sync the database with the structure and content of a CSV file."""
+        if not csv_file_path:
+            base_name = os.path.splitext(os.path.basename(self.db_path))[0]
+            csv_file_path = f"data/{base_name}/{self.table_name}.csv"
+
+        if not confirm:
+            print("Sync operation requires confirmation. Set confirm=True to proceed.")
+            return
+
+        if self.conn:
+            try:
+                # Load CSV data
+                df_csv = pd.read_csv(csv_file_path)
+                csv_columns = set(df_csv.columns)
+
+                # Get database columns
+                self.cursor.execute(f"PRAGMA table_info({self.table_name});")
+                db_columns = {row[1] for row in self.cursor.fetchall()}
+
+                # Add new columns from CSV to database
+                for column in csv_columns - db_columns:
+                    self.create_field_if_not_exists(self.table_name, column, "TEXT")
+
+                # Delete columns from database not in CSV
+                for column in db_columns - csv_columns:
+                    self.delete_column_if_exists(self.table_name, column)
+
+                # Update or insert rows
+                for _, row in df_csv.iterrows():
+                    columns = ', '.join(row.index)
+                    placeholders = ', '.join(['?'] * len(row))
+                    update_clause = ', '.join([f"{col}=excluded.{col}" for col in row.index])
+
+                    query = f"""
+                        INSERT INTO {self.table_name} ({columns})
+                        VALUES ({placeholders})
+                        ON CONFLICT(id) DO UPDATE SET
+                        {update_clause};
+                    """
+                    self.cursor.execute(query, tuple(row))
+
+                # Delete rows not in CSV
+                df_db = pd.read_sql_query(f"SELECT * FROM {self.table_name}", self.conn)
+                db_ids = set(df_db['id'])
+                csv_ids = set(df_csv['id'])
+                ids_to_delete = db_ids - csv_ids
+                for id in ids_to_delete:
+                    self.cursor.execute(f"DELETE FROM {self.table_name} WHERE id = ?", (id,))
+
+                self.conn.commit()
+                print("Database successfully synced with CSV.")
+
+            except Exception as e:
+                print(f"Error during syncing database with CSV: {e}")
+
+
+
+
+    def create_table_if_not_exists(self):
+        if self.conn:
+            try:
+                self.cursor.execute(f"PRAGMA table_info({self.table_name});")
+                if not self.cursor.fetchall():
+                    # If fields are provided, use them; otherwise, create default columns
+                    if self.fields:
+                        columns = ', '.join([f"{name} {type}" for name, type in self.fields])
+                    else:
+                        columns = "id INTEGER PRIMARY KEY, create_date TEXT, update_date TEXT"
+                    
+                    self.cursor.execute(f"CREATE TABLE {self.table_name} ({columns});")
+                    self.conn.commit()
+            except sqlite3.Error as e:
+                print(f"SQLite Error: {e}")
+                traceback.print_exc()
+
+    
+
+
+
+    def create_fields_if_not_exists(self):
+        if self.conn:
+            try:
+                for field_name, field_type in self.fields:
+                    self.create_field_if_not_exists(self.table_name, field_name, field_type)
+            except sqlite3.Error as e:
+                print(f"SQLite Error: {e}")
+                traceback.print_exc()
 
 
     def create_field_if_not_exists(self, table_name, field_name, field_type, default_value=None):
@@ -557,6 +668,8 @@ class WordsDatabase:
                 print(f"SQLite Error: {e}")
                 traceback.print_exc()
 
+
+
     def delete_column_if_exists(self, table_name, column_name):
         """
         Remove a field from a table if it exists.
@@ -592,6 +705,36 @@ class WordsDatabase:
             except sqlite3.Error as e:
                 print(f"SQLite Error: {e}")
                 traceback.print_exc()
+
+    def log_history_update(self, old_new_word_details_pairs, history_csv_path='data/words_update_history.csv'):
+        with open(history_csv_path, 'a', newline='', encoding='utf-8') as history_file:
+            history_writer = csv.writer(history_file)
+            for old_details, new_details in old_new_word_details_pairs:
+                for key in old_details.keys():
+                    old_value = old_details[key]
+                    new_value = new_details[key]
+                    if old_value != new_value:
+                        history_writer.writerow([key, old_value, "→", new_value])
+
+    # def word_exists(self, word):
+    #     if self.conn:
+    #         self.cursor.execute("SELECT COUNT(*) FROM words_phonetics WHERE word = ?", (word.strip(),))
+    #         return self.cursor.fetchone()[0] > 0
+    #     return False
+
+    def word_exists(self, word):
+        if self.conn:
+            # print("Checking existence: ", word)
+
+            # Prepare the word in lowercase
+            word_lower = word.strip().lower()
+            
+            # Update the SQL query to check for both exact and lowercase match
+            # self.cursor.execute("SELECT COUNT(*) FROM words_phonetics WHERE word = ? OR LOWER(word) = ?", (word.strip(), word_lower))
+            self.cursor.execute("SELECT COUNT(*) FROM words_phonetics WHERE word = ? OR word = ?", (word.strip(), word_lower))
+            
+            return self.cursor.fetchone()[0] > 0
+        return False
     
 
 
@@ -1077,15 +1220,19 @@ class AdvancedWordFetcher:
 
         try:
             parsed_json = json5.loads(json_string) + not_enough_words_list
+            parsed_json_len = len(parsed_json)
+            parsed_json = list(set(parsed_json))
+
             if len(parsed_json) == 0:
                 raise JSONParsingError("Parsed JSON string is empty", json_string)
 
+            
             unique_words = [word for word in parsed_json if not word_database.word_exists(word)]
             if len(unique_words) < num_words // 2:
                 duplicated_words = set(parsed_json) - set(unique_words)
 
                 fetched_num = len(unique_words)
-                raise NotEnoughUniqueWordsError(len(parsed_json), fetched_num, unique_words, list(duplicated_words), json_string)
+                raise NotEnoughUniqueWordsError(parsed_json_len, fetched_num, unique_words, list(duplicated_words), json_string)
 
             return unique_words
         # except json.JSONDecodeError as e:
@@ -1185,7 +1332,7 @@ class AdvancedWordFetcher:
 
         not_enough_words_list = []
 
-        for try_num in range(self.max_retries):
+        for try_num in range(self.max_retries+2):
             try:
                 
 
@@ -1196,10 +1343,13 @@ class AdvancedWordFetcher:
 
                 words_list = self.extract_and_parse_words(response.choices[0].message.content, num_words, word_database, not_enough_words_list=not_enough_words_list)
 
-                words_list.extend(not_enough_words_list)
+                # words_list.extend(not_enough_words_list)
+
+                # words_list = list(set(words_list))
 
                 # print("words_list: ", words_list)
-                unique_words = [word for word in words_list if not word_database.word_exists(word)]
+                # unique_words = [word for word in words_list if not word_database.word_exists(word)]
+                unique_words = words_list
                 if unique_words:
                     break
 
@@ -1227,7 +1377,8 @@ class AdvancedWordFetcher:
 
 
                 # not_enough_words_list.extend(json5.loads(not_enough_error.json_string))
-                not_enough_words_list.extend(not_enough_error.unique_words)
+                # not_enough_words_list.extend(not_enough_error.unique_words)
+                not_enough_words_list = not_enough_error.unique_words
 
                 messages.append({"role": "system", "content": not_enough_error.json_string})
                 messages.append({"role": "user", "content": f"{not_enough_error.error_details} Please take a deep breath and use your imagination to think more widely. "})
@@ -2336,20 +2487,24 @@ class OpenAiChooser:
             self.current_words.append(word_details)
         self.words_iterator = iter(self.current_words)
 
-    def _is_daytime_in_hk(self):
+    def _is_daytime_in_hk(self, start=9, end=22):
         hk_timezone = pytz.timezone('Asia/Hong_Kong')
         hk_time = datetime.now(hk_timezone)
-        if self.enable_openai:
-            return 9 <= hk_time.hour < 22  # Daytime hours in Hong Kong
-        else:
-            return False
+        # if self.enable_openai:
+        #     return 9 <= hk_time.hour < 22  # Daytime hours in Hong Kong
+        # else:
+        #     return False
+
+        print("hk hour: ", hk_time.hour)
+
+        return start <= hk_time.hour < end  # Daytime hours in Hong Kong
         # return True
         # return False
 
     def fetch_new_words(self):
         # If original_words_list is None, fetch new words dynamically
         if not self.original_words_list:
-            if self._is_daytime_in_hk():
+            if self._is_daytime_in_hk() and self.enable_openai:
                 words = self.word_fetcher.fetch_words(10, self.db)
                 openai_words = self.word_fetcher.fetch_word_details(words, self.db, num_words_phonetic=10)
                 db_words = self.db.fetch_random_words(10)
@@ -2386,6 +2541,77 @@ class OpenAiChooser:
         return word
 
     def get_current_words(self):
+        return self.current_words
+
+# class EmojiWordChooser:
+#     def __init__(self, csv_file_path='data/words_emoji.csv'):
+#         self.csv_file_path = csv_file_path
+#         self.current_words = []
+#         self.words_iterator = iter([])
+#         self.load_words_from_csv()
+
+#     def load_words_from_csv(self):
+#         # Load the words from the CSV file
+#         try:
+#             df = pd.read_csv(self.csv_file_path)
+#             self.current_words = df.to_dict(orient='records')
+#             self.words_iterator = iter(self.current_words)
+#         except Exception as e:
+#             print(f"Error loading CSV file: {e}")
+
+#     def choose(self):
+#         """Returns the next word from the iterator, or fetches new words if the iterator is exhausted."""
+#         try:
+#             return next(self.words_iterator)
+#         except StopIteration:
+#             # # If all words have been iterated, restart from the beginning
+#             # self.words_iterator = iter(self.current_words)
+#             # return next(self.words_iterator)
+
+#             raise StopIteration
+
+#     def get_current_words(self):
+#         """Returns the current list of words."""
+#         return self.current_words
+
+class EmojiWordChooser:
+    def __init__(self, csv_file_path='data/words_emoji.csv'):
+        self.csv_file_path = csv_file_path
+        self.current_words = []
+        self.words_iterator = iter([])
+        self.load_words_from_csv()
+
+    def load_words_from_csv(self):
+        try:
+            # Load words from the CSV file
+            df = pd.read_csv(self.csv_file_path)
+            # Remove leading and trailing spaces from column names
+            df.columns = [col.strip() for col in df.columns]
+            # Convert DataFrame rows to dictionaries and clean values
+            self.current_words = [self.clean_row(row) for row in df.to_dict(orient='records')]
+            self.words_iterator = iter(self.current_words)
+        except Exception as e:
+            print(f"Error loading CSV file: {e}")
+
+    def clean_row(self, row):
+        """Strip spaces and quotes from each value in the row, depending on its type."""
+        cleaned_row = {}
+        for key, value in row.items():
+            if isinstance(value, str):
+                cleaned_row[key] = value.strip().strip('"')
+            else:
+                cleaned_row[key] = value
+        return cleaned_row
+
+    def choose(self):
+        """Returns the next word from the iterator, or raises StopIteration if exhausted."""
+        try:
+            return next(self.words_iterator)
+        except StopIteration:
+            raise StopIteration
+
+    def get_current_words(self):
+        """Returns the current list of words."""
         return self.current_words
 
 if __name__ == "__main__":

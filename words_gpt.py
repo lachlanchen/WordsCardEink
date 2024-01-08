@@ -52,7 +52,7 @@ logging.basicConfig(level=logging.DEBUG)
 import json
 import json5
 from openai import OpenAI
-from words_data import WordsDatabase, AdvancedWordFetcher, OpenAiChooser
+from words_data import WordsDatabase, AdvancedWordFetcher, OpenAiChooser, EmojiWordChooser
 from words_data import split_word, split_word_with_color, count_syllables
 
 import sqlite3
@@ -228,7 +228,7 @@ class EPaperDisplay:
         print("content_type: ", content_type)
         # Format the current date and time to use in the folder name
         # timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        timestamp = datetime.now().strftime("%Y%m%d")
+        timestamp = datetime.now().strftime("%Y%m%d_%H")
         # self.image_folder = os.path.join(image_folder, timestamp)
         # self.image_folder = f"{image_folder}-{timestamp}"
         # self.image_folder = image_folder
@@ -255,6 +255,7 @@ class EPaperDisplay:
 
         # Determine the base path depending on whether emoji_path is provided
         base_path = emoji_path if emoji_path else images_root
+        self.make_emoji = True if emoji_path else False
 
         # Choose the subdirectory based on whether simplified_chinese is True
         subdirectory = "simplified" if simplified_chinese else ""
@@ -269,7 +270,7 @@ class EPaperDisplay:
 
 
 
-
+        self.word_id = None
         self.word = None
         self.image = None
         self.intermediate_images = []
@@ -287,9 +288,15 @@ class EPaperDisplay:
             os.makedirs(word_path)
         for i, img in enumerate(self.intermediate_images):
             img = img.resize((self.width * self.scale_factor, self.height * self.scale_factor), Resampling.LANCZOS)
-            img.save(os.path.join(word_path, f"{i+1:02d}.jpg"))
+            
+            if self.make_emoji:
+                img.save(os.path.join(word_path, f"{i+1:02d}.jpg"))
+
             if i == len(self.intermediate_images) - 1:
-                img.save(os.path.join(self.image_folder, f"{word}-{self.content_type}.jpg"))
+                if self.word_id:
+                    img.save(os.path.join(self.image_folder, f"{self.word_id:02d}-{word}-{self.content_type}.jpg"))
+                else:
+                    img.save(os.path.join(self.image_folder, f"{word}-{self.content_type}.jpg"))
 
 
     def clear_intermediate_images(self):
@@ -309,6 +316,7 @@ class EPaperDisplay:
         self.default_font_path = os.path.join(self.font_root, 'Font.ttc')
 
     def create_content_layout(self, item):
+        self.word_id = item.get("id", None)
         self.word = item["word"]
 
         if self.background_texture == "white":
@@ -364,6 +372,15 @@ class EPaperDisplay:
             # print("Drawing japanese and arabic...")
             self.draw_japanese(draw, item['japanese_synonym'], 1.7 * row_height, 1.8 * row_height, start_size=120)
             self.draw_arabic_synonym(draw, item['arabic_synonym'], 2.9 * row_height, 1 * row_height)
+        elif self.content_type == "film":
+            if "，" in item["synonym"]:
+                synonym1, synonym2 = item["synonym"].split("，")[:2]
+                self.draw_chinese_synonym(draw, synonym1, 2 * row_height, 1 * row_height)
+                self.draw_chinese_synonym(draw, synonym2, 3 * row_height, 1 * row_height)
+            else:
+                self.draw_chinese_synonym(draw, item['synonym'], 2 * row_height, 2 * row_height)
+
+
         self.save_intermediate_image()
 
 
@@ -588,106 +605,7 @@ class EPaperDisplay:
         remaining_text = text[last_match_end:]
         draw.text((pos_x, y), re.sub(r'（[ぁ-ゔァ-ヴガ-ドㇰ-ㇿヵヶ々ー\-]+）', '', remaining_text), font=font, fill=(0, 0, 0))
 
-    # def draw_arabic_synonym(self, draw, arabic_text, start_y, row_height):
-    #     """
-    #     Draws Arabic text with different colors from the palette.
-    #     """
-
-    #     if not arabic_text:  # Skip if no kanji characters are present
-    #         return
-    #     # Define the font path for Arabic text
-    #     arabic_font_path = self.arabic_font_path  # Replace with your Arabic font file
-
-    #     # Determine the font size
-    #     font_size = self.find_font_size(arabic_text, arabic_font_path, self.width, row_height)
-    #     font = ImageFont.truetype(arabic_font_path, font_size)
-
-    #     # Initialize color cycle
-    #     color_cycle = itertools.cycle(self.pallete)
-
-    #     # Split the text into characters
-    #     characters = list(arabic_text)
-    #     total_width = sum(self.get_text_size(char, font)[0] for char in characters)
-
-    #     # Calculate starting x position
-    #     x = (self.width - total_width) / 2
-    #     y = start_y + (row_height - self.get_text_size(arabic_text, font)[1]) / 2
-
-    #     # Draw each character with a color from the palette
-    #     for char in characters:
-    #         draw.text((x, y), char, font=font, fill=next(color_cycle))
-    #         self.save_intermediate_image()
-    #         x += self.get_text_size(char, font)[0]
-
-    # def draw_arabic_synonym(self, draw, arabic_text, start_y, row_height):
-    #     """
-    #     Draws Arabic text with different colors from the palette, accounting for right-to-left writing.
-    #     """
-
-    #     if not arabic_text:  # Skip if no Arabic characters are present
-    #         return
-
-    #     # Define the font path for Arabic text
-    #     arabic_font_path = self.arabic_font_path  # Replace with your Arabic font file
-
-    #     # Determine the font size
-    #     font_size = self.find_font_size(arabic_text, arabic_font_path, self.width, row_height)
-    #     font = ImageFont.truetype(arabic_font_path, font_size)
-
-    #     # Initialize color cycle
-    #     color_cycle = itertools.cycle(self.pallete)
-
-    #     # Split the text into characters
-    #     characters = list(arabic_text)
-    #     total_width = sum(self.get_text_size(char, font)[0] for char in characters)
-
-    #     # Calculate starting x position (starting from right)
-    #     x = (self.width + total_width) / 2
-
-    #     # Draw each character with a color from the palette, moving right to left
-    #     for char in reversed(characters):
-    #         char_width, char_height = self.get_text_size(char, font)
-    #         x -= char_width
-    #         y = start_y + (row_height - char_height) / 2
-    #         draw.text((x, y), char, font=font, fill=next(color_cycle))
-    #         self.save_intermediate_image()
-
-    # def draw_arabic_synonym(self, draw, arabic_text, start_y, row_height):
-    #     """
-    #     Draws Arabic text with different colors from the palette, respecting the correct form of each character.
-    #     """
-
-    #     if not arabic_text:  # Skip if no Arabic characters are present
-    #         return
-
-    #     # Reshape and apply RTL to the Arabic text
-    #     reshaped_text = arabic_reshaper.reshape(arabic_text)
-    #     bidi_text = get_display(reshaped_text)
-
-    #     # Define the font path for Arabic text
-    #     arabic_font_path = self.arabic_font_path  # Replace with your Arabic font file
-
-    #     # Determine the font size
-    #     font_size = self.find_font_size(bidi_text, arabic_font_path, self.width, row_height)
-    #     font = ImageFont.truetype(arabic_font_path, font_size)
-
-    #     # Initialize color cycle
-    #     color_cycle = itertools.cycle(self.pallete)
-
-    #     # Split the reshaped and reordered text into characters
-    #     characters = list(bidi_text)
-    #     total_width = sum(self.get_text_size(char, font)[0] for char in characters)
-
-    #     # Calculate starting x position (starting from right)
-    #     x = (self.width + total_width) / 2
-
-    #     # Draw each character with a color from the palette, moving right to left
-    #     for char in reversed(characters):
-    #         char_width, char_height = self.get_text_size(char, font)
-    #         x -= char_width
-    #         y = start_y + (row_height - char_height) / 2
-    #         draw.text((x, y), char, font=font, fill=next(color_cycle))
-    #         self.save_intermediate_image()
+    
 
     def draw_arabic_synonym(self, draw, arabic_text, start_y, row_height):
         """
@@ -776,7 +694,9 @@ if __name__=="__main__":
     parser.add_argument('--make_emoji', action='store_true', default=False, help='Enable emoji making feature')
     parser.add_argument('--ignore_list', action='store_true', default=False, help='Ignore the words list')
     parser.add_argument('--simplify', action='store_true', default=False, help='Simplify kanji and traditional Chinese')
-    parser.add_argument('--use_csv', action='store_true', default=False, help='Simplify kanji and traditional Chinese')
+    parser.add_argument('--use_csv', action='store_true', default=False, help='Use words from csv')
+    parser.add_argument('--complete_csv', action='store_true', default=False, help='Use word details from csv')
+    parser.add_argument('--filename', help='Filename of word details csv')
 
     # Parse the arguments
     args = parser.parse_args()
@@ -794,6 +714,9 @@ if __name__=="__main__":
 
     use_csv = args.use_csv
 
+    complete_csv = args.complete_csv
+
+    filename = args.filename
     logging.basicConfig(level=logging.DEBUG)
 
     
@@ -803,139 +726,107 @@ if __name__=="__main__":
     # epd_display = EPaperDisplay(epd_hardware, font_root, content_type="japanese_synonym", image_folder="images-japanese-synonym")
     epd_display = EPaperDisplay(epd_hardware, font_root, content_type="japanese_and_arabic", image_folder="images-japanese-synonym")
     epd_display.pallete = [(0, 0, 0), (255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 165, 0), (255, 0, 165), (0, 255, 165)]
-    if make_emoji:
-        epd_display_virtual_kanji = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="kanji", image_folder="virtual-images-grey-kanji", emoji_path="emoji")
-        epd_display_virtual_kanji_synonym = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="kanji_synonym", image_folder="virtual-images-grey-kanji-synonym", emoji_path="emoji")
-        epd_display_virtual_japanese = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="japanese_synonym", image_folder="virtual-images-grey-japanese-synonym", emoji_path="emoji")
-        epd_display_virtual_arabic = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="arabic_synonym", image_folder="virtual-images-grey-arabic-synonym", emoji_path="emoji")
-        epd_display_virtual_japanese_and_arabic = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="japanese_and_arabic", image_folder="virtual-images-grey-japanese-and-arabic", emoji_path="emoji")
-        epd_display_virtual_chinese = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="chinese_synonym", image_folder="virtual-images-grey-chinese", emoji_path="emoji")
-        epd_display_virtual_simplified_chinese = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="simplified_chinese_synonym", image_folder="virtual-images-grey-simplified-chinese", emoji_path="emoji")
+    if complete_csv:
+        epd_display_virtual_complete_csv = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="film", image_folder="virtual-images-grey-film", emoji_path="emoji")
     else:
-        epd_display_virtual_kanji = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="kanji", image_folder="virtual-images-grey-kanji")
-        epd_display_virtual_kanji_synonym = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="kanji_synonym", image_folder="virtual-images-grey-kanji-synonym")
-        epd_display_virtual_japanese = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="japanese_synonym", image_folder="virtual-images-grey-japanese-synonym")
-        epd_display_virtual_arabic = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="arabic_synonym", image_folder="virtual-images-grey-arabic-synonym")
-        epd_display_virtual_japanese_and_arabic = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="japanese_and_arabic", image_folder="virtual-images-grey-japanese-and-arabic")
-        epd_display_virtual_chinese = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="chinese_synonym", image_folder="virtual-images-grey-chinese")
-        epd_display_virtual_simplified_chinese = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="simplified_chinese_synonym", image_folder="virtual-images-grey-simplified-chinese")
+        if make_emoji:
+            epd_display_virtual_kanji = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="kanji", image_folder="virtual-images-grey-kanji", emoji_path="emoji")
+            epd_display_virtual_kanji_synonym = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="kanji_synonym", image_folder="virtual-images-grey-kanji-synonym", emoji_path="emoji")
+            epd_display_virtual_japanese = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="japanese_synonym", image_folder="virtual-images-grey-japanese-synonym", emoji_path="emoji")
+            epd_display_virtual_arabic = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="arabic_synonym", image_folder="virtual-images-grey-arabic-synonym", emoji_path="emoji")
+            epd_display_virtual_japanese_and_arabic = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="japanese_and_arabic", image_folder="virtual-images-grey-japanese-and-arabic", emoji_path="emoji")
+            epd_display_virtual_chinese = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="chinese_synonym", image_folder="virtual-images-grey-chinese", emoji_path="emoji")
+            epd_display_virtual_simplified_chinese = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="simplified_chinese_synonym", image_folder="virtual-images-grey-simplified-chinese", emoji_path="emoji")
+        else:
+            epd_display_virtual_kanji = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="kanji", image_folder="virtual-images-grey-kanji")
+            epd_display_virtual_kanji_synonym = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="kanji_synonym", image_folder="virtual-images-grey-kanji-synonym")
+            epd_display_virtual_japanese = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="japanese_synonym", image_folder="virtual-images-grey-japanese-synonym")
+            epd_display_virtual_arabic = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="arabic_synonym", image_folder="virtual-images-grey-arabic-synonym")
+            epd_display_virtual_japanese_and_arabic = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="japanese_and_arabic", image_folder="virtual-images-grey-japanese-and-arabic")
+            epd_display_virtual_chinese = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="chinese_synonym", image_folder="virtual-images-grey-chinese")
+            epd_display_virtual_simplified_chinese = EPaperDisplay(epd_hardware, font_root, background_texture="grey", content_type="simplified_chinese_synonym", image_folder="virtual-images-grey-simplified-chinese")
 
-    if simplify:
-        # Set the 'simplified_chinese' class variable to True for all EPaperDisplay instances
-        epd_display_virtual_kanji.simplified_chinese = True
-        epd_display_virtual_kanji_synonym.simplified_chinese = True
-        epd_display_virtual_japanese.simplified_chinese = True
-        epd_display_virtual_arabic.simplified_chinese = True
-        epd_display_virtual_japanese_and_arabic.simplified_chinese = True
-        epd_display_virtual_chinese.simplified_chinese = True
+        if simplify:
+            # Set the 'simplified_chinese' class variable to True for all EPaperDisplay instances
+            epd_display_virtual_kanji.simplified_chinese = True
+            epd_display_virtual_kanji_synonym.simplified_chinese = True
+            epd_display_virtual_japanese.simplified_chinese = True
+            epd_display_virtual_arabic.simplified_chinese = True
+            epd_display_virtual_japanese_and_arabic.simplified_chinese = True
+            epd_display_virtual_chinese.simplified_chinese = True
 
 
-    words_list = [
-        # "impeccable"
-        # "gratitude",
-        # "appreciation"
-        # "amalgamate"
-    ]
 
-    words_list = [
-        # "incontrovertible", "benevolent", 
-        # "peregrinate", "obstreperous", "hiraeth", "idyllic", "chimerical", 
-        # "cacophony", 
-        # "serendipity", "sacrosanct", 
-        # "reticent", "do", "accolade", "jingoism", 
-        # "facilitate", 
-        # "infallible", "rescind", 
-        # "trepidation", 
-        # "raconteur", 
-        # "xenophobia", 
-        # "indubitable", 
-        # "propensity", 
-        # "gregarious", 
-        # "magnate",
-        # "perambulation", 
-        # "wanderlust",
-        # "apoplectic",
-        # "xenial",
-        # "metamorphosis",
-        # "misanthrope",
-        # "fairydom",
-        # "subgyrus",
-        # "rescind",
-        # "raconteur",
-        # "malaise",
-        # "insouciance",
-        # "inarticulately",
-        # "opulence",
-        # "mundane",
-        # "prosaic",
-        # "gratitude",
-        # "appreciation",
-        # "dry"，
-        # "stem",
-        # "run",
-        "hippopotomonstrosesquipedaliophobia",
-        "supercalifragilisticexpialidocious"
-    ] + [
-        "galvanize", "marginalize", "nuance", "venerate", "bolster", "do", "what", "get", "how", "optimization",
-        "jovial", "espouse", "logorrhea", "sacrosanct", "abnegation", "debacle", "hedonism", "ludicrous", "narcissism",
-        "quandary", "decadent", "glib", "pulchritude", "ennui", "nefarious", "erudite", "furtive", "sesquipedalian",
-        "defenestration", "reticent", "indomitable", "perfidious", "indubitable", "exquisite", "indefatigable", 
-        "impecunious", "platitude", "ersatz", "jejune", "serendipitous", "schadenfreude", "syzygy", "hiraeth", 
-        "lugubrious", "sobremesa", "superfluous", "circumlocution", "pontificate", "verbose", "reprehensible", 
-        "interlocutor", "reprobate", "intransigent", "malevolent", "demagogue", "warranted", "diatribe", "deference", 
-        "scurrilous", "auspicious", "impugn", "risible", "yaffle", "agelast", "rebarbative", "euphoria", "serene"
-    ] + ['opulence', 'guile', 'martinet', 'kakorrhaphiophobia', 'fustigate', 'ambiguous', 'complacency', 'lucubrate',
-        'glabrous', 'egress', 'nocispeptive', 'hedonistic', 'lassitude', 'felicitous', 'envision', 'cupidity',
-        'quintessence', 'zelotypia', 'philalethist', 'quotidian', 'penury', 'consternation', 'arithmomania',
-        'captivatrix', 'genius', 'sangfroid', 'cynosure', 'intrapsychic', 'philoprogenitive', 'quinquagenarian',
-        'lampoon', 'kith', 'macushla', 'winsome', 'blissful', 'unsanctimonious', 'frivolous', 'insouciance',
-        'vernalagnia', 'sagacious', 'mendacity', 'klendusic', 'nudiustertian', 'jejunely', 'wasabi', 'deference',
-        'fecund', 'wraithlike', 'psychoanalysis', 'scurrilous', 'facet', 'encomium', 'verisimilitude', 'obesession',
-        'autodidact', 'ejaculate', 'kowtow', 'passivist', 'esoteric', 'happiness', 'solace', 'calumny', 'lugubrious',
-        'kairos', 'gastronomy', 'serene', 'debacle', 'disingenuous', 'responsibility', 'omnigerent', 'synesthesia', 'desolate', 'stentorian'
-    ]
+
+    words_list = []
 
     words_list = list(set(words_list))
 
     if use_csv:
         words_list = read_words_list("data/words_list.csv")
 
-
-    chooser = OpenAiChooser(words_db, word_fetcher, words_list=words_list if not ignore_list else [])
-    # Set the openaichooser.enable_openai based on the command line argument
-    chooser.enable_openai = enable_openai
-
+    words_list = words_list if not ignore_list else []
     words_set = set(words_list)
 
-    print("Total words: ", len(words_set))
+    if complete_csv:
+        # chooser = EmojiWordChooser(csv_file_path="data/wuxia_style.csv")
+        # chooser = EmojiWordChooser(csv_file_path="data/medicine.csv")
+        # chooser = EmojiWordChooser(csv_file_path="data/workout.csv")
+        # chooser = EmojiWordChooser(csv_file_path="data/wittol.csv")
+        # chooser = EmojiWordChooser(csv_file_path="data/perfunctory.csv")
+        # chooser = EmojiWordChooser(csv_file_path="data/zhenhuan.csv")
+        # chooser = EmojiWordChooser(csv_file_path="data/wulin.csv")
+        # chooser = EmojiWordChooser(csv_file_path="data/cold.csv")
+        chooser = EmojiWordChooser(csv_file_path=f"data/{filename}.csv")
+    else:
+        chooser = OpenAiChooser(words_db, word_fetcher, words_list=words_list)
+        # Set the openaichooser.enable_openai based on the command line argument
+        chooser.enable_openai = enable_openai
+
+    
+
+    # print("Total words: ", len(words_set))
     try:
         while True:
-            item = chooser.choose()
-            # item = chooser.choose()
-            print("word: ", item)
-            content_image = epd_display.create_content_layout(item)
-            epd_display_virtual_kanji.create_content_layout(item)
-            epd_display_virtual_kanji_synonym.create_content_layout(item)
-            epd_display_virtual_japanese.create_content_layout(item)
-            epd_display_virtual_arabic.create_content_layout(item)
-            epd_display_virtual_japanese_and_arabic.create_content_layout(item)
-            epd_display_virtual_chinese.create_content_layout(item)
-            epd_display_virtual_simplified_chinese.create_content_layout(item)
 
-            if not make_emoji:
-                epd_hardware.display_image(content_image)
+            if not chooser._is_daytime_in_hk(start=6, end=24):
+                print("Not daytime. ")
                 time.sleep(300)  # Display each word for 5 minutes
+                continue    
 
 
-            if (not words_list is None) and len(words_list) > 0:
-                print("Remain words: ", len(words_set))
-                try: 
-                    words_set.remove(item["word"])
-                except:
-                    continue
+            item = chooser.choose()
+            print("word: ", item)
 
-                if len(words_set) == 0:
-                    break
+
+            if complete_csv:
+                epd_display_virtual_complete_csv.create_content_layout(item)
+
+            else:
+                content_image = epd_display.create_content_layout(item)
+                epd_display_virtual_kanji.create_content_layout(item)
+                epd_display_virtual_kanji_synonym.create_content_layout(item)
+                epd_display_virtual_japanese.create_content_layout(item)
+                epd_display_virtual_arabic.create_content_layout(item)
+                epd_display_virtual_japanese_and_arabic.create_content_layout(item)
+                epd_display_virtual_chinese.create_content_layout(item)
+                epd_display_virtual_simplified_chinese.create_content_layout(item)
+
+                if not make_emoji:
+                    epd_hardware.display_image(content_image)
+                    time.sleep(300)  # Display each word for 5 minutes
+                    
+
+
+                if (not words_list is None) and len(words_list) > 0:
+                    print("Remain words: ", len(words_set))
+                    try: 
+                        words_set.remove(item["word"])
+                    except:
+                        continue
+
+                    if len(words_set) == 0:
+                        break
 
     except Exception as e:
         print("Exception: ", str(e))
