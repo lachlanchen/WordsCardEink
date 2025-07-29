@@ -1,0 +1,4 @@
+{
+    "prompt": "Provide the correct and standard phonetics of the word, and the syllable of this word with its phonetics in pair. Make sure the join of syllables will be exact the original word and phonetics. Treat space as a syllable. The word: ['omnipresent'] Output only json format: [{\"word\": \"\",\"phonetics\": \"\",\"syllables\": [{\"word_syllable\": \"\", \"phonetic_syllable\":\" \"},]},]",
+    "response": "```json\n[{\"word\": \"omnipresent\",\"phonetics\": \"ˌɒm.nɪˈprez.ənt\",\"syllables\": [{\"word_syllable\": \"om\", \"phonetic_syllable\":\"ˌɒm\"},{\"word_syllable\": \"ni\", \"phonetic_syllable\":\"nɪ\"},{\"word_syllable\": \"pre\", \"phonetic_syllable\":\"ˈprez\"},{\"word_syllable\": \"sent\", \"phonetic_syllable\":\"ənt\"}]}]\n```"
+}

@@ -1,0 +1,4 @@
+{
+    "prompt": "Provide the correct and standard phonetics of the word, and the syllable of this word with its phonetics in pair. Make sure the join of syllables will be exact the original word and phonetics. Treat space as a syllable. The word: ['abnegated'] Output only json format: [{\"word\": \"\",\"phonetics\": \"\",\"syllables\": [{\"word_syllable\": \"\", \"phonetic_syllable\":\" \"},]},]",
+    "response": "```json\n[{\n    \"word\": \"abnegated\",\n    \"phonetics\": \"/ˈæb.nɪ.ɡeɪ.tɪd/\",\n    \"syllables\": [\n        {\n            \"word_syllable\": \"ab\",\n            \"phonetic_syllable\": \"ˈæb\"\n        },\n        {\n            \"word_syllable\": \"ne\",\n            \"phonetic_syllable\": \"nɪ\"\n        },\n        {\n            \"word_syllable\": \"gat\",\n            \"phonetic_syllable\": \"ɡeɪt\"\n        },\n        {\n            \"word_syllable\": \"ed\",\n            \"phonetic_syllable\": \"ɪd\"\n        }\n    ]\n}]\n```"
+}

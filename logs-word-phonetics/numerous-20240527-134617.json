@@ -1,0 +1,4 @@
+{
+    "prompt": "Provide the correct and standard phonetics of the word, and the syllable of this word with its phonetics in pair. Make sure the join of syllables will be exact the original word and phonetics. Treat space as a syllable. The word: ['numerous'] Output only json format: [{\"word\": \"\",\"phonetics\": \"\",\"syllables\": [{\"word_syllable\": \"\", \"phonetic_syllable\":\" \"},]},]",
+    "response": "[\n    {\n        \"word\": \"numerous\",\n        \"phonetics\": \"ˈnumərəs\",\n        \"syllables\": [\n            {\n                \"word_syllable\": \"nu\",\n                \"phonetic_syllable\": \"ˈnu\"\n            },\n            {\n                \"word_syllable\": \"mer\",\n                \"phonetic_syllable\": \"mər\"\n            },\n            {\n                \"word_syllable\": \"ous\",\n                \"phonetic_syllable\": \"əs\"\n            }\n        ]\n    }\n]"
+}

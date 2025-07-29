@@ -55,11 +55,11 @@ db_path = 'words_phonetics.db'
 words_db = WordsDatabase(db_path)
 
 # Initialize word fetcher
-word_fetcher = AdvancedWordFetcher(client)
+word_fetcher = AdvancedWordFetcher()
 
 # Example usage
 words_db = WordsDatabase(db_path)
-word_fetcher = AdvancedWordFetcher(client)
+word_fetcher = AdvancedWordFetcher()
 
 
 

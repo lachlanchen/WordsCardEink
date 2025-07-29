@@ -78,10 +78,10 @@ client = OpenAI()
 # Database path
 db_path = 'words_phonetics.db'
 # Initialize database class
-words_db = WordsDatabase(db_path)
+# words_db = WordsDatabase(db_path)
 # Initialize word fetcher
 words_db = WordsDatabase(db_path)
-word_fetcher = AdvancedWordFetcher(client)
+word_fetcher = AdvancedWordFetcher()
 
 def convert_to_simplified_chinese(input_text):
     # Initialize OpenCC converters

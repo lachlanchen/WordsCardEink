@@ -1,0 +1,4 @@
+{
+    "prompt": "Provide the correct and standard phonetics of the word, and the syllable of this word with its phonetics in pair. Make sure the join of syllables will be exact the original word and phonetics. Treat space as a syllable. The word: ['microscopy'] Output only json format: [{\"word\": \"\",\"phonetics\": \"\",\"syllables\": [{\"word_syllable\": \"\", \"phonetic_syllable\":\" \"},]},]",
+    "response": "```json\n[{\"word\": \"microscopy\",\"phonetics\": \"maɪˈkrɒskəpi\",\"syllables\":[{\"word_syllable\":\"mi\",\"phonetic_syllable\":\"maɪ\"},{\"word_syllable\":\"cros\",\"phonetic_syllable\":\"ˈkrɒs\"},{\"word_syllable\":\"co\",\"phonetic_syllable\":\"kə\"},{\"word_syllable\":\"py\",\"phonetic_syllable\":\"pi\"}]}]\n```"
+}

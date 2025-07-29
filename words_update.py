@@ -256,7 +256,7 @@ if __name__ == "__main__":
 
     # Initialize database and word fetcher
     words_db = WordsDatabase(db_path)
-    word_fetcher = AdvancedWordFetcher(client)
+    word_fetcher = AdvancedWordFetcher()
 
     # # Update the last 10 words
     # update_last_10_words(words_db, word_fetcher)
