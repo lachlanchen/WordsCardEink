@@ -248,122 +248,6 @@ class AdvancedWordFetcher(OpenAIRequestJSONBase):
             "additionalProperties": False
         }
     
-    def get_basic_phonetics_schema(self):
-        """Schema for basic word phonetics without syllable separation"""
-        return {
-            "type": "object",
-            "properties": {
-                "phonetics": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "word": {"type": "string"},
-                            "phonetic": {"type": "string"}
-                        },
-                        "required": ["word", "phonetic"],
-                        "additionalProperties": False
-                    },
-                    "minItems": 1
-                }
-            },
-            "required": ["phonetics"],
-            "additionalProperties": False
-        }
-    
-    def get_syllable_pairs_schema(self):
-        """Schema for syllable-phonetic pairs"""
-        return {
-            "type": "object",
-            "properties": {
-                "syllable_pairs": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "word_syllable": {"type": "string"},
-                            "phonetic_syllable": {"type": "string"}
-                        },
-                        "required": ["word_syllable", "phonetic_syllable"],
-                        "additionalProperties": False
-                    },
-                    "minItems": 1
-                }
-            },
-            "required": ["syllable_pairs"],
-            "additionalProperties": False
-        }
-    
-    def get_basic_japanese_schema(self):
-        """Schema for basic Japanese synonyms"""
-        return {
-            "type": "object",
-            "properties": {
-                "japanese_synonyms": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "word": {"type": "string"},
-                            "japanese_synonym": {"type": "string"}
-                        },
-                        "required": ["word", "japanese_synonym"],
-                        "additionalProperties": False
-                    },
-                    "minItems": 1
-                }
-            },
-            "required": ["japanese_synonyms"],
-            "additionalProperties": False
-        }
-    
-    def get_furigana_schema(self):
-        """Schema for furigana information"""
-        return {
-            "type": "object",
-            "properties": {
-                "furigana_data": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "kanji": {"type": "string"},
-                            "furigana": {"type": "string"}
-                        },
-                        "required": ["kanji", "furigana"],
-                        "additionalProperties": False
-                    },
-                    "minItems": 1
-                }
-            },
-            "required": ["furigana_data"],
-            "additionalProperties": False
-        }
-    
-    def get_transliteration_schema(self):
-        """Schema for phonetics and transliteration"""
-        return {
-            "type": "object",
-            "properties": {
-                "transliterations": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "word": {"type": "string"},
-                            "phonetic": {"type": "string"},
-                            "transliteration": {"type": "string"}
-                        },
-                        "required": ["word", "phonetic", "transliteration"],
-                        "additionalProperties": False
-                    },
-                    "minItems": 1
-                }
-            },
-            "required": ["transliterations"],
-            "additionalProperties": False
-        }
-    
     def get_syllable_phonetic_schema(self):
         """Schema for syllable and phonetic information"""
         return {
@@ -688,237 +572,9 @@ class AdvancedWordFetcher(OpenAIRequestJSONBase):
             print("No local words available either, returning empty list")
             return []
 
-    def fetch_basic_phonetics(self, words):
-        """
-        Fetch basic phonetics for words (first step)
-        """
-        words_string = ', '.join(words)
-        
-        prompt = (
-            f"Provide the IPA phonetic transcription for each of these English words: {words_string}\n"
-            "Return only the basic phonetic transcription without syllable separation. "
-            "Include primary stress (ˈ) and secondary stress (ˌ) symbols where appropriate. "
-            "Return the data in a JSON object with a 'phonetics' array."
-        )
-        
-        system_content = "You are an expert in IPA phonetic transcription. Provide accurate, standard phonetic transcriptions."
-        
-        try:
-            response = self.send_request_with_json_schema(
-                prompt=prompt,
-                json_schema=self.get_basic_phonetics_schema(),
-                system_content=system_content,
-                filename=f"basic_phonetics_{'_'.join(words[:3])}.json"
-            )
-            
-            return response["phonetics"]
-            
-        except Exception as e:
-            print(f"Error in fetch_basic_phonetics: {e}")
-            traceback.print_exc()
-            return []
-
-    def fetch_syllable_pairs(self, word, phonetic):
-        """
-        Fetch syllable-phonetic pairs ensuring exact concatenation (second step)
-        """
-        prompt = (
-            f"For the word '{word}' with phonetic '{phonetic}', "
-            "provide syllable pairs where each word syllable matches with its phonetic syllable. "
-            "CRITICAL: The concatenation of all word_syllables must exactly equal the original word. "
-            "CRITICAL: The concatenation of all phonetic_syllables must exactly equal the original phonetic. "
-            "Handle stress symbols (ˈ, ˌ) properly - they should appear at the beginning of their syllable. "
-            "Return the data in a JSON object with a 'syllable_pairs' array."
-        )
-        
-        system_content = "You are an expert in syllable division. Ensure exact concatenation without extra or missing letters."
-        
-        try:
-            response = self.send_request_with_json_schema(
-                prompt=prompt,
-                json_schema=self.get_syllable_pairs_schema(),
-                system_content=system_content,
-                filename=f"syllable_pairs_{word}.json"
-            )
-            
-            pairs = response["syllable_pairs"]
-            
-            # Verify concatenation
-            word_concat = ''.join([pair['word_syllable'] for pair in pairs])
-            phonetic_concat = ''.join([pair['phonetic_syllable'] for pair in pairs])
-            
-            if word_concat != word:
-                print(f"Warning: Word concatenation mismatch for '{word}': expected '{word}', got '{word_concat}'")
-            if phonetic_concat != phonetic:
-                print(f"Warning: Phonetic concatenation mismatch for '{word}': expected '{phonetic}', got '{phonetic_concat}'")
-            
-            return pairs
-            
-        except Exception as e:
-            print(f"Error in fetch_syllable_pairs: {e}")
-            traceback.print_exc()
-            return []
-
-    def create_dotted_format(self, pairs):
-        """
-        Convert syllable pairs to dotted format for compatibility
-        """
-        if not pairs:
-            return "", ""
-            
-        syllable_word = '·'.join([pair['word_syllable'] for pair in pairs])
-        phonetic = '·'.join([pair['phonetic_syllable'] for pair in pairs])
-        
-        # Clean up multiple dots and handle spaces
-        syllable_word = syllable_word.replace('· ·', ' ').replace('·ˈ', 'ˈ').replace('·ˌ', 'ˌ')
-        phonetic = phonetic.replace('· ·', ' ').replace('·ˈ', 'ˈ').replace('·ˌ', 'ˌ')
-        
-        return syllable_word, phonetic
-
-    def fetch_basic_japanese_synonym(self, words):
-        """
-        Fetch basic Japanese synonyms (first step)
-        """
-        words_string = ', '.join(words)
-        
-        prompt = (
-            f"Provide Japanese synonyms for these English words: {words_string}\n"
-            "Use kanji when commonly used in written Japanese. "
-            "If no kanji exists or hiragana is more natural, use hiragana only. "
-            "Do NOT include furigana (hiragana in parentheses) in this step. "
-            "Return the data in a JSON object with a 'japanese_synonyms' array."
-        )
-        
-        system_content = "You are an expert in Japanese vocabulary. Provide appropriate Japanese synonyms using kanji or hiragana as naturally used."
-        
-        try:
-            response = self.send_request_with_json_schema(
-                prompt=prompt,
-                json_schema=self.get_basic_japanese_schema(),
-                system_content=system_content,
-                filename=f"basic_japanese_{'_'.join(words[:3])}.json"
-            )
-            
-            return response["japanese_synonyms"]
-            
-        except Exception as e:
-            print(f"Error in fetch_basic_japanese_synonym: {e}")
-            traceback.print_exc()
-            return []
-
-    def fetch_furigana_for_kanji(self, japanese_text):
-        """
-        Fetch furigana for kanji characters (second step)
-        """
-        # Extract kanji from the text
-        kanji_chars = re.findall(r'[一-龯]', japanese_text)
-        if not kanji_chars:
-            return []
-            
-        unique_kanji = list(set(kanji_chars))
-        kanji_string = ''.join(unique_kanji)
-        
-        prompt = (
-            f"For these kanji characters: {kanji_string}\n"
-            "Provide the hiragana reading (furigana) for each kanji character. "
-            "Consider the context of vocabulary usage. "
-            "Return the data in a JSON object with a 'furigana_data' array."
-        )
-        
-        system_content = "You are an expert in Japanese readings. Provide accurate hiragana readings for kanji characters."
-        
-        try:
-            response = self.send_request_with_json_schema(
-                prompt=prompt,
-                json_schema=self.get_furigana_schema(),
-                system_content=system_content,
-                filename=f"furigana_{kanji_string[:5]}.json"
-            )
-            
-            return response["furigana_data"]
-            
-        except Exception as e:
-            print(f"Error in fetch_furigana_for_kanji: {e}")
-            traceback.print_exc()
-            return []
-
-    def create_furigana_format(self, japanese_text, furigana_data):
-        """
-        Create furigana format: kanji（hiragana）
-        """
-        if not furigana_data:
-            return japanese_text
-            
-        # Create a mapping of kanji to furigana
-        furigana_map = {item['kanji']: item['furigana'] for item in furigana_data}
-        
-        result = ""
-        i = 0
-        while i < len(japanese_text):
-            char = japanese_text[i]
-            if char in furigana_map:
-                # Check if this is part of a compound kanji
-                compound = char
-                j = i + 1
-                while j < len(japanese_text) and japanese_text[j] in furigana_map:
-                    compound += japanese_text[j]
-                    j += 1
-                
-                # Add kanji with furigana
-                if len(compound) > 1:
-                    # For compound kanji, combine furigana
-                    combined_furigana = ''.join([furigana_map.get(k, k) for k in compound])
-                    result += f"{compound}（{combined_furigana}）"
-                else:
-                    result += f"{char}（{furigana_map[char]}）"
-                i = j
-            else:
-                result += char
-                i += 1
-                
-        return result
-
-    def fetch_transliteration(self, words, target_language):
-        """
-        Fetch phonetics and transliteration for Arabic/French
-        """
-        words_string = ', '.join(words)
-        
-        if target_language.lower() == 'arabic':
-            prompt = (
-                f"For these English words: {words_string}\n"
-                "Provide: 1) IPA phonetic transcription, 2) Arabic transliteration\n"
-                "Return the data in a JSON object with a 'transliterations' array."
-            )
-            system_content = "You are an expert in Arabic transliteration and IPA phonetics."
-        elif target_language.lower() == 'french':
-            prompt = (
-                f"For these English words: {words_string}\n"
-                "Provide: 1) IPA phonetic transcription, 2) French transliteration/synonym\n"
-                "Return the data in a JSON object with a 'transliterations' array."
-            )
-            system_content = "You are an expert in French linguistics and IPA phonetics."
-        else:
-            raise ValueError(f"Unsupported target language: {target_language}")
-        
-        try:
-            response = self.send_request_with_json_schema(
-                prompt=prompt,
-                json_schema=self.get_transliteration_schema(),
-                system_content=system_content,
-                filename=f"{target_language.lower()}_transliteration_{'_'.join(words[:3])}.json"
-            )
-            
-            return response["transliterations"]
-            
-        except Exception as e:
-            print(f"Error in fetch_transliteration: {e}")
-            traceback.print_exc()
-            return []
-
     def fetch_word_details(self, words, word_database=None, num_words_phonetic=10, include_existing=True):
         """
-        Fetch word details using simplified multi-step approach
+        Fetch word details using structured OpenAI outputs
         """
         # Initialize phonetic_checker if it doesn't exist
         if not hasattr(self, 'phonetic_checker'):
@@ -940,50 +596,42 @@ class AdvancedWordFetcher(OpenAIRequestJSONBase):
         if new_words:
             random_words = new_words
             self.save_unused_words(words, random_words)
+
+            # Directly create the example string
+            example_word = self.examples[0].get("word", "")
+            syllables = split_word(self.examples[0].get("syllable_word", ""))
+            phonetics = split_word(self.examples[0].get("phonetic", ""))
+            mappings = self.map_syllables_phonetics(syllables, phonetics)
+
+            words_string = ', '.join(random_words).lower()
             
-            word_phonetics = []
+            detailed_list_message = (
+                "Could you provide a detailed syllable (using ·) and phonetic separation (also using ·) "
+                "ensuring a one-to-one correspondence between syllable_word and its IPA phonetic? "
+                "Please adjust the syllable or phonetic divisions if necessary "
+                "to ensure each syllable directly matches/aligns with its corresponding phonetic element, "
+                "even if this means altering the conventional syllable breakdown."
+                f"For example, the separation of {example_word} should reflect the correspondence: \n {mappings}. \n"
+                "For japanese_synonym: "
+                "- If kanji exists for the concept, use kanji with hiragana reading in parentheses: 特徴（とくちょう）, 定義（ていぎ） "
+                "- If no kanji exists or hiragana is more natural, use hiragana only: つかむ, する "
+                "- Prefer kanji when commonly used in written Japanese "
+                f"Could you provide me the linguistic details for words [ {words_string} ] ?"
+                "Return the data in a JSON object with a 'word_details' array containing: word, syllable_word, phonetic, and japanese_synonym for each word."
+            )
+
+            system_content = "You are an assistant skilled in linguistics, capable of providing detailed phonetic and linguistic attributes for given words. For Japanese synonyms, always use kanji characters with hiragana readings in parentheses when possible (e.g., 特徴（とくちょう）, 定義（ていぎ）). Avoid providing purely hiragana words unless no kanji equivalent exists."
             
             try:
-                # Step 1: Fetch basic phonetics
-                print("Step 1: Fetching basic phonetics...")
-                basic_phonetics = self.fetch_basic_phonetics(random_words)
-                phonetic_map = {item['word']: item['phonetic'] for item in basic_phonetics}
+                # Use structured outputs to get the response
+                response = self.send_request_with_json_schema(
+                    prompt=detailed_list_message,
+                    json_schema=self.get_word_details_schema(),
+                    system_content=system_content,
+                    filename=f"word_details_{'_'.join(random_words[:3])}.json"
+                )
                 
-                # Step 2: Fetch basic Japanese synonyms
-                print("Step 2: Fetching basic Japanese synonyms...")
-                basic_japanese = self.fetch_basic_japanese_synonym(random_words)
-                japanese_map = {item['word']: item['japanese_synonym'] for item in basic_japanese}
-                
-                # Step 3: Process each word for syllable pairs and furigana
-                print("Step 3: Processing syllable pairs and furigana...")
-                for word in random_words:
-                    word_data = {'word': word}
-                    
-                    # Get phonetic and create syllable pairs
-                    if word in phonetic_map:
-                        phonetic = phonetic_map[word]
-                        syllable_pairs = self.fetch_syllable_pairs(word, phonetic)
-                        syllable_word, phonetic_dotted = self.create_dotted_format(syllable_pairs)
-                        
-                        word_data['syllable_word'] = syllable_word
-                        word_data['phonetic'] = phonetic_dotted
-                    else:
-                        print(f"Warning: No phonetic found for word '{word}'")
-                        word_data['syllable_word'] = word
-                        word_data['phonetic'] = word
-                    
-                    # Get Japanese synonym and add furigana
-                    if word in japanese_map:
-                        japanese_text = japanese_map[word]
-                        furigana_data = self.fetch_furigana_for_kanji(japanese_text)
-                        japanese_with_furigana = self.create_furigana_format(japanese_text, furigana_data)
-                        
-                        word_data['japanese_synonym'] = japanese_with_furigana
-                    else:
-                        print(f"Warning: No Japanese synonym found for word '{word}'")
-                        word_data['japanese_synonym'] = word
-                    
-                    word_phonetics.append(word_data)
+                word_phonetics = response["word_details"]
 
                 # Save word details to database
                 for detail in word_phonetics:
@@ -1041,7 +689,7 @@ class AdvancedWordFetcher(OpenAIRequestJSONBase):
 
     def recheck_syllable_and_phonetic(self, word_details, word_database=None, messages=""):
         """
-        Recheck syllable and phonetic information using simplified approach
+        Recheck syllable and phonetic information using structured outputs
         """
         print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
         print("Rechecking syllable and phonetics: ")
@@ -1052,50 +700,44 @@ class AdvancedWordFetcher(OpenAIRequestJSONBase):
         word_details = [{k: v for k, v in word.items() if k in ['word', 'syllable_word', 'phonetic']} for word in word_details]
         word_details = clean_word_details(word_details)
 
-        rechecked_details = []
-        
-        try:
-            for word_detail in word_details:
-                word = word_detail['word']
-                current_syllable = word_detail.get('syllable_word', '')
-                current_phonetic = word_detail.get('phonetic', '')
-                
-                print(f"Rechecking: {word}")
-                
-                # Step 1: Get fresh basic phonetic
-                basic_phonetics = self.fetch_basic_phonetics([word])
-                if basic_phonetics:
-                    fresh_phonetic = basic_phonetics[0]['phonetic']
-                    
-                    # Step 2: Get syllable pairs
-                    syllable_pairs = self.fetch_syllable_pairs(word, fresh_phonetic)
-                    if syllable_pairs:
-                        syllable_word, phonetic_dotted = self.create_dotted_format(syllable_pairs)
-                    else:
-                        syllable_word, phonetic_dotted = current_syllable, current_phonetic
-                else:
-                    syllable_word, phonetic_dotted = current_syllable, current_phonetic
-                
-                updated_detail = {
-                    'word': word,
-                    'syllable_word': syllable_word,
-                    'phonetic': phonetic_dotted
-                }
-                
-                rechecked_details.append(updated_detail)
+        detailed_list_message = (
+            "That ˈ and ˌ are always treated as separator regardless if '·' exists or not. "
+            "Please ensure the syllable separation in the 'phonetic' transcription aligns with the 'syllable_word' separation. "
+            "Each syllable should be marked with a central dot (·) in both fields. "
+            "Adjust the 'phonetic' field or the syllable divisions in 'syllable_word' to be matched. "
+            "Return the corrected data in a JSON object with a 'word_details' array."
+        )
 
-            print("OpenAI (simplified approach): ")
-            pprint(rechecked_details)
+        system_content = (
+            "You are an assistant skilled in linguistics, "
+            "capable of providing accurate and detailed phonetic and linguistic attributes for given words. "
+            "You are excellent in separate words and their phonetics into consistent and accurate separations with '·'."
+        )
+
+        try:
+            # Use structured outputs to get the response
+            response = self.send_request_with_json_schema(
+                prompt=detailed_list_message,
+                json_schema=self.get_syllable_phonetic_schema(),
+                system_content=system_content,
+                filename=f"syllable_phonetic_{'_'.join([w['word'] for w in word_details[:3]])}.json"
+            )
+            
+            word_phonetics = response["word_details"]
+            word_phonetics = clean_word_details(word_phonetics)
+
+            print("OpenAI: ")
+            pprint(word_phonetics)
             print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
             # Save word details to database
-            for detail in rechecked_details:
+            for detail in word_phonetics:
                 if word_database:
                     print(f"Updating syllable and phonetic of word with", json.dumps(detail, ensure_ascii=False, separators=(",", ":")))
                     print("\n")
                     word_database.update_word_details(detail)
                     
-            return rechecked_details
+            return word_phonetics
             
         except Exception as e:
             print(f"Error in recheck_syllable_and_phonetic: {e}")
@@ -1104,7 +746,7 @@ class AdvancedWordFetcher(OpenAIRequestJSONBase):
 
     def recheck_japanese_synonym(self, word_details, word_database=None, messages=''):
         """
-        Recheck Japanese synonym using simplified approach
+        Recheck Japanese synonym using structured outputs
         """
         print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
         print("Rechecking Japanese synonym: ")
@@ -1113,47 +755,42 @@ class AdvancedWordFetcher(OpenAIRequestJSONBase):
 
         # Extract the relevant parts from word_details
         word_details = [{k: v for k, v in word.items() if k in ['word', 'japanese_synonym']} for word in word_details]
-        
-        rechecked_details = []
-        
-        try:
-            words_to_process = [detail['word'] for detail in word_details]
-            
-            # Step 1: Get fresh Japanese synonyms
-            basic_japanese = self.fetch_basic_japanese_synonym(words_to_process)
-            japanese_map = {item['word']: item['japanese_synonym'] for item in basic_japanese}
-            
-            # Step 2: Process each word for furigana
-            for word_detail in word_details:
-                word = word_detail['word']
-                
-                if word in japanese_map:
-                    japanese_text = japanese_map[word]
-                    # Step 3: Get furigana and create final format
-                    furigana_data = self.fetch_furigana_for_kanji(japanese_text)
-                    japanese_with_furigana = self.create_furigana_format(japanese_text, furigana_data)
-                    
-                    updated_detail = {
-                        'word': word,
-                        'japanese_synonym': japanese_with_furigana
-                    }
-                else:
-                    updated_detail = word_detail
-                
-                rechecked_details.append(updated_detail)
+        word_details = clean_and_transcribe(word_details)
 
-            print("OpenAI (simplified approach): ")
-            print(rechecked_details)
+        detailed_list_message = (
+            "Could you correct the furigana/hiragana of kanji/katakana inside the parentheses as needed? "
+            "Return the corrected data in a JSON object with a 'word_details' array."
+        )
+
+        system_content = (
+            "You are an assistant skilled in linguistics, capable of providing detailed phonetic and linguistic attributes for given words. "
+            "You are excellent in providing hiragana (furigana) for consecutive kanji/katakana."
+        )
+
+        try:
+            # Use structured outputs to get the response
+            response = self.send_request_with_json_schema(
+                prompt=detailed_list_message,
+                json_schema=self.get_japanese_synonym_schema(),
+                system_content=system_content,
+                filename=f"japanese_synonym_{'_'.join([w['word'] for w in word_details[:3]])}.json"
+            )
+            
+            word_phonetics = response["word_details"]
+            word_phonetics = clean_word_details(word_phonetics)
+
+            print("OpenAI: ")
+            print(word_phonetics)
             print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
             # Save word details to database
-            for detail in rechecked_details:
+            for detail in word_phonetics:
                 if word_database:
                     print("Updating japanese synonym of word with ", json.dumps(detail, ensure_ascii=False, separators=(",", ":")))
                     print("\n")
                     word_database.update_word_details(detail)
 
-            return rechecked_details
+            return word_phonetics
             
         except Exception as e:
             print(f"Error in recheck_japanese_synonym: {e}")
@@ -1451,21 +1088,32 @@ class AdvancedWordFetcher(OpenAIRequestJSONBase):
 
     def fetch_arabic_synonyms(self, words, word_database, messages=None):
         """
-        Fetch Arabic synonyms using simplified transliteration approach
+        Fetch Arabic synonyms using structured outputs
         """
         print("Words to fetch arabic: ", words)
         
+        detailed_list_message = (
+            "Based on the following words, provide the Arabic synonym for each word in the list. "
+            "Each dictionary contains 'word' and 'arabic_synonym'. "
+            "Return the data in a JSON object with a 'word_details' array."
+            f"The words to process are: {', '.join(words)}."
+        )
+
+        system_content = (
+            "You are an assistant skilled in linguistics, capable of providing detailed linguistic attributes for given words. "
+            "You are excellent in providing Arabic synonyms."
+        )
+
         try:
-            # Use the simplified transliteration method
-            transliterations = self.fetch_transliteration(words, 'arabic')
+            # Use structured outputs to get the response
+            response = self.send_request_with_json_schema(
+                prompt=detailed_list_message,
+                json_schema=self.get_arabic_synonym_schema(),
+                system_content=system_content,
+                filename=f"arabic_synonyms_{'_'.join(words[:3])}.json"
+            )
             
-            # Convert to the expected format
-            synonyms = []
-            for item in transliterations:
-                synonyms.append({
-                    'word': item['word'],
-                    'arabic_synonym': item['transliteration']
-                })
+            synonyms = response["word_details"]
 
             # Save synonyms to database
             for detail in synonyms:
@@ -1481,19 +1129,30 @@ class AdvancedWordFetcher(OpenAIRequestJSONBase):
 
     def fetch_french_synonyms(self, words, word_database=None, model_name=None):
         """
-        Fetch French synonyms using simplified transliteration approach
+        Fetch French synonyms using structured outputs
         """
+        detailed_list_message = (
+            "Based on the following words, provide the French synonym for each word in the list. "
+            "Return the data in a JSON object with a 'word_details' array, "
+            "where each dictionary contains 'word' and 'french_synonym'. "
+            f"The words to process are: {', '.join(words)}."
+        )
+
+        system_content = (
+            "You are an assistant skilled in linguistics, capable of providing detailed linguistic attributes for given words. "
+            "You are excellent in providing French synonyms."
+        )
+
         try:
-            # Use the simplified transliteration method
-            transliterations = self.fetch_transliteration(words, 'french')
+            # Use structured outputs to get the response
+            response = self.send_request_with_json_schema(
+                prompt=detailed_list_message,
+                json_schema=self.get_french_synonym_schema(),
+                system_content=system_content,
+                filename=f"french_synonyms_{'_'.join(words[:3])}.json"
+            )
             
-            # Convert to the expected format
-            synonyms = []
-            for item in transliterations:
-                synonyms.append({
-                    'word': item['word'],
-                    'french_synonym': item['transliteration']
-                })
+            synonyms = response["word_details"]
 
             # Save synonyms to database
             for detail in synonyms:
@@ -1583,19 +1242,12 @@ class PhoneticRechecker(OpenAIRequestJSONBase):
 
     def save_log(self, words, prompt, response_content):
         """Save the prompt and response content to a JSON file, adjusting for multiple words."""
-        # Handle different types of words input
+        # If 'words' is a list, join the word entries; else, use the word directly
         if isinstance(words, list):
-            # Check if it's a list of strings or list of dicts
-            if words and isinstance(words[0], dict):
-                # List of dictionaries with 'word' key
-                word_list = [word_dict['word'] for word_dict in words]
-                word_str = ",".join(word_list)
-            else:
-                # List of strings
-                word_str = ",".join(words)
+            word_list = [word_dict['word'] for word_dict in words]
+            word_str = ",".join(word_list)
         else:
-            # Single string
-            word_str = words
+            word_str = words  # Assuming 'words' is a string when not a list
 
         # Ensure the log folder exists
         if not os.path.exists(self.log_folder):
@@ -1733,7 +1385,7 @@ class PhoneticRechecker(OpenAIRequestJSONBase):
 
     def recheck_word_phonetics_with_paired_tuple(self, words, word_database, force=False):
         """
-        Recheck word phonetics using simplified multi-step approach
+        Recheck word phonetics using structured OpenAI outputs
         """
         words_filtered = []
         for word in words:
@@ -1746,40 +1398,38 @@ class PhoneticRechecker(OpenAIRequestJSONBase):
         if len(words_filtered) == 0:
             return []
 
+        prompt = (
+            "Provide the correct and standard phonetics of the word, "
+            "and the syllable of this word with its phonetics in pair. "
+            "Make sure the join of syllables will be exact the original word and phonetics. "
+            "Treat space as a syllable. "
+            f"The words: {words_filtered} "
+            "Return the data in a JSON object with a 'phonetic_data' array."
+        )
+
+        system_content = "You are an expert linguist specializing in phonetic transcription and syllable division."
+
         try:
-            converted_data = []
+            # Use structured outputs to get the response
+            response = self.send_request_with_json_schema(
+                prompt=prompt,
+                json_schema=self.get_phonetic_pairs_schema(),
+                system_content=system_content,
+                filename=f"phonetic_pairs_{'_'.join(words_filtered[:3])}.json"
+            )
             
-            # Step 1: Get basic phonetics
-            basic_phonetics = self.fetch_basic_phonetics_simple(words_filtered)
-            phonetic_map = {item['word']: item['phonetic'] for item in basic_phonetics}
-            
-            # Step 2: Process each word for syllable pairs
-            for word in words_filtered:
-                if word in phonetic_map:
-                    phonetic = phonetic_map[word]
-                    syllable_pairs = self.fetch_syllable_pairs_simple(word, phonetic)
-                    
-                    if syllable_pairs:
-                        syllable_word, phonetic_dotted = self.create_dotted_format_simple(syllable_pairs)
-                        
-                        word_data = {
-                            'word': word,
-                            'syllable_word': syllable_word,
-                            'phonetic': phonetic_dotted
-                        }
-                        converted_data.append(word_data)
+            word_phonetics = response["phonetic_data"]
+            print("Phonetic data received:")
+            pprint(word_phonetics)
+
+            # Process the response through the provided functions
+            data_sanitized = self.sanitize_input_and_normalize_syllables(word_phonetics)
+            converted_data = self.convert_to_dot_separated_json(data_sanitized)
 
             self.save_to_csv(converted_data)
-            
-            # Create a simple log entry
-            log_data = {
-                'words': words_filtered,
-                'method': 'simplified_multi_step',
-                'results': converted_data
-            }
-            self.save_log(words_filtered, "Simplified multi-step approach", str(log_data))
+            self.save_log(word_phonetics, prompt, str(response))
 
-            print("OpenAI (simplified approach): ")
+            print("OpenAI: ")
             pprint(converted_data)
             print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
@@ -1795,135 +1445,6 @@ class PhoneticRechecker(OpenAIRequestJSONBase):
             print(f"Error in recheck_word_phonetics_with_paired_tuple: {e}")
             traceback.print_exc()
             raise RuntimeError("Failed to recheck phonetics.")
-
-    def fetch_basic_phonetics_simple(self, words):
-        """
-        Fetch basic phonetics for words (simple version for PhoneticRechecker)
-        """
-        words_string = ', '.join(words)
-        
-        prompt = (
-            f"Provide the IPA phonetic transcription for each of these English words: {words_string}\n"
-            "Return only the basic phonetic transcription without syllable separation. "
-            "Include primary stress (ˈ) and secondary stress (ˌ) symbols where appropriate. "
-            "Return the data in a JSON object with a 'phonetics' array."
-        )
-        
-        system_content = "You are an expert in IPA phonetic transcription. Provide accurate, standard phonetic transcriptions."
-        
-        schema = {
-            "type": "object",
-            "properties": {
-                "phonetics": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "word": {"type": "string"},
-                            "phonetic": {"type": "string"}
-                        },
-                        "required": ["word", "phonetic"],
-                        "additionalProperties": False
-                    },
-                    "minItems": 1
-                }
-            },
-            "required": ["phonetics"],
-            "additionalProperties": False
-        }
-        
-        try:
-            response = self.send_request_with_json_schema(
-                prompt=prompt,
-                json_schema=schema,
-                system_content=system_content,
-                filename=f"basic_phonetics_{'_'.join(words[:3])}.json"
-            )
-            
-            return response["phonetics"]
-            
-        except Exception as e:
-            print(f"Error in fetch_basic_phonetics_simple: {e}")
-            traceback.print_exc()
-            return []
-
-    def fetch_syllable_pairs_simple(self, word, phonetic):
-        """
-        Fetch syllable-phonetic pairs ensuring exact concatenation (simple version)
-        """
-        prompt = (
-            f"For the word '{word}' with phonetic '{phonetic}', "
-            "provide syllable pairs where each word syllable matches with its phonetic syllable. "
-            "CRITICAL: The concatenation of all word_syllables must exactly equal the original word. "
-            "CRITICAL: The concatenation of all phonetic_syllables must exactly equal the original phonetic. "
-            "Handle stress symbols (ˈ, ˌ) properly - they should appear at the beginning of their syllable. "
-            "Return the data in a JSON object with a 'syllable_pairs' array."
-        )
-        
-        system_content = "You are an expert in syllable division. Ensure exact concatenation without extra or missing letters."
-        
-        schema = {
-            "type": "object",
-            "properties": {
-                "syllable_pairs": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "word_syllable": {"type": "string"},
-                            "phonetic_syllable": {"type": "string"}
-                        },
-                        "required": ["word_syllable", "phonetic_syllable"],
-                        "additionalProperties": False
-                    },
-                    "minItems": 1
-                }
-            },
-            "required": ["syllable_pairs"],
-            "additionalProperties": False
-        }
-        
-        try:
-            response = self.send_request_with_json_schema(
-                prompt=prompt,
-                json_schema=schema,
-                system_content=system_content,
-                filename=f"syllable_pairs_{word}.json"
-            )
-            
-            pairs = response["syllable_pairs"]
-            
-            # Verify concatenation
-            word_concat = ''.join([pair['word_syllable'] for pair in pairs])
-            phonetic_concat = ''.join([pair['phonetic_syllable'] for pair in pairs])
-            
-            if word_concat != word:
-                print(f"Warning: Word concatenation mismatch for '{word}': expected '{word}', got '{word_concat}'")
-            if phonetic_concat != phonetic:
-                print(f"Warning: Phonetic concatenation mismatch for '{word}': expected '{phonetic}', got '{phonetic_concat}'")
-            
-            return pairs
-            
-        except Exception as e:
-            print(f"Error in fetch_syllable_pairs_simple: {e}")
-            traceback.print_exc()
-            return []
-
-    def create_dotted_format_simple(self, pairs):
-        """
-        Convert syllable pairs to dotted format for compatibility (simple version)
-        """
-        if not pairs:
-            return "", ""
-            
-        syllable_word = '·'.join([pair['word_syllable'] for pair in pairs])
-        phonetic = '·'.join([pair['phonetic_syllable'] for pair in pairs])
-        
-        # Clean up multiple dots and handle spaces
-        syllable_word = syllable_word.replace('· ·', ' ').replace('·ˈ', 'ˈ').replace('·ˌ', 'ˌ')
-        phonetic = phonetic.replace('· ·', ' ').replace('·ˈ', 'ˈ').replace('·ˌ', 'ˌ')
-        
-        return syllable_word, phonetic
 
 
 if __name__ == "__main__":

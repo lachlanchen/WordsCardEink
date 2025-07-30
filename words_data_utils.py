@@ -117,28 +117,7 @@ def clean_japanese(text):
     return text.replace(".", "").replace("·", "").replace("(", "（").replace(")", "）").replace(" ", "")
 
 
-# def split_word(word):
-#     # print("word before clean: ", word)
-#     word = clean_english(word)
-#     # print("word after clean: ", word)
 
-#     if word.startswith('ˈ') or word.startswith('ˌ'):
-#         word = word[0] + word[1:].replace('ˈ', '·ˈ').replace('ˌ', '·ˌ').replace(" ", " ·")
-#     else:
-#         word = word.replace('ˈ', '·ˈ').replace('ˌ', '·ˌ').replace("-", "·-").replace(" ", " ·")
-
-#     # print("word after add dot: ", word)
-
-#     syllables = word.split('·')
-
-#     # print(word)
-
-#     # if word.startswith("Hippocratic"):
-#     #     print("syllables: ")
-
-#     #     pprint(syllables)
-
-#     return syllables
 
 def split_word(text):
     # Split the text into words by space
@@ -526,7 +505,7 @@ class OpenAiChooser:
                 words = self.word_fetcher.fetch_words(
                     10, 
                     self.db, 
-                    include_existing=False
+                    include_existing=True
                 )
                 openai_words = self.word_fetcher.fetch_word_details(
                     words, 
@@ -569,36 +548,6 @@ class OpenAiChooser:
     def get_current_words(self):
         return self.current_words
 
-# class EmojiWordChooser:
-#     def __init__(self, csv_file_path='data/words_emoji.csv'):
-#         self.csv_file_path = csv_file_path
-#         self.current_words = []
-#         self.words_iterator = iter([])
-#         self.load_words_from_csv()
-
-#     def load_words_from_csv(self):
-#         # Load the words from the CSV file
-#         try:
-#             df = pd.read_csv(self.csv_file_path)
-#             self.current_words = df.to_dict(orient='records')
-#             self.words_iterator = iter(self.current_words)
-#         except Exception as e:
-#             print(f"Error loading CSV file: {e}")
-
-#     def choose(self):
-#         """Returns the next word from the iterator, or fetches new words if the iterator is exhausted."""
-#         try:
-#             return next(self.words_iterator)
-#         except StopIteration:
-#             # # If all words have been iterated, restart from the beginning
-#             # self.words_iterator = iter(self.current_words)
-#             # return next(self.words_iterator)
-
-#             raise StopIteration
-
-#     def get_current_words(self):
-#         """Returns the current list of words."""
-#         return self.current_words
 
 class EmojiWordChooser:
     def __init__(self, csv_file_path='data/words_emoji.csv'):
