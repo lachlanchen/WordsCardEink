@@ -1,0 +1,67 @@
+{
+    "prompt": "Could you provide a detailed syllable (using ·) and phonetic separation (also using ·) ensuring a one-to-one correspondence between syllable_word and its IPA phonetic? Please adjust the syllable or phonetic divisions if necessary to ensure each syllable directly matches/aligns with its corresponding phonetic element, even if this means altering the conventional syllable breakdown.For example, the separation of letteret should reflect the correspondence: \n let ↔ lɛt, ter ↔ ər, et  ↔ ɛt . \nFor japanese_synonym: - If kanji exists for the concept, use kanji with hiragana reading in parentheses: 特徴（とくちょう）, 定義（ていぎ） - If no kanji exists or hiragana is more natural, use hiragana only: つかむ, する - Prefer kanji when commonly used in written Japanese Could you provide me the linguistic details for words [ internecine, forswear, metriculous, antimicrobial, miasma, germane, temporal, recapitulate, adhesion, bifurcation ] ?Return the data in a JSON object with a 'word_details' array containing: word, syllable_word, phonetic, and japanese_synonym for each word.",
+    "response": {
+        "word_details": [
+            {
+                "word": "internecine",
+                "syllable_word": "in·ter·ne·cine",
+                "phonetic": "ˌɪn·tərˈnɛs·aɪn",
+                "japanese_synonym": "内戦的（ないせんてき）"
+            },
+            {
+                "word": "forswear",
+                "syllable_word": "for·swear",
+                "phonetic": "foʊrˈswɛr",
+                "japanese_synonym": "誓約（せいやく）"
+            },
+            {
+                "word": "meticulous",
+                "syllable_word": "me·tic·u·lous",
+                "phonetic": "məˈtɪk·jə·ləs",
+                "japanese_synonym": "細心（さいしん）"
+            },
+            {
+                "word": "antimicrobial",
+                "syllable_word": "an·ti·mi·cro·bi·al",
+                "phonetic": "ˌæn·ti·maɪˈkroʊ·bi·əl",
+                "japanese_synonym": "抗菌（こうきん）"
+            },
+            {
+                "word": "miasma",
+                "syllable_word": "mi·as·ma",
+                "phonetic": "maɪˈæz·mə",
+                "japanese_synonym": "悪臭（あくしゅう）"
+            },
+            {
+                "word": "germane",
+                "syllable_word": "ger·mane",
+                "phonetic": "dʒɜrˈmeɪn",
+                "japanese_synonym": "関連（かんれん）"
+            },
+            {
+                "word": "temporal",
+                "syllable_word": "tem·po·ral",
+                "phonetic": "ˈtɛmp·ər·əl",
+                "japanese_synonym": "時間的（じかんてき）"
+            },
+            {
+                "word": "recapitulate",
+                "syllable_word": "re·ca·pit·u·late",
+                "phonetic": "ˌriː.kəˈpɪtʃ·ə·leɪt",
+                "japanese_synonym": "要約（ようやく）"
+            },
+            {
+                "word": "adhesion",
+                "syllable_word": "ad·he·sion",
+                "phonetic": "ədˈhiː·zhən",
+                "japanese_synonym": "接着（せっちゃく）"
+            },
+            {
+                "word": "bifurcation",
+                "syllable_word": "bi·fur·ca·tion",
+                "phonetic": "ˌbaɪ·fərˈkeɪ·ʃən",
+                "japanese_synonym": "分岐（ぶんき）"
+            }
+        ]
+    }
+}

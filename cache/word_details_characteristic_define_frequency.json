@@ -1,0 +1,79 @@
+{
+    "prompt": "Could you provide a detailed syllable (using ·) and phonetic separation (also using ·) ensuring a one-to-one correspondence between syllable_word and its IPA phonetic? Please adjust the syllable or phonetic divisions if necessary to ensure each syllable directly matches/aligns with its corresponding phonetic element, even if this means altering the conventional syllable breakdown.For example, the separation of letteret should reflect the correspondence: \n let ↔ lɛt, ter ↔ ər, et  ↔ ɛt . \nAlso provide the japanese_synonym with hiragana pronunciation of kanji inside parentheses. Could you provide me the linguistic details for words [ characteristic, define, frequency, genuine, nevertheless, reliable, withstand, grasp, legitimate, operate, proficient, xiom ] ?Return the data in a JSON object with a 'word_details' array containing: word, syllable_word, phonetic, and japanese_synonym for each word.",
+    "response": {
+        "word_details": [
+            {
+                "word": "characteristic",
+                "syllable_word": "cha·rac·ter·is·tic",
+                "phonetic": "ˌkæɹ·ɪk·təˈrɪs·tɪk",
+                "japanese_synonym": "特徴 (とくちょう)"
+            },
+            {
+                "word": "define",
+                "syllable_word": "de·fine",
+                "phonetic": "dɪˈfaɪn",
+                "japanese_synonym": "定義 (ていぎ)"
+            },
+            {
+                "word": "frequency",
+                "syllable_word": "fre·quen·cy",
+                "phonetic": "ˈfriː.kwən.si",
+                "japanese_synonym": "頻度 (ひんど)"
+            },
+            {
+                "word": "genuine",
+                "syllable_word": "gen·u·ine",
+                "phonetic": "ˈdʒɛn.ju.ɪn",
+                "japanese_synonym": "本物 (ほんもの)"
+            },
+            {
+                "word": "nevertheless",
+                "syllable_word": "ne·ver·the·less",
+                "phonetic": "ˌnɛv·ər·ðəˈlɛs",
+                "japanese_synonym": "それにもかかわらず (それにもかかわらず)"
+            },
+            {
+                "word": "reliable",
+                "syllable_word": "re·li·a·ble",
+                "phonetic": "rɪˈlaɪ·ə·bəl",
+                "japanese_synonym": "信頼できる (しんらいできる)"
+            },
+            {
+                "word": "withstand",
+                "syllable_word": "with·stand",
+                "phonetic": "wɪðˈstænd",
+                "japanese_synonym": "耐える (たえる)"
+            },
+            {
+                "word": "grasp",
+                "syllable_word": "grasp",
+                "phonetic": "ɡræsp",
+                "japanese_synonym": "つかむ (つかむ)"
+            },
+            {
+                "word": "legitimate",
+                "syllable_word": "le·git·i·mate",
+                "phonetic": "lɪˈdʒɪt·ɪ·mət",
+                "japanese_synonym": "正当な (せいとうな)"
+            },
+            {
+                "word": "operate",
+                "syllable_word": "op·er·ate",
+                "phonetic": "ˈɑː.pə.reɪt",
+                "japanese_synonym": "操作する (そうさする)"
+            },
+            {
+                "word": "proficient",
+                "syllable_word": "pro·fi·cient",
+                "phonetic": "prəˈfɪʃ·ənt",
+                "japanese_synonym": "熟練した (じゅくれんした)"
+            },
+            {
+                "word": "xiom",
+                "syllable_word": "xi·om",
+                "phonetic": "ˈziː.ɒm",
+                "japanese_synonym": "公理 (こうり)"
+            }
+        ]
+    }
+}

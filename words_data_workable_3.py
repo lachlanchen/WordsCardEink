@@ -225,10 +225,10 @@ class AdvancedWordFetcher(OpenAIRequestJSONBase):
             "additionalProperties": False
         }
 
-    def fetch_words(self, num_words, word_database, include_existing=True):
+    def fetch_words(self, num_words, word_database):
         """Main method to fetch words - delegates to openai or local with fallback"""
         try:
-            words = self.fetch_words_openai(num_words, word_database, include_existing)
+            words = self.fetch_words_openai(num_words, word_database)
             if words and len(words) > 0:
                 return words
             else:
@@ -238,7 +238,7 @@ class AdvancedWordFetcher(OpenAIRequestJSONBase):
             print(f"Error in fetch_words_openai: {e}, falling back to local words")
             return self.fetch_words_local(num_words, word_database)
 
-    def fetch_words_openai(self, num_words, word_database, include_existing=True):
+    def fetch_words_openai(self, num_words, word_database):
         """
         Fetch words using structured OpenAI outputs with enhanced strategies
         """
@@ -354,13 +354,10 @@ class AdvancedWordFetcher(OpenAIRequestJSONBase):
                 
                 words_list = response["words"]
                 
-                # Filter out words that already exist in the database (unless include_existing=True)
-                if include_existing:
-                    unique_words = words_list  # Include all words, even existing ones
-                    print(f"Strategy '{strategy_name}': {len(words_list)} total words (including existing)")
-                else:
-                    unique_words = [word for word in words_list if not word_database.word_exists(word)]
-                    print(f"Strategy '{strategy_name}': {len(words_list)} total words, {len(unique_words)} unique")
+                # Filter out words that already exist in the database
+                unique_words = [word for word in words_list if not word_database.word_exists(word)]
+                
+                print(f"Strategy '{strategy_name}': {len(words_list)} total words, {len(unique_words)} unique")
                 
                 # Add unique words to our collection
                 partial_words.extend(unique_words)
@@ -397,9 +394,9 @@ class AdvancedWordFetcher(OpenAIRequestJSONBase):
             )
             
             words_list = response["words"]
-            unique_words = words_list if include_existing else [word for word in words_list if not word_database.word_exists(word)]
+            unique_words = [word for word in words_list if not word_database.word_exists(word)]
             
-            print(f"Fallback strategy: {len(words_list)} total words, {len(unique_words)} {'(including existing)' if include_existing else 'unique'}")
+            print(f"Fallback strategy: {len(words_list)} total words, {len(unique_words)} unique")
             
             if len(unique_words) > 0:
                 partial_words.extend(unique_words)
@@ -416,135 +413,104 @@ class AdvancedWordFetcher(OpenAIRequestJSONBase):
         # Final fallback: use local dictionary words
         print("No OpenAI words found, using local dictionary words as fallback...")
         if local_words and len(local_words) > 0:
-            if include_existing:
-                print(f"Found {len(local_words)} words from local dictionary (including existing)")
-                return local_words[:num_words]
+            local_unique = [word for word in local_words if not word_database.word_exists(word)]
+            if local_unique:
+                print(f"Found {len(local_unique)} unique words from local dictionary")
+                return local_unique[:num_words]
             else:
-                local_unique = [word for word in local_words if not word_database.word_exists(word)]
-                if local_unique:
-                    print(f"Found {len(local_unique)} unique words from local dictionary")
-                    return local_unique[:num_words]
-                else:
-                    print("Even local words are mostly duplicates, returning available local words anyway")
-                    return local_words[:num_words]
+                print("Even local words are mostly duplicates, returning available local words anyway")
+                return local_words[:num_words]
         else:
             print("No local words available either, returning empty list")
             return []
 
-    def fetch_word_details(self, words, word_database=None, num_words_phonetic=10, include_existing=True):
+    def fetch_word_details(self, words, word_database=None, num_words_phonetic=10):
         """
         Fetch word details using structured OpenAI outputs
         """
         # Initialize phonetic_checker if it doesn't exist
         if not hasattr(self, 'phonetic_checker'):
             self.phonetic_checker = PhoneticRechecker()
-        
-        # Separate new words from existing words
-        new_words = []
-        existing_words = []
-        
-        for word in words:
-            if word_database and word_database.word_exists(word):
-                existing_words.append(word)
-            else:
-                new_words.append(word)
-        
-        print(f"Processing: {len(new_words)} new words, {len(existing_words)} existing words")
-        
-        # Only process new words with OpenAI
-        if new_words:
-            random_words = new_words
-            self.save_unused_words(words, random_words)
-
-            # Directly create the example string
-            example_word = self.examples[0].get("word", "")
-            syllables = split_word(self.examples[0].get("syllable_word", ""))
-            phonetics = split_word(self.examples[0].get("phonetic", ""))
-            mappings = self.map_syllables_phonetics(syllables, phonetics)
-
-            words_string = ', '.join(random_words).lower()
             
-            detailed_list_message = (
-                "Could you provide a detailed syllable (using ·) and phonetic separation (also using ·) "
-                "ensuring a one-to-one correspondence between syllable_word and its IPA phonetic? "
-                "Please adjust the syllable or phonetic divisions if necessary "
-                "to ensure each syllable directly matches/aligns with its corresponding phonetic element, "
-                "even if this means altering the conventional syllable breakdown."
-                f"For example, the separation of {example_word} should reflect the correspondence: \n {mappings}. \n"
-                "For japanese_synonym: "
-                "- If kanji exists for the concept, use kanji with hiragana reading in parentheses: 特徴（とくちょう）, 定義（ていぎ） "
-                "- If no kanji exists or hiragana is more natural, use hiragana only: つかむ, する "
-                "- Prefer kanji when commonly used in written Japanese "
-                f"Could you provide me the linguistic details for words [ {words_string} ] ?"
-                "Return the data in a JSON object with a 'word_details' array containing: word, syllable_word, phonetic, and japanese_synonym for each word."
+        random_words = words
+        self.save_unused_words(words, random_words)
+
+        # Directly create the example string
+        example_word = self.examples[0].get("word", "")
+        syllables = split_word(self.examples[0].get("syllable_word", ""))
+        phonetics = split_word(self.examples[0].get("phonetic", ""))
+        mappings = self.map_syllables_phonetics(syllables, phonetics)
+
+        words_string = ', '.join(random_words).lower()
+        
+        detailed_list_message = (
+            "Could you provide a detailed syllable (using ·) and phonetic separation (also using ·) "
+            "ensuring a one-to-one correspondence between syllable_word and its IPA phonetic? "
+            "Please adjust the syllable or phonetic divisions if necessary "
+            "to ensure each syllable directly matches/aligns with its corresponding phonetic element, "
+            "even if this means altering the conventional syllable breakdown."
+            f"For example, the separation of {example_word} should reflect the correspondence: \n {mappings}. \n"
+            "For japanese_synonym: "
+            "- If kanji exists for the concept, use kanji with hiragana reading in parentheses: 特徴（とくちょう）, 定義（ていぎ） "
+            "- If no kanji exists or hiragana is more natural, use hiragana only: つかむ, する "
+            "- Prefer kanji when commonly used in written Japanese "
+            f"Could you provide me the linguistic details for words [ {words_string} ] ?"
+            "Return the data in a JSON object with a 'word_details' array containing: word, syllable_word, phonetic, and japanese_synonym for each word."
+        )
+
+        system_content = "You are an assistant skilled in linguistics, capable of providing detailed phonetic and linguistic attributes for given words. For Japanese synonyms, always use kanji characters with hiragana readings in parentheses when possible (e.g., 特徴（とくちょう）, 定義（ていぎ）). Avoid providing purely hiragana words unless no kanji equivalent exists."
+        
+        try:
+            # Use structured outputs to get the response
+            response = self.send_request_with_json_schema(
+                prompt=detailed_list_message,
+                json_schema=self.get_word_details_schema(),
+                system_content=system_content,
+                filename=f"word_details_{'_'.join(random_words[:3])}.json"
             )
-
-            system_content = "You are an assistant skilled in linguistics, capable of providing detailed phonetic and linguistic attributes for given words. For Japanese synonyms, always use kanji characters with hiragana readings in parentheses when possible (e.g., 特徴（とくちょう）, 定義（ていぎ）). Avoid providing purely hiragana words unless no kanji equivalent exists."
             
-            try:
-                # Use structured outputs to get the response
-                response = self.send_request_with_json_schema(
-                    prompt=detailed_list_message,
-                    json_schema=self.get_word_details_schema(),
-                    system_content=system_content,
-                    filename=f"word_details_{'_'.join(random_words[:3])}.json"
-                )
-                
-                word_phonetics = response["word_details"]
+            word_phonetics = response["word_details"]
 
-                # Save word details to database
-                for detail in word_phonetics:
-                    if word_database:
-                        try:
-                            word_database.insert_word_details(detail)
-                        except Exception as e:
-                            if "UNIQUE constraint failed" in str(e):
-                                print(f"Word '{detail.get('word', 'unknown')}' already exists in database, updating instead...")
-                                word_database.update_word_details(detail)
-                            else:
-                                print(f"Error inserting word details: {e}")
-                                continue
-                
-                # Post-processing steps remain the same
+            # Save word details to database
+            for detail in word_phonetics:
                 if word_database:
-                    words_list = [word["word"] for word in word_phonetics]
-                    
-                    print("Starting comparing separation...")
-                    self.phonetic_checker.recheck_word_phonetics_with_paired_tuple(words_list, word_database)
-                    print("Starting check Japanese...")
-                    self.recheck_japanese_synonym_with_conditions(word_phonetics.copy(), word_database)
-                    print("Generating kanji...")
-                    word_database.update_kanji_for_all_words()
-                    print("Starting check pure kanji...")
-                    self.recheck_pure_kanji_synonym(word_phonetics.copy(), word_database)
-                    print("Starting check Arabic...")
-                    word_database.convert_and_update_chinese_synonyms()
-                    self.recheck_arabic_synonym(word_phonetics.copy(), word_database)
-
-                    # Get updated word details from database for all words (new + existing)
-                    all_processed_words = words_list + existing_words
-                    word_phonetics = [word_database.find_word_details(word) for word in all_processed_words]
-                    word_phonetics = [w for w in word_phonetics if w is not None]  # Filter out None results
-
-                    self.examples = word_phonetics[0:2] if len(word_phonetics) >= 2 else word_phonetics
-                    self.save_examples()
-                    
-                return word_phonetics
+                    try:
+                        word_database.insert_word_details(detail)
+                    except Exception as e:
+                        if "UNIQUE constraint failed" in str(e):
+                            print(f"Word '{detail.get('word', 'unknown')}' already exists in database, updating instead...")
+                            word_database.update_word_details(detail)
+                        else:
+                            print(f"Error inserting word details: {e}")
+                            continue
+            
+            # Post-processing steps remain the same
+            if word_database:
+                words_list = [word["word"] for word in word_phonetics]
                 
-            except Exception as e:
-                print(f"Error in fetch_word_details: {e}")
-                traceback.print_exc()
-                raise RuntimeError("Failed to fetch word details.")
-        
-        else:
-            # If only existing words, just return their details from database
-            if existing_words and word_database:
-                print("Only existing words, fetching from database...")
-                word_phonetics = [word_database.find_word_details(word) for word in existing_words]
-                word_phonetics = [w for w in word_phonetics if w is not None]  # Filter out None results
-                return word_phonetics
-            else:
-                return []
+                print("Starting comparing separation...")
+                self.phonetic_checker.recheck_word_phonetics_with_paired_tuple(words_list, word_database)
+                print("Starting check Japanese...")
+                self.recheck_japanese_synonym_with_conditions(word_phonetics.copy(), word_database)
+                print("Generating kanji...")
+                word_database.update_kanji_for_all_words()
+                print("Starting check pure kanji...")
+                self.recheck_pure_kanji_synonym(word_phonetics.copy(), word_database)
+                print("Starting check Arabic...")
+                word_database.convert_and_update_chinese_synonyms()
+                self.recheck_arabic_synonym(word_phonetics.copy(), word_database)
+
+                word_phonetics = [word_database.find_word_details(word) for word in words_list]
+
+                self.examples = word_phonetics[0:2]
+                self.save_examples()
+                
+            return word_phonetics
+            
+        except Exception as e:
+            print(f"Error in fetch_word_details: {e}")
+            traceback.print_exc()
+            raise RuntimeError("Failed to fetch word details.")
 
     def recheck_syllable_and_phonetic(self, word_details, word_database=None, messages=""):
         """

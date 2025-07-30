@@ -97,18 +97,37 @@ def get_image_as_base64_string(image):
     img_str = base64.b64encode(buffered.getvalue())
     return img_str.decode('utf-8')
 
+# async def periodic_task():
+#     http_client = AsyncHTTPClient()
+#     try:
+#         request = HTTPRequest(url="http://localhost:{}/next_random_word".format(PORT), method="GET")
+#         response = await http_client.fetch(request)
+#         if response.code == 200:
+#             logging.info("Successfully called next_random_word API")
+#         else:
+#             logging.error(f"Failed to call next_random_word API. Status code: {response.code}")
+#     except Exception as e:
+#         logging.error(f"Error in periodic_task: {str(e)}")
+
+
 async def periodic_task():
     http_client = AsyncHTTPClient()
     try:
-        request = HTTPRequest(url="http://localhost:{}/next_random_word".format(PORT), method="GET")
+        # Increase timeout to 5 minutes for complex word processing
+        request = HTTPRequest(
+            url=f"http://localhost:{PORT}/next_random_word", 
+            method="GET",
+            request_timeout=300.0  # 5 minutes timeout
+        )
         response = await http_client.fetch(request)
         if response.code == 200:
             logging.info("Successfully called next_random_word API")
         else:
             logging.error(f"Failed to call next_random_word API. Status code: {response.code}")
     except Exception as e:
-        logging.error(f"Error in periodic_task: {str(e)}")
-
+        logging.warning(f"Timeout in periodic_task (expected for complex processing): {str(e)}")
+    finally:
+        http_client.close()
 
 
 class DisplayWordHandler(RequestHandler):

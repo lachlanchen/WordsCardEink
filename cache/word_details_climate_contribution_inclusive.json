@@ -1,0 +1,115 @@
+{
+    "prompt": "Could you provide a detailed syllable (using ·) and phonetic separation (also using ·) ensuring a one-to-one correspondence between syllable_word and its IPA phonetic? Please adjust the syllable or phonetic divisions if necessary to ensure each syllable directly matches/aligns with its corresponding phonetic element, even if this means altering the conventional syllable breakdown.For example, the separation of letteret should reflect the correspondence: \n let ↔ lɛt, ter ↔ ər, et  ↔ ɛt . \nFor japanese_synonym: - If kanji exists for the concept, use kanji with hiragana reading in parentheses: 特徴（とくちょう）, 定義（ていぎ） - If no kanji exists or hiragana is more natural, use hiragana only: つかむ, する - Prefer kanji when commonly used in written Japanese Could you provide me the linguistic details for words [ climate, contribution, inclusive, convenient, journal, approach, participate, expertise, policy, benefit, institute, visualize, debate, respond, frequent, expand, industry, monitor ] ?Return the data in a JSON object with a 'word_details' array containing: word, syllable_word, phonetic, and japanese_synonym for each word.",
+    "response": {
+        "word_details": [
+            {
+                "word": "climate",
+                "syllable_word": "cli·mate",
+                "phonetic": "ˈklaɪ·mət",
+                "japanese_synonym": "気候（きこう）"
+            },
+            {
+                "word": "contribution",
+                "syllable_word": "con·tri·bu·tion",
+                "phonetic": "ˌkɒn·trɪˈbjuː·ʃən",
+                "japanese_synonym": "貢献（こうけん）"
+            },
+            {
+                "word": "inclusive",
+                "syllable_word": "in·clu·sive",
+                "phonetic": "ɪnˈkluː·sɪv",
+                "japanese_synonym": "包括的（ほうかつてき）"
+            },
+            {
+                "word": "convenient",
+                "syllable_word": "con·ven·ient",
+                "phonetic": "kənˈviː·ni·ənt",
+                "japanese_synonym": "便利（べんり）"
+            },
+            {
+                "word": "journal",
+                "syllable_word": "jour·nal",
+                "phonetic": "ˈdʒɜrn·əl",
+                "japanese_synonym": "ジャーナル（じゃーなる）"
+            },
+            {
+                "word": "approach",
+                "syllable_word": "ap·proach",
+                "phonetic": "əˈproʊtʃ",
+                "japanese_synonym": "近づく（ちかづく）"
+            },
+            {
+                "word": "participate",
+                "syllable_word": "par·ti·ci·pate",
+                "phonetic": "pɑrˈtɪs·ɪˌpeɪt",
+                "japanese_synonym": "参加（さんか）"
+            },
+            {
+                "word": "expertise",
+                "syllable_word": "ex·per·tise",
+                "phonetic": "ˌɛk.spərˈtiːz",
+                "japanese_synonym": "専門知識（せんもんちしき）"
+            },
+            {
+                "word": "policy",
+                "syllable_word": "pol·i·cy",
+                "phonetic": "ˈpɒl·ɪ·si",
+                "japanese_synonym": "方針（ほうしん）"
+            },
+            {
+                "word": "benefit",
+                "syllable_word": "ben·e·fit",
+                "phonetic": "ˈbɛn·ɪ·fɪt",
+                "japanese_synonym": "利益（りえき）"
+            },
+            {
+                "word": "institute",
+                "syllable_word": "in·sti·tute",
+                "phonetic": "ˈɪn·stəˌtut",
+                "japanese_synonym": "研究所（けんきゅうじょ）"
+            },
+            {
+                "word": "visualize",
+                "syllable_word": "vis·u·al·ize",
+                "phonetic": "ˈvɪʒ·u·əˌlaɪz",
+                "japanese_synonym": "可視化（かしか）"
+            },
+            {
+                "word": "debate",
+                "syllable_word": "de·bate",
+                "phonetic": "dɪˈbeɪt",
+                "japanese_synonym": "討論（とうろん）"
+            },
+            {
+                "word": "respond",
+                "syllable_word": "re·spond",
+                "phonetic": "rɪˈspɒnd",
+                "japanese_synonym": "応答（おうとう）"
+            },
+            {
+                "word": "frequent",
+                "syllable_word": "fre·quent",
+                "phonetic": "ˈfriː·kwənt",
+                "japanese_synonym": "頻繁（ひんぱん）"
+            },
+            {
+                "word": "expand",
+                "syllable_word": "ex·pand",
+                "phonetic": "ɪkˈspænd",
+                "japanese_synonym": "拡大（かくだい）"
+            },
+            {
+                "word": "industry",
+                "syllable_word": "in·dus·try",
+                "phonetic": "ˈɪn·dʌs·tri",
+                "japanese_synonym": "産業（さんぎょう）"
+            },
+            {
+                "word": "monitor",
+                "syllable_word": "mon·i·tor",
+                "phonetic": "ˈmɒn·ɪ·tər",
+                "japanese_synonym": "監視（かんし）"
+            }
+        ]
+    }
+}

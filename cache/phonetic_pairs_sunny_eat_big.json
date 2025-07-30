@@ -1,0 +1,359 @@
+{
+    "prompt": "Provide the correct and standard phonetics of the word, and the syllable of this word with its phonetics in pair. Make sure the join of syllables will be exact the original word and phonetics. Treat space as a syllable. The words: ['sunny', 'eat', 'big', 'listen', 'tired', 'chair', 'quiet', 'phone', 'car', 'sell', 'play', 'school', 'buy', 'hot', 'weather', 'music', 'night', 'sad', 'movie', 'thankful', 'day', 'money', 'rainy', 'dark', 'angry', 'fun', 'drink', 'bicycle', 'loud', 'light'] Return the data in a JSON object with a 'phonetic_data' array.",
+    "response": {
+        "phonetic_data": [
+            {
+                "word": "sunny",
+                "phonetics": "ˈsʌni",
+                "syllables": [
+                    {
+                        "word_syllable": "sun",
+                        "phonetic_syllable": "sʌn"
+                    },
+                    {
+                        "word_syllable": "ny",
+                        "phonetic_syllable": "ni"
+                    }
+                ]
+            },
+            {
+                "word": "eat",
+                "phonetics": "it",
+                "syllables": [
+                    {
+                        "word_syllable": "eat",
+                        "phonetic_syllable": "it"
+                    }
+                ]
+            },
+            {
+                "word": "big",
+                "phonetics": "bɪg",
+                "syllables": [
+                    {
+                        "word_syllable": "big",
+                        "phonetic_syllable": "bɪg"
+                    }
+                ]
+            },
+            {
+                "word": "listen",
+                "phonetics": "ˈlɪsən",
+                "syllables": [
+                    {
+                        "word_syllable": "lis",
+                        "phonetic_syllable": "lɪs"
+                    },
+                    {
+                        "word_syllable": "ten",
+                        "phonetic_syllable": "ən"
+                    }
+                ]
+            },
+            {
+                "word": "tired",
+                "phonetics": "ˈtaɪərd",
+                "syllables": [
+                    {
+                        "word_syllable": "ti",
+                        "phonetic_syllable": "taɪ"
+                    },
+                    {
+                        "word_syllable": "red",
+                        "phonetic_syllable": "ərd"
+                    }
+                ]
+            },
+            {
+                "word": "chair",
+                "phonetics": "tʃɛr",
+                "syllables": [
+                    {
+                        "word_syllable": "chair",
+                        "phonetic_syllable": "tʃɛr"
+                    }
+                ]
+            },
+            {
+                "word": "quiet",
+                "phonetics": "ˈkwaɪət",
+                "syllables": [
+                    {
+                        "word_syllable": "qui",
+                        "phonetic_syllable": "kwaɪ"
+                    },
+                    {
+                        "word_syllable": "et",
+                        "phonetic_syllable": "ət"
+                    }
+                ]
+            },
+            {
+                "word": "phone",
+                "phonetics": "foʊn",
+                "syllables": [
+                    {
+                        "word_syllable": "phone",
+                        "phonetic_syllable": "foʊn"
+                    }
+                ]
+            },
+            {
+                "word": "car",
+                "phonetics": "kɑr",
+                "syllables": [
+                    {
+                        "word_syllable": "car",
+                        "phonetic_syllable": "kɑr"
+                    }
+                ]
+            },
+            {
+                "word": "sell",
+                "phonetics": "sɛl",
+                "syllables": [
+                    {
+                        "word_syllable": "sell",
+                        "phonetic_syllable": "sɛl"
+                    }
+                ]
+            },
+            {
+                "word": "play",
+                "phonetics": "pleɪ",
+                "syllables": [
+                    {
+                        "word_syllable": "play",
+                        "phonetic_syllable": "pleɪ"
+                    }
+                ]
+            },
+            {
+                "word": "school",
+                "phonetics": "skuːl",
+                "syllables": [
+                    {
+                        "word_syllable": "school",
+                        "phonetic_syllable": "skuːl"
+                    }
+                ]
+            },
+            {
+                "word": "buy",
+                "phonetics": "baɪ",
+                "syllables": [
+                    {
+                        "word_syllable": "buy",
+                        "phonetic_syllable": "baɪ"
+                    }
+                ]
+            },
+            {
+                "word": "hot",
+                "phonetics": "hɑt",
+                "syllables": [
+                    {
+                        "word_syllable": "hot",
+                        "phonetic_syllable": "hɑt"
+                    }
+                ]
+            },
+            {
+                "word": "weather",
+                "phonetics": "ˈwɛðər",
+                "syllables": [
+                    {
+                        "word_syllable": "wea",
+                        "phonetic_syllable": "wɛð"
+                    },
+                    {
+                        "word_syllable": "ther",
+                        "phonetic_syllable": "ər"
+                    }
+                ]
+            },
+            {
+                "word": "music",
+                "phonetics": "ˈmjuːzɪk",
+                "syllables": [
+                    {
+                        "word_syllable": "mu",
+                        "phonetic_syllable": "mjuː"
+                    },
+                    {
+                        "word_syllable": "sic",
+                        "phonetic_syllable": "zɪk"
+                    }
+                ]
+            },
+            {
+                "word": "night",
+                "phonetics": "naɪt",
+                "syllables": [
+                    {
+                        "word_syllable": "night",
+                        "phonetic_syllable": "naɪt"
+                    }
+                ]
+            },
+            {
+                "word": "sad",
+                "phonetics": "sæd",
+                "syllables": [
+                    {
+                        "word_syllable": "sad",
+                        "phonetic_syllable": "sæd"
+                    }
+                ]
+            },
+            {
+                "word": "movie",
+                "phonetics": "ˈmuːvi",
+                "syllables": [
+                    {
+                        "word_syllable": "mo",
+                        "phonetic_syllable": "muː"
+                    },
+                    {
+                        "word_syllable": "vie",
+                        "phonetic_syllable": "vi"
+                    }
+                ]
+            },
+            {
+                "word": "thankful",
+                "phonetics": "ˈθæŋkfəl",
+                "syllables": [
+                    {
+                        "word_syllable": "thank",
+                        "phonetic_syllable": "θæŋk"
+                    },
+                    {
+                        "word_syllable": "ful",
+                        "phonetic_syllable": "fəl"
+                    }
+                ]
+            },
+            {
+                "word": "day",
+                "phonetics": "deɪ",
+                "syllables": [
+                    {
+                        "word_syllable": "day",
+                        "phonetic_syllable": "deɪ"
+                    }
+                ]
+            },
+            {
+                "word": "money",
+                "phonetics": "ˈmʌni",
+                "syllables": [
+                    {
+                        "word_syllable": "mon",
+                        "phonetic_syllable": "mʌn"
+                    },
+                    {
+                        "word_syllable": "ey",
+                        "phonetic_syllable": "i"
+                    }
+                ]
+            },
+            {
+                "word": "rainy",
+                "phonetics": "ˈreɪni",
+                "syllables": [
+                    {
+                        "word_syllable": "rain",
+                        "phonetic_syllable": "reɪ"
+                    },
+                    {
+                        "word_syllable": "y",
+                        "phonetic_syllable": "ni"
+                    }
+                ]
+            },
+            {
+                "word": "dark",
+                "phonetics": "dɑrk",
+                "syllables": [
+                    {
+                        "word_syllable": "dark",
+                        "phonetic_syllable": "dɑrk"
+                    }
+                ]
+            },
+            {
+                "word": "angry",
+                "phonetics": "ˈæŋɡri",
+                "syllables": [
+                    {
+                        "word_syllable": "an",
+                        "phonetic_syllable": "æŋ"
+                    },
+                    {
+                        "word_syllable": "gry",
+                        "phonetic_syllable": "ɡri"
+                    }
+                ]
+            },
+            {
+                "word": "fun",
+                "phonetics": "fʌn",
+                "syllables": [
+                    {
+                        "word_syllable": "fun",
+                        "phonetic_syllable": "fʌn"
+                    }
+                ]
+            },
+            {
+                "word": "drink",
+                "phonetics": "drɪŋk",
+                "syllables": [
+                    {
+                        "word_syllable": "drink",
+                        "phonetic_syllable": "drɪŋk"
+                    }
+                ]
+            },
+            {
+                "word": "bicycle",
+                "phonetics": "ˈbaɪsɪkəl",
+                "syllables": [
+                    {
+                        "word_syllable": "bi",
+                        "phonetic_syllable": "baɪ"
+                    },
+                    {
+                        "word_syllable": "cy",
+                        "phonetic_syllable": "sɪ"
+                    },
+                    {
+                        "word_syllable": "cle",
+                        "phonetic_syllable": "kəl"
+                    }
+                ]
+            },
+            {
+                "word": "loud",
+                "phonetics": "laʊd",
+                "syllables": [
+                    {
+                        "word_syllable": "loud",
+                        "phonetic_syllable": "laʊd"
+                    }
+                ]
+            },
+            {
+                "word": "light",
+                "phonetics": "laɪt",
+                "syllables": [
+                    {
+                        "word_syllable": "light",
+                        "phonetic_syllable": "laɪt"
+                    }
+                ]
+            }
+        ]
+    }
+}

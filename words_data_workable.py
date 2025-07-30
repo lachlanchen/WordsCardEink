@@ -225,22 +225,13 @@ class AdvancedWordFetcher(OpenAIRequestJSONBase):
             "additionalProperties": False
         }
 
-    def fetch_words(self, num_words, word_database, include_existing=True):
-        """Main method to fetch words - delegates to openai or local with fallback"""
-        try:
-            words = self.fetch_words_openai(num_words, word_database, include_existing)
-            if words and len(words) > 0:
-                return words
-            else:
-                print("OpenAI fetch returned no words, falling back to local words")
-                return self.fetch_words_local(num_words, word_database)
-        except Exception as e:
-            print(f"Error in fetch_words_openai: {e}, falling back to local words")
-            return self.fetch_words_local(num_words, word_database)
+    def fetch_words(self, num_words, word_database):
+        """Main method to fetch words - delegates to openai or local"""
+        return self.fetch_words_openai(num_words, word_database)
 
-    def fetch_words_openai(self, num_words, word_database, include_existing=True):
+    def fetch_words_openai(self, num_words, word_database):
         """
-        Fetch words using structured OpenAI outputs with enhanced strategies
+        Fetch words using structured OpenAI outputs
         """
         propensities = self.load_propensities()
         local_words = self.fetch_words_local(num_words, word_database)
@@ -248,303 +239,123 @@ class AdvancedWordFetcher(OpenAIRequestJSONBase):
         words_number_scale_factor = 5
         num_words_scaled = num_words * words_number_scale_factor
         
-        # Try multiple strategies to get unique words, starting with common words
-        strategies = [
-            ("common_daily", "common, everyday, and frequently used"),
-            ("intermediate", "intermediate level, commonly found in newspapers and magazines"),
-            ("business_professional", "business, professional, and workplace"),
-            ("academic_vocabulary", "academic, scholarly, or formal"),
-            ("technical_terms", "technical, scientific, or specialized"),
-            ("advanced_literary", "advanced, sophisticated, or literary")
-        ]
-        
-        partial_words = []  # Collect partial results
-        
-        for strategy_name, word_type in strategies:
-            print(f"Trying strategy: {strategy_name}")
-            
-            # Choose the appropriate prompt based on strategy
-            if propensities and strategy_name == "common_daily":
-                criteria_list = "\n".join([f"{i+1}) {propensity}" for i, propensity in enumerate(propensities)])
-                user_message = (
-                    f"Generate a list of {num_words_scaled} unique {word_type} words that meet one or more of the following criteria:\n"
-                    f"{criteria_list}\n"
-                    "Focus on words that are commonly used in daily conversation and basic writing. "
-                    "Return the words in a JSON object with a 'words' array containing the list of words."
-                )
-            elif strategy_name == "common_daily":
-                user_message = (
-                    f"Generate a list of {num_words_scaled} unique {word_type} English words. "
-                    "Focus on vocabulary that people use in daily conversations, basic reading, and everyday situations. "
-                    "Include words from: daily activities, emotions, common objects, basic verbs and adjectives, family and relationships, food, weather, etc. "
-                    "These should be words that intermediate English learners would encounter regularly. "
-                    f"Return the words in a JSON object with a 'words' array containing the list of words."
-                )
-            elif strategy_name == "intermediate":
-                user_message = (
-                    f"Generate a list of {num_words_scaled} unique {word_type} English words. "
-                    "Focus on vocabulary commonly found in newspapers, magazines, and general media. "
-                    "Include words from: current events, general science, basic business, travel, culture, health, education, etc. "
-                    "These should be words that upper-intermediate English learners encounter in mainstream media. "
-                    f"Return the words in a JSON object with a 'words' array containing the list of words."
-                )
-            elif strategy_name == "business_professional":
-                user_message = (
-                    f"Generate a list of {num_words_scaled} unique {word_type} English words. "
-                    "Focus on vocabulary used in professional and business contexts. "
-                    "Include words from: meetings, presentations, negotiations, management, finance, marketing, project management, etc. "
-                    "These should be words that professionals encounter in workplace communication. "
-                    f"Return the words in a JSON object with a 'words' array containing the list of words."
-                )
-            elif strategy_name == "academic_vocabulary":
-                user_message = (
-                    f"Generate a list of {num_words_scaled} unique {word_type} English words. "
-                    "Focus on vocabulary found in academic texts, research papers, and scholarly writing. "
-                    "Include words from: research methodology, analysis, theories, formal writing, academic discussions, etc. "
-                    "These should be words that university students and researchers encounter in academic contexts. "
-                    f"Return the words in a JSON object with a 'words' array containing the list of words."
-                )
-            elif strategy_name == "technical_terms":
-                user_message = (
-                    f"Generate a list of {num_words_scaled} unique {word_type} English words. "
-                    "Focus on specialized vocabulary from technical and scientific fields. "
-                    "Include words from: science, technology, medicine, engineering, computer science, biology, physics, etc. "
-                    "These should be technical terms that specialists in various fields would use. "
-                    f"Return the words in a JSON object with a 'words' array containing the list of words."
-                )
-            else:  # advanced_literary
-                user_message = (
-                    f"Generate a list of {num_words_scaled} unique {word_type} English words. "
-                    "Focus on sophisticated vocabulary found in literature, advanced texts, and formal writing. "
-                    "Include words from: classical literature, philosophy, advanced humanities, rare but meaningful words, etc. "
-                    "These should be words that challenge even advanced English speakers and readers. "
-                    f"Return the words in a JSON object with a 'words' array containing the list of words."
-                )
-
-            if strategy_name in ["common_daily", "intermediate"]:
-                system_content = (
-                    "You are an assistant with a vast vocabulary knowledge. "
-                    "You specialize in practical, useful English vocabulary. "
-                    f"Focus on {word_type} words that are genuinely useful for English learners."
-                )
-            elif strategy_name in ["business_professional", "academic_vocabulary"]:
-                system_content = (
-                    "You are an assistant with extensive knowledge of professional and academic English. "
-                    "You specialize in formal and professional vocabulary. "
-                    f"Focus on {word_type} words that are essential for professional and academic success."
-                )
-            else:  # technical_terms, advanced_literary
-                system_content = (
-                    "You are an assistant with a vast vocabulary and creativity. "
-                    "You specialize in advanced and sophisticated English vocabulary. "
-                    f"Focus on {word_type} words that would challenge an advanced English learner."
-                )
-            
-            try:
-                # Use different cache filenames for different strategies
-                cache_filename = f"fetch_words_{strategy_name}_{num_words_scaled}.json"
-                
-                # Use structured outputs to get the response
-                response = self.send_request_with_json_schema(
-                    prompt=user_message,
-                    json_schema=self.get_word_list_schema(),
-                    system_content=system_content,
-                    filename=cache_filename
-                )
-                
-                words_list = response["words"]
-                
-                # Filter out words that already exist in the database (unless include_existing=True)
-                if include_existing:
-                    unique_words = words_list  # Include all words, even existing ones
-                    print(f"Strategy '{strategy_name}': {len(words_list)} total words (including existing)")
-                else:
-                    unique_words = [word for word in words_list if not word_database.word_exists(word)]
-                    print(f"Strategy '{strategy_name}': {len(words_list)} total words, {len(unique_words)} unique")
-                
-                # Add unique words to our collection
-                partial_words.extend(unique_words)
-                partial_words = list(set(partial_words))  # Remove duplicates
-                
-                print(f"Collected so far: {len(partial_words)} unique words")
-                
-                # If we got enough unique words, return them early
-                if len(partial_words) >= num_words:
-                    print(f"Found enough words ({len(partial_words)}) from strategy '{strategy_name}', stopping early")
-                    return partial_words[:num_words_scaled]  # Return up to the requested amount
-                    
-            except Exception as e:
-                print(f"Strategy '{strategy_name}' failed: {e}")
-                continue
-        
-        # If all strategies failed to get enough words, try a fallback with random generation
-        print("All strategies provided insufficient words, trying fallback with creative approach...")
-        try:
-            fallback_message = (
-                f"Create {num_words_scaled} unique, creative, and sophisticated English words. "
-                "Mix real advanced vocabulary with technical terms from various fields: "
-                "neuroscience, quantum physics, philosophy, linguistics, biotechnology, "
-                "cybersecurity, environmental science, psychology, literature, etc. "
-                "Focus on words that would appear in graduate-level academic papers or professional journals. "
-                "Return the words in a JSON object with a 'words' array."
+        # Choose the appropriate prompt based on whether propensities are available
+        if propensities:
+            criteria_list = "\n".join([f"{i+1}) {propensity}" for i, propensity in enumerate(propensities)])
+            user_message = (
+                f"Generate a list of {num_words_scaled} unique advanced words that meet one or more of the following criteria:\n"
+                f"{criteria_list}\n"
+                "Return the words in a JSON object with a 'words' array containing the list of words."
             )
-            
+        else:
+            user_message = (
+                "Choose English words from most common to advanced that are often used in daily expression or formal readings in various areas. "
+                f"Could you take a deep breath, think widely and give me a list of {num_words_scaled} words. "
+                f"Return the words in a JSON object with a 'words' array containing the list of words."
+            )
+
+        system_content = "You are an assistant with a vast vocabulary and creativity. You almost know every English words in this universe."
+        
+        try:
+            # Use structured outputs to get the response
             response = self.send_request_with_json_schema(
-                prompt=fallback_message,
+                prompt=user_message,
                 json_schema=self.get_word_list_schema(),
-                system_content="You are a vocabulary expert creating challenging advanced English words.",
-                filename=f"fetch_words_fallback_{num_words_scaled}.json"
+                system_content=system_content,
+                filename=f"fetch_words_{num_words_scaled}.json"
             )
             
             words_list = response["words"]
-            unique_words = words_list if include_existing else [word for word in words_list if not word_database.word_exists(word)]
             
-            print(f"Fallback strategy: {len(words_list)} total words, {len(unique_words)} {'(including existing)' if include_existing else 'unique'}")
+            # Filter out words that already exist in the database
+            unique_words = [word for word in words_list if not word_database.word_exists(word)]
             
-            if len(unique_words) > 0:
-                partial_words.extend(unique_words)
-                partial_words = list(set(partial_words))  # Remove duplicates
+            if not unique_words:
+                raise RuntimeError("No unique words found after filtering.")
                 
-        except Exception as e:
-            print(f"Fallback strategy failed: {e}")
-        
-        # Use what we have collected
-        if len(partial_words) > 0:
-            print(f"Using collected results: {len(partial_words)} words")
-            return partial_words[:num_words_scaled] if len(partial_words) >= num_words else partial_words
+            return unique_words
             
-        # Final fallback: use local dictionary words
-        print("No OpenAI words found, using local dictionary words as fallback...")
-        if local_words and len(local_words) > 0:
-            if include_existing:
-                print(f"Found {len(local_words)} words from local dictionary (including existing)")
-                return local_words[:num_words]
-            else:
-                local_unique = [word for word in local_words if not word_database.word_exists(word)]
-                if local_unique:
-                    print(f"Found {len(local_unique)} unique words from local dictionary")
-                    return local_unique[:num_words]
-                else:
-                    print("Even local words are mostly duplicates, returning available local words anyway")
-                    return local_words[:num_words]
-        else:
-            print("No local words available either, returning empty list")
-            return []
+        except Exception as e:
+            print(f"Error in fetch_words_openai: {e}")
+            traceback.print_exc()
+            raise RuntimeError("Failed to fetch unique words.")
 
-    def fetch_word_details(self, words, word_database=None, num_words_phonetic=10, include_existing=True):
+    def fetch_word_details(self, words, word_database=None, num_words_phonetic=10):
         """
         Fetch word details using structured OpenAI outputs
         """
         # Initialize phonetic_checker if it doesn't exist
         if not hasattr(self, 'phonetic_checker'):
             self.phonetic_checker = PhoneticRechecker()
-        
-        # Separate new words from existing words
-        new_words = []
-        existing_words = []
-        
-        for word in words:
-            if word_database and word_database.word_exists(word):
-                existing_words.append(word)
-            else:
-                new_words.append(word)
-        
-        print(f"Processing: {len(new_words)} new words, {len(existing_words)} existing words")
-        
-        # Only process new words with OpenAI
-        if new_words:
-            random_words = new_words
-            self.save_unused_words(words, random_words)
-
-            # Directly create the example string
-            example_word = self.examples[0].get("word", "")
-            syllables = split_word(self.examples[0].get("syllable_word", ""))
-            phonetics = split_word(self.examples[0].get("phonetic", ""))
-            mappings = self.map_syllables_phonetics(syllables, phonetics)
-
-            words_string = ', '.join(random_words).lower()
             
-            detailed_list_message = (
-                "Could you provide a detailed syllable (using ·) and phonetic separation (also using ·) "
-                "ensuring a one-to-one correspondence between syllable_word and its IPA phonetic? "
-                "Please adjust the syllable or phonetic divisions if necessary "
-                "to ensure each syllable directly matches/aligns with its corresponding phonetic element, "
-                "even if this means altering the conventional syllable breakdown."
-                f"For example, the separation of {example_word} should reflect the correspondence: \n {mappings}. \n"
-                "For japanese_synonym: "
-                "- If kanji exists for the concept, use kanji with hiragana reading in parentheses: 特徴（とくちょう）, 定義（ていぎ） "
-                "- If no kanji exists or hiragana is more natural, use hiragana only: つかむ, する "
-                "- Prefer kanji when commonly used in written Japanese "
-                f"Could you provide me the linguistic details for words [ {words_string} ] ?"
-                "Return the data in a JSON object with a 'word_details' array containing: word, syllable_word, phonetic, and japanese_synonym for each word."
+        random_words = words
+        self.save_unused_words(words, random_words)
+
+        # Directly create the example string
+        example_word = self.examples[0].get("word", "")
+        syllables = split_word(self.examples[0].get("syllable_word", ""))
+        phonetics = split_word(self.examples[0].get("phonetic", ""))
+        mappings = self.map_syllables_phonetics(syllables, phonetics)
+
+        words_string = ', '.join(random_words).lower()
+        
+        detailed_list_message = (
+            "Could you provide a detailed syllable (using ·) and phonetic separation (also using ·) "
+            "ensuring a one-to-one correspondence between syllable_word and its IPA phonetic? "
+            "Please adjust the syllable or phonetic divisions if necessary "
+            "to ensure each syllable directly matches/aligns with its corresponding phonetic element, "
+            "even if this means altering the conventional syllable breakdown."
+            f"For example, the separation of {example_word} should reflect the correspondence: \n {mappings}. \n"
+            "Also provide the japanese_synonym with hiragana pronunciation of kanji inside parentheses. "
+            f"Could you provide me the linguistic details for words [ {words_string} ] ?"
+            "Return the data in a JSON object with a 'word_details' array containing: word, syllable_word, phonetic, and japanese_synonym for each word."
+        )
+
+        system_content = "You are an assistant skilled in linguistics, capable of providing detailed phonetic and linguistic attributes for given words."
+        
+        try:
+            # Use structured outputs to get the response
+            response = self.send_request_with_json_schema(
+                prompt=detailed_list_message,
+                json_schema=self.get_word_details_schema(),
+                system_content=system_content,
+                filename=f"word_details_{'_'.join(random_words[:3])}.json"
             )
-
-            system_content = "You are an assistant skilled in linguistics, capable of providing detailed phonetic and linguistic attributes for given words. For Japanese synonyms, always use kanji characters with hiragana readings in parentheses when possible (e.g., 特徴（とくちょう）, 定義（ていぎ）). Avoid providing purely hiragana words unless no kanji equivalent exists."
             
-            try:
-                # Use structured outputs to get the response
-                response = self.send_request_with_json_schema(
-                    prompt=detailed_list_message,
-                    json_schema=self.get_word_details_schema(),
-                    system_content=system_content,
-                    filename=f"word_details_{'_'.join(random_words[:3])}.json"
-                )
-                
-                word_phonetics = response["word_details"]
+            word_phonetics = response["word_details"]
 
-                # Save word details to database
-                for detail in word_phonetics:
-                    if word_database:
-                        try:
-                            word_database.insert_word_details(detail)
-                        except Exception as e:
-                            if "UNIQUE constraint failed" in str(e):
-                                print(f"Word '{detail.get('word', 'unknown')}' already exists in database, updating instead...")
-                                word_database.update_word_details(detail)
-                            else:
-                                print(f"Error inserting word details: {e}")
-                                continue
-                
-                # Post-processing steps remain the same
+            # Save word details to database
+            for detail in word_phonetics:
                 if word_database:
-                    words_list = [word["word"] for word in word_phonetics]
-                    
-                    print("Starting comparing separation...")
-                    self.phonetic_checker.recheck_word_phonetics_with_paired_tuple(words_list, word_database)
-                    print("Starting check Japanese...")
-                    self.recheck_japanese_synonym_with_conditions(word_phonetics.copy(), word_database)
-                    print("Generating kanji...")
-                    word_database.update_kanji_for_all_words()
-                    print("Starting check pure kanji...")
-                    self.recheck_pure_kanji_synonym(word_phonetics.copy(), word_database)
-                    print("Starting check Arabic...")
-                    word_database.convert_and_update_chinese_synonyms()
-                    self.recheck_arabic_synonym(word_phonetics.copy(), word_database)
-
-                    # Get updated word details from database for all words (new + existing)
-                    all_processed_words = words_list + existing_words
-                    word_phonetics = [word_database.find_word_details(word) for word in all_processed_words]
-                    word_phonetics = [w for w in word_phonetics if w is not None]  # Filter out None results
-
-                    self.examples = word_phonetics[0:2] if len(word_phonetics) >= 2 else word_phonetics
-                    self.save_examples()
-                    
-                return word_phonetics
+                    word_database.insert_word_details(detail)
+            
+            # Post-processing steps remain the same
+            if word_database:
+                words_list = [word["word"] for word in word_phonetics]
                 
-            except Exception as e:
-                print(f"Error in fetch_word_details: {e}")
-                traceback.print_exc()
-                raise RuntimeError("Failed to fetch word details.")
-        
-        else:
-            # If only existing words, just return their details from database
-            if existing_words and word_database:
-                print("Only existing words, fetching from database...")
-                word_phonetics = [word_database.find_word_details(word) for word in existing_words]
-                word_phonetics = [w for w in word_phonetics if w is not None]  # Filter out None results
-                return word_phonetics
-            else:
-                return []
+                print("Starting comparing separation...")
+                self.phonetic_checker.recheck_word_phonetics_with_paired_tuple(words_list, word_database)
+                print("Starting check Japanese...")
+                self.recheck_japanese_synonym_with_conditions(word_phonetics.copy(), word_database)
+                print("Generating kanji...")
+                word_database.update_kanji_for_all_words()
+                print("Starting check pure kanji...")
+                self.recheck_pure_kanji_synonym(word_phonetics.copy(), word_database)
+                print("Starting check Arabic...")
+                word_database.convert_and_update_chinese_synonyms()
+                self.recheck_arabic_synonym(word_phonetics.copy(), word_database)
+
+                word_phonetics = [word_database.find_word_details(word) for word in words_list]
+
+                self.examples = word_phonetics[0:2]
+                self.save_examples()
+                
+            return word_phonetics
+            
+        except Exception as e:
+            print(f"Error in fetch_word_details: {e}")
+            traceback.print_exc()
+            raise RuntimeError("Failed to fetch word details.")
 
     def recheck_syllable_and_phonetic(self, word_details, word_database=None, messages=""):
         """

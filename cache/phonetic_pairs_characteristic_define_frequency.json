@@ -1,0 +1,223 @@
+{
+    "prompt": "Provide the correct and standard phonetics of the word, and the syllable of this word with its phonetics in pair. Make sure the join of syllables will be exact the original word and phonetics. Treat space as a syllable. The words: ['characteristic', 'define', 'frequency', 'genuine', 'nevertheless', 'reliable', 'withstand', 'grasp', 'legitimate', 'operate', 'proficient', 'xiom'] Return the data in a JSON object with a 'phonetic_data' array.",
+    "response": {
+        "phonetic_data": [
+            {
+                "word": "characteristic",
+                "phonetics": "ˌkær.ɪk.təˈrɪs.tɪk",
+                "syllables": [
+                    {
+                        "word_syllable": "char",
+                        "phonetic_syllable": "ʧɑr"
+                    },
+                    {
+                        "word_syllable": "ac",
+                        "phonetic_syllable": "ə̆k"
+                    },
+                    {
+                        "word_syllable": "ter",
+                        "phonetic_syllable": "tər"
+                    },
+                    {
+                        "word_syllable": "is",
+                        "phonetic_syllable": "ɪs"
+                    },
+                    {
+                        "word_syllable": "tic",
+                        "phonetic_syllable": "tɪk"
+                    }
+                ]
+            },
+            {
+                "word": "define",
+                "phonetics": "dɪˈfaɪn",
+                "syllables": [
+                    {
+                        "word_syllable": "de",
+                        "phonetic_syllable": "dɪ"
+                    },
+                    {
+                        "word_syllable": "fine",
+                        "phonetic_syllable": "faɪn"
+                    }
+                ]
+            },
+            {
+                "word": "frequency",
+                "phonetics": "ˈfriː.kwən.si",
+                "syllables": [
+                    {
+                        "word_syllable": "fre",
+                        "phonetic_syllable": "fri"
+                    },
+                    {
+                        "word_syllable": "quen",
+                        "phonetic_syllable": "kwən"
+                    },
+                    {
+                        "word_syllable": "cy",
+                        "phonetic_syllable": "si"
+                    }
+                ]
+            },
+            {
+                "word": "genuine",
+                "phonetics": "ˈdʒɛn.ju.ɪn",
+                "syllables": [
+                    {
+                        "word_syllable": "gen",
+                        "phonetic_syllable": "dʒɛn"
+                    },
+                    {
+                        "word_syllable": "u",
+                        "phonetic_syllable": "ju"
+                    },
+                    {
+                        "word_syllable": "ine",
+                        "phonetic_syllable": "ɪn"
+                    }
+                ]
+            },
+            {
+                "word": "nevertheless",
+                "phonetics": "ˌnɛv.əˈðel.əs",
+                "syllables": [
+                    {
+                        "word_syllable": "nev",
+                        "phonetic_syllable": "nɛv"
+                    },
+                    {
+                        "word_syllable": "er",
+                        "phonetic_syllable": "ər"
+                    },
+                    {
+                        "word_syllable": "the",
+                        "phonetic_syllable": "ðɛl"
+                    },
+                    {
+                        "word_syllable": "less",
+                        "phonetic_syllable": "əs"
+                    }
+                ]
+            },
+            {
+                "word": "reliable",
+                "phonetics": "rɪˈlaɪ.ə.bəl",
+                "syllables": [
+                    {
+                        "word_syllable": "re",
+                        "phonetic_syllable": "rɪ"
+                    },
+                    {
+                        "word_syllable": "li",
+                        "phonetic_syllable": "laɪ"
+                    },
+                    {
+                        "word_syllable": "a",
+                        "phonetic_syllable": "ə"
+                    },
+                    {
+                        "word_syllable": "ble",
+                        "phonetic_syllable": "bəl"
+                    }
+                ]
+            },
+            {
+                "word": "withstand",
+                "phonetics": "wɪðˈstænd",
+                "syllables": [
+                    {
+                        "word_syllable": "with",
+                        "phonetic_syllable": "wɪð"
+                    },
+                    {
+                        "word_syllable": "stand",
+                        "phonetic_syllable": "stænd"
+                    }
+                ]
+            },
+            {
+                "word": "grasp",
+                "phonetics": "ɡræsp",
+                "syllables": [
+                    {
+                        "word_syllable": "grasp",
+                        "phonetic_syllable": "græsp"
+                    }
+                ]
+            },
+            {
+                "word": "legitimate",
+                "phonetics": "lɪˈdʒɪt.ɪ.mət",
+                "syllables": [
+                    {
+                        "word_syllable": "le",
+                        "phonetic_syllable": "lɪ"
+                    },
+                    {
+                        "word_syllable": "gi",
+                        "phonetic_syllable": "dʒɪ"
+                    },
+                    {
+                        "word_syllable": "ti",
+                        "phonetic_syllable": "tɪ"
+                    },
+                    {
+                        "word_syllable": "mate",
+                        "phonetic_syllable": "mət"
+                    }
+                ]
+            },
+            {
+                "word": "operate",
+                "phonetics": "ˈɒp.ər.eɪt",
+                "syllables": [
+                    {
+                        "word_syllable": "op",
+                        "phonetic_syllable": "ɒp"
+                    },
+                    {
+                        "word_syllable": "er",
+                        "phonetic_syllable": "ər"
+                    },
+                    {
+                        "word_syllable": "ate",
+                        "phonetic_syllable": "eɪt"
+                    }
+                ]
+            },
+            {
+                "word": "proficient",
+                "phonetics": "prəˈfɪʃ.ənt",
+                "syllables": [
+                    {
+                        "word_syllable": "pro",
+                        "phonetic_syllable": "prə"
+                    },
+                    {
+                        "word_syllable": "fi",
+                        "phonetic_syllable": "fɪ"
+                    },
+                    {
+                        "word_syllable": "cient",
+                        "phonetic_syllable": "ʃənt"
+                    }
+                ]
+            },
+            {
+                "word": "xiom",
+                "phonetics": "ˈzaɪ.əm",
+                "syllables": [
+                    {
+                        "word_syllable": "xi",
+                        "phonetic_syllable": "zaɪ"
+                    },
+                    {
+                        "word_syllable": "om",
+                        "phonetic_syllable": "əm"
+                    }
+                ]
+            }
+        ]
+    }
+}

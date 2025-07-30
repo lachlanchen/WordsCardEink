@@ -1,0 +1,19 @@
+content_type:  japanese_and_arabic
+Server is running on http://lazyingart:8082
+hk hour:  23
+self.use_cache:  True
+cache_path:  cache/word_fetcher/words_fetch_10_5223.json
+cache_dir:  cache/word_fetcher
+Querying OpenAI with structured outputs (attempt 1)...
+cache_path:  cache/word_fetcher/words_fetch_10_5223.json
+cache_dir:  cache/word_fetcher
+self.use_cache:  True
+cache_path:  cache/word_fetcher/word_details_3949.json
+cache_dir:  cache/word_fetcher
+Querying OpenAI with structured outputs (attempt 1)...
+OpenAI API error: Error code: 400 - {'error': {'message': "Invalid schema for response_format 'response': In context=('properties', 'words', 'items'), 'required' is required to be supplied and to be an array including every key in properties. Missing 'kanji_synonym'.", 'type': 'invalid_request_error', 'param': 'response_format', 'code': None}}
+Querying OpenAI with structured outputs (attempt 2)...
+OpenAI API error: Error code: 400 - {'error': {'message': "Invalid schema for response_format 'response': In context=('properties', 'words', 'items'), 'required' is required to be supplied and to be an array including every key in properties. Missing 'kanji_synonym'.", 'type': 'invalid_request_error', 'param': 'response_format', 'code': None}}
+Querying OpenAI with structured outputs (attempt 3)...
+OpenAI API error: Error code: 400 - {'error': {'message': "Invalid schema for response_format 'response': In context=('properties', 'words', 'items'), 'required' is required to be supplied and to be an array including every key in properties. Missing 'kanji_synonym'.", 'type': 'invalid_request_error', 'param': 'response_format', 'code': None}}
+Error fetching word details: Maximum retries reached without success.

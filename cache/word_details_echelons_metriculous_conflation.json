@@ -1,0 +1,109 @@
+{
+    "prompt": "Could you provide a detailed syllable (using ·) and phonetic separation (also using ·) ensuring a one-to-one correspondence between syllable_word and its IPA phonetic? Please adjust the syllable or phonetic divisions if necessary to ensure each syllable directly matches/aligns with its corresponding phonetic element, even if this means altering the conventional syllable breakdown.For example, the separation of letteret should reflect the correspondence: \n let ↔ lɛt, ter ↔ ər, et  ↔ ɛt . \nFor japanese_synonym: - If kanji exists for the concept, use kanji with hiragana reading in parentheses: 特徴（とくちょう）, 定義（ていぎ） - If no kanji exists or hiragana is more natural, use hiragana only: つかむ, する - Prefer kanji when commonly used in written Japanese Could you provide me the linguistic details for words [ echelons, metriculous, conflation, benediction, technocracy, opportune, inter alia, ephemera, inextricable, repercussion, fallacy, polemical, axiology, simulacrum, copious, paradoxical, repidation ] ?Return the data in a JSON object with a 'word_details' array containing: word, syllable_word, phonetic, and japanese_synonym for each word.",
+    "response": {
+        "word_details": [
+            {
+                "word": "echelons",
+                "syllable_word": "ech·e·lons",
+                "phonetic": "ˈɛʃ.ə.lɒnz",
+                "japanese_synonym": "階層（かいそう）"
+            },
+            {
+                "word": "metriculous",
+                "syllable_word": "me·tric·u·lous",
+                "phonetic": "məˈtrɪk.jə.ləs",
+                "japanese_synonym": "精密（せいみつ）"
+            },
+            {
+                "word": "conflation",
+                "syllable_word": "con·fla·tion",
+                "phonetic": "kənˈfleɪ.ʃən",
+                "japanese_synonym": "混同（こんどう）"
+            },
+            {
+                "word": "benediction",
+                "syllable_word": "ben·e·dic·tion",
+                "phonetic": "ˌbɛn.ɪˈdɪk.ʃən",
+                "japanese_synonym": "祝福（しゅくふく）"
+            },
+            {
+                "word": "technocracy",
+                "syllable_word": "tech·noc·ra·cy",
+                "phonetic": "tɛkˈnɒk.rə.si",
+                "japanese_synonym": "技術支配（ぎじゅつしはい）"
+            },
+            {
+                "word": "opportune",
+                "syllable_word": "op·por·tune",
+                "phonetic": "ˌɒp.ərˈtjun",
+                "japanese_synonym": "好機（こうき）"
+            },
+            {
+                "word": "inter alia",
+                "syllable_word": "in·ter·a·lia",
+                "phonetic": "ˈɪn.tər ˈeɪ.li.ə",
+                "japanese_synonym": "その他（そのた）"
+            },
+            {
+                "word": "ephemera",
+                "syllable_word": "e·phem·e·ra",
+                "phonetic": "ɪˈfɛm.ə.rə",
+                "japanese_synonym": "一時的なもの（いちじてきなもの）"
+            },
+            {
+                "word": "inextricable",
+                "syllable_word": "in·ex·tri·ca·ble",
+                "phonetic": "ˌɪnˈɛk.strɪ.kə.bəl",
+                "japanese_synonym": "解決不可能な（かいけつふかのうな）"
+            },
+            {
+                "word": "repercussion",
+                "syllable_word": "re·per·cus·sion",
+                "phonetic": "ˌriː.pərˈkʌʃ.ən",
+                "japanese_synonym": "影響（えいきょう）"
+            },
+            {
+                "word": "fallacy",
+                "syllable_word": "fal·la·cy",
+                "phonetic": "ˈfæl.ə.si",
+                "japanese_synonym": "誤謬（ごびゅう）"
+            },
+            {
+                "word": "polemical",
+                "syllable_word": "po·lem·i·cal",
+                "phonetic": "pəˈlɛm.ɪ.kəl",
+                "japanese_synonym": "論争的な（ろんそうてきな）"
+            },
+            {
+                "word": "axiology",
+                "syllable_word": "ax·i·ol·o·gy",
+                "phonetic": "ˌæks.iˈɒl.ə.dʒi",
+                "japanese_synonym": "価値論（かちろん）"
+            },
+            {
+                "word": "simulacrum",
+                "syllable_word": "sim·u·la·crum",
+                "phonetic": "ˌsɪm.jəˈleɪ.krəm",
+                "japanese_synonym": "模倣（もほう）"
+            },
+            {
+                "word": "copious",
+                "syllable_word": "co·pi·ous",
+                "phonetic": "ˈkoʊ.pi.əs",
+                "japanese_synonym": "豊富（ほうふ）"
+            },
+            {
+                "word": "paradoxical",
+                "syllable_word": "par·a·dox·i·cal",
+                "phonetic": "ˌpær.əˈdɒk.sɪ.kəl",
+                "japanese_synonym": "逆説的な（ぎゃくせつてきな）"
+            },
+            {
+                "word": "repidation",
+                "syllable_word": "rep·i·da·tion",
+                "phonetic": "ˌrɛp.ɪˈdeɪ.ʃən",
+                "japanese_synonym": "恐れ（おそれ）"
+            }
+        ]
+    }
+}

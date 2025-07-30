@@ -1,0 +1,187 @@
+{
+    "prompt": "Could you provide a detailed syllable (using ·) and phonetic separation (also using ·) ensuring a one-to-one correspondence between syllable_word and its IPA phonetic? Please adjust the syllable or phonetic divisions if necessary to ensure each syllable directly matches/aligns with its corresponding phonetic element, even if this means altering the conventional syllable breakdown.For example, the separation of letteret should reflect the correspondence: \n let ↔ lɛt, ter ↔ ər, et  ↔ ɛt . \nFor japanese_synonym: - If kanji exists for the concept, use kanji with hiragana reading in parentheses: 特徴（とくちょう）, 定義（ていぎ） - If no kanji exists or hiragana is more natural, use hiragana only: つかむ, する - Prefer kanji when commonly used in written Japanese Could you provide me the linguistic details for words [ sunny, eat, big, listen, tired, chair, quiet, phone, car, sell, play, school, buy, hot, weather, music, night, sad, movie, thankful, day, money, rainy, dark, angry, fun, drink, bicycle, loud, light ] ?Return the data in a JSON object with a 'word_details' array containing: word, syllable_word, phonetic, and japanese_synonym for each word.",
+    "response": {
+        "word_details": [
+            {
+                "word": "sunny",
+                "syllable_word": "sun·ny",
+                "phonetic": "ˈsʌn.i",
+                "japanese_synonym": "晴れ（はれ）"
+            },
+            {
+                "word": "eat",
+                "syllable_word": "eat",
+                "phonetic": "iːt",
+                "japanese_synonym": "食べる（たべる）"
+            },
+            {
+                "word": "big",
+                "syllable_word": "big",
+                "phonetic": "bɪg",
+                "japanese_synonym": "大きい（おおきい）"
+            },
+            {
+                "word": "listen",
+                "syllable_word": "lis·ten",
+                "phonetic": "ˈlɪs.ən",
+                "japanese_synonym": "聞く（きく）"
+            },
+            {
+                "word": "tired",
+                "syllable_word": "tir·ed",
+                "phonetic": "ˈtaɪərd",
+                "japanese_synonym": "疲れた（つかれた）"
+            },
+            {
+                "word": "chair",
+                "syllable_word": "chair",
+                "phonetic": "tʃɛr",
+                "japanese_synonym": "椅子（いす）"
+            },
+            {
+                "word": "quiet",
+                "syllable_word": "qui·et",
+                "phonetic": "ˈkwaɪ.ɪt",
+                "japanese_synonym": "静か（しずか）"
+            },
+            {
+                "word": "phone",
+                "syllable_word": "phone",
+                "phonetic": "foʊn",
+                "japanese_synonym": "電話（でんわ）"
+            },
+            {
+                "word": "car",
+                "syllable_word": "car",
+                "phonetic": "kɑr",
+                "japanese_synonym": "車（くるま）"
+            },
+            {
+                "word": "sell",
+                "syllable_word": "sell",
+                "phonetic": "sɛl",
+                "japanese_synonym": "売る（うる）"
+            },
+            {
+                "word": "play",
+                "syllable_word": "play",
+                "phonetic": "pleɪ",
+                "japanese_synonym": "遊ぶ（あそぶ）"
+            },
+            {
+                "word": "school",
+                "syllable_word": "school",
+                "phonetic": "skuːl",
+                "japanese_synonym": "学校（がっこう）"
+            },
+            {
+                "word": "buy",
+                "syllable_word": "buy",
+                "phonetic": "baɪ",
+                "japanese_synonym": "買う（かう）"
+            },
+            {
+                "word": "hot",
+                "syllable_word": "hot",
+                "phonetic": "hɑt",
+                "japanese_synonym": "熱い（あつい）"
+            },
+            {
+                "word": "weather",
+                "syllable_word": "wea·ther",
+                "phonetic": "ˈwɛð.ər",
+                "japanese_synonym": "天気（てんき）"
+            },
+            {
+                "word": "music",
+                "syllable_word": "mu·sic",
+                "phonetic": "ˈmjuː.zɪk",
+                "japanese_synonym": "音楽（おんがく）"
+            },
+            {
+                "word": "night",
+                "syllable_word": "night",
+                "phonetic": "naɪt",
+                "japanese_synonym": "夜（よる）"
+            },
+            {
+                "word": "sad",
+                "syllable_word": "sad",
+                "phonetic": "sæd",
+                "japanese_synonym": "悲しい（かなしい）"
+            },
+            {
+                "word": "movie",
+                "syllable_word": "mo·vie",
+                "phonetic": "ˈmuː.vi",
+                "japanese_synonym": "映画（えいが）"
+            },
+            {
+                "word": "thankful",
+                "syllable_word": "thank·ful",
+                "phonetic": "ˈθæŋkfəl",
+                "japanese_synonym": "感謝（かんしゃ）"
+            },
+            {
+                "word": "day",
+                "syllable_word": "day",
+                "phonetic": "deɪ",
+                "japanese_synonym": "日（ひ）"
+            },
+            {
+                "word": "money",
+                "syllable_word": "mon·ey",
+                "phonetic": "ˈmʌn.i",
+                "japanese_synonym": "お金（おかね）"
+            },
+            {
+                "word": "rainy",
+                "syllable_word": "rain·y",
+                "phonetic": "ˈreɪ.ni",
+                "japanese_synonym": "雨（あめ）"
+            },
+            {
+                "word": "dark",
+                "syllable_word": "dark",
+                "phonetic": "dɑrk",
+                "japanese_synonym": "暗い（くらい）"
+            },
+            {
+                "word": "angry",
+                "syllable_word": "an·gry",
+                "phonetic": "ˈæŋ.ɡri",
+                "japanese_synonym": "怒っている（おこっている）"
+            },
+            {
+                "word": "fun",
+                "syllable_word": "fun",
+                "phonetic": "fʌn",
+                "japanese_synonym": "楽しい（たのしい）"
+            },
+            {
+                "word": "drink",
+                "syllable_word": "drink",
+                "phonetic": "drɪŋk",
+                "japanese_synonym": "飲む（のむ）"
+            },
+            {
+                "word": "bicycle",
+                "syllable_word": "bi·cy·cle",
+                "phonetic": "ˈbaɪ.sɪ.kəl",
+                "japanese_synonym": "自転車（じてんしゃ）"
+            },
+            {
+                "word": "loud",
+                "syllable_word": "loud",
+                "phonetic": "laʊd",
+                "japanese_synonym": "大きな声（おおきなこえ）"
+            },
+            {
+                "word": "light",
+                "syllable_word": "light",
+                "phonetic": "laɪt",
+                "japanese_synonym": "光（ひかり）"
+            }
+        ]
+    }
+}
