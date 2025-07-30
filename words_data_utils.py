@@ -523,11 +523,19 @@ class OpenAiChooser:
         # If original_words_list is None, fetch new words dynamically
         if not self.original_words_list:
             if self._is_daytime_in_hk() and self.enable_openai:
-                words = self.word_fetcher.fetch_words(10, self.db, include_existing=True)
-                openai_words = self.word_fetcher.fetch_word_details(words, self.db, num_words_phonetic=10)
+                words = self.word_fetcher.fetch_words(
+                    10, 
+                    self.db, 
+                    include_existing=False
+                )
+                openai_words = self.word_fetcher.fetch_word_details(
+                    words, 
+                    self.db, 
+                    num_words_phonetic=10
+                )
                 db_words = self.db.fetch_random_words(10)
             else:
-                db_words = self.db.fetch_random_words(20)
+                db_words = self.db.fetch_random_words(10)
                 # db_words = []
                 openai_words = []
 

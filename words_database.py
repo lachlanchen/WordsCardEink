@@ -43,9 +43,46 @@ import opencc
 # from phonetic_checker import PhoneticRechecker
 
 from words_data_utils import (
+    # Exception Classes
+    JSONParsingError,
+    NotEnoughUniqueWordsError,
+    
+    # Utility Functions - Random/Sampling
+    random_shuffle,
+    random_sample,
+    
+    # Text Processing Functions - General
+    count_syllables,
     clean_english,
-    random_shuffle
-
+    clean_japanese,
+    split_word,
+    split_word_with_color,
+    
+    # Japanese Text Processing Functions
+    extract_kanji,
+    remove_second_parentheses,
+    remove_text_including_parentheses,
+    remove_text_inside_parentheses,
+    remove_content_inside_parentheses,
+    remove_japanese_letter_including_parentheses,
+    remove_japanese_letter_inside_parentheses,
+    remove_hiragana_including_parentheses,
+    remove_hiragana_inside_parentheses,
+    remove_hiragana_and_parentheses,
+    transcribe_japanese,
+    
+    # Japanese Analysis Functions
+    count_hiragana_repetitions,
+    smallest_non_zero_repetition,
+    compare_repetition_results,
+    
+    # Word Details Processing Functions
+    clean_and_transcribe,
+    clean_word_details,
+    
+    # Chooser Classes
+    OpenAiChooser,
+    EmojiWordChooser,
 )
 
 class WordsDatabase:

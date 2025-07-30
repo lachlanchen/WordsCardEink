@@ -277,7 +277,7 @@ class AdvancedWordFetcher(OpenAIRequestJSONBase):
         propensities = self.load_propensities()
         local_words = self.fetch_words_local(num_words, word_database)
         
-        words_number_scale_factor = 5
+        words_number_scale_factor = 2
         num_words_scaled = num_words * words_number_scale_factor
         
         # Try multiple strategies to get unique words, starting with common words

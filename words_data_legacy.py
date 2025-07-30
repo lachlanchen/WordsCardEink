@@ -42,1121 +42,1163 @@ import opencc
 # from phonetic_checker import PhoneticRechecker
 
 
+from words_data_utils import (
+    # Exception Classes
+    JSONParsingError,
+    NotEnoughUniqueWordsError,
+    
+    # Utility Functions - Random/Sampling
+    random_shuffle,
+    random_sample,
+    
+    # Text Processing Functions - General
+    count_syllables,
+    clean_english,
+    clean_japanese,
+    split_word,
+    split_word_with_color,
+    
+    # Japanese Text Processing Functions
+    extract_kanji,
+    remove_second_parentheses,
+    remove_text_including_parentheses,
+    remove_text_inside_parentheses,
+    remove_content_inside_parentheses,
+    remove_japanese_letter_including_parentheses,
+    remove_japanese_letter_inside_parentheses,
+    remove_hiragana_including_parentheses,
+    remove_hiragana_inside_parentheses,
+    remove_hiragana_and_parentheses,
+    transcribe_japanese,
+    
+    # Japanese Analysis Functions
+    count_hiragana_repetitions,
+    smallest_non_zero_repetition,
+    compare_repetition_results,
+    
+    # Word Details Processing Functions
+    clean_and_transcribe,
+    clean_word_details,
+    
+    # Chooser Classes
+    OpenAiChooser,
+    EmojiWordChooser,
+)
 
 
-class JSONParsingError(Exception):
-    """Exception raised for errors in the JSON parsing."""
-    def __init__(self, error_message, json_string, error_pos=None):
-        self.error_message = error_message
-        self.json_string = json_string.lower()
-        self.error_pos = error_pos
-        self.error_details = f"{self.error_message}\nError Position: {self.error_pos}" if self.error_pos else f"{self.error_message}"
-        self.message = f"JSON String: {self.json_string}\n{self.error_details}"
-        super().__init__(self.message)
+# class JSONParsingError(Exception):
+#     """Exception raised for errors in the JSON parsing."""
+#     def __init__(self, error_message, json_string, error_pos=None):
+#         self.error_message = error_message
+#         self.json_string = json_string.lower()
+#         self.error_pos = error_pos
+#         self.error_details = f"{self.error_message}\nError Position: {self.error_pos}" if self.error_pos else f"{self.error_message}"
+#         self.message = f"JSON String: {self.json_string}\n{self.error_details}"
+#         super().__init__(self.message)
 
-class NotEnoughUniqueWordsError(Exception):
-    """Exception raised when not enough unique words are fetched."""
-    def __init__(self, required_num, fetched_num, unique_words, duplicated_words, json_string):
-        self.required_num = required_num
-        self.fetched_num = fetched_num
-        self.unique_words = [word.lower() for word in unique_words]
-        self.duplicated_words = duplicated_words
-        self.json_string = json_string.lower()
-        self.error_details = (
-            f"Error: Required {self.required_num} unique words, "
-            f"but only {self.fetched_num} non-duplicated words comparing to my local database were fetched. "
-            # f"Duplicated words in local database: {', '.join(self.duplicated_words)}."
-            f"These non-duplicated words I am yearning for are: "
-            f"{', '.join(self.unique_words)}. "
-        )
-        self.message = f"JSON String: {self.json_string}\n{self.error_details}"
-        super().__init__(self.message)
-
-
-def random_shuffle(input_list):
-    # Convert the input list to a NumPy array
-    array = np.array(input_list, dtype=object)
-
-    # Shuffle the array in-place
-    np.random.shuffle(array)
-
-    # Convert the shuffled array back to a list
-    shuffled_list = array.tolist()
-
-    return shuffled_list
-
-def random_sample(input_list, sample_size):
-    # Ensure the sample size is not larger than the list size
-    sample_size = min(sample_size, len(input_list))
-
-    # Convert the input list to a NumPy array if it's not already one
-    if not isinstance(input_list, np.ndarray):
-        input_array = np.array(input_list)
-    else:
-        input_array = input_list
-
-    # Randomly sample elements without replacement
-    sampled_elements = np.random.choice(input_array, size=sample_size, replace=False)
-
-    return list(sampled_elements)
-
-# Function to count syllables based on dots
-def count_syllables(word):
-    # Count dots and stress symbols, subtract one if the first character is a stress symbol
-    count = word.count('·') + word.count('ˈ') + word.count('ˌ')
-    if word.startswith('ˈ') or word.startswith('ˌ'):
-        count -= 1
-    return count + 1
+# class NotEnoughUniqueWordsError(Exception):
+#     """Exception raised when not enough unique words are fetched."""
+#     def __init__(self, required_num, fetched_num, unique_words, duplicated_words, json_string):
+#         self.required_num = required_num
+#         self.fetched_num = fetched_num
+#         self.unique_words = [word.lower() for word in unique_words]
+#         self.duplicated_words = duplicated_words
+#         self.json_string = json_string.lower()
+#         self.error_details = (
+#             f"Error: Required {self.required_num} unique words, "
+#             f"but only {self.fetched_num} non-duplicated words comparing to my local database were fetched. "
+#             # f"Duplicated words in local database: {', '.join(self.duplicated_words)}."
+#             f"These non-duplicated words I am yearning for are: "
+#             f"{', '.join(self.unique_words)}. "
+#         )
+#         self.message = f"JSON String: {self.json_string}\n{self.error_details}"
+#         super().__init__(self.message)
 
 
+# def random_shuffle(input_list):
+#     # Convert the input list to a NumPy array
+#     array = np.array(input_list, dtype=object)
 
-def clean_english(text):
-    return text.replace(".", "·").replace(" · ", " ").replace("·ˈ", "ˈ").replace("·ˌ", "ˌ").replace("ˈ·", "ˈ").replace("ˌ·", "ˌ")#.replace(" ", "")
+#     # Shuffle the array in-place
+#     np.random.shuffle(array)
 
-def clean_japanese(text):
-    return text.replace(".", "").replace("·", "").replace("(", "（").replace(")", "）").replace(" ", "")
+#     # Convert the shuffled array back to a list
+#     shuffled_list = array.tolist()
 
+#     return shuffled_list
 
-# def split_word(word):
-#     # print("word before clean: ", word)
-#     word = clean_english(word)
-#     # print("word after clean: ", word)
+# def random_sample(input_list, sample_size):
+#     # Ensure the sample size is not larger than the list size
+#     sample_size = min(sample_size, len(input_list))
 
-#     if word.startswith('ˈ') or word.startswith('ˌ'):
-#         word = word[0] + word[1:].replace('ˈ', '·ˈ').replace('ˌ', '·ˌ').replace(" ", " ·")
+#     # Convert the input list to a NumPy array if it's not already one
+#     if not isinstance(input_list, np.ndarray):
+#         input_array = np.array(input_list)
 #     else:
-#         word = word.replace('ˈ', '·ˈ').replace('ˌ', '·ˌ').replace("-", "·-").replace(" ", " ·")
+#         input_array = input_list
 
-#     # print("word after add dot: ", word)
+#     # Randomly sample elements without replacement
+#     sampled_elements = np.random.choice(input_array, size=sample_size, replace=False)
 
-#     syllables = word.split('·')
+#     return list(sampled_elements)
 
-#     # print(word)
+# # Function to count syllables based on dots
+# def count_syllables(word):
+#     # Count dots and stress symbols, subtract one if the first character is a stress symbol
+#     count = word.count('·') + word.count('ˈ') + word.count('ˌ')
+#     if word.startswith('ˈ') or word.startswith('ˌ'):
+#         count -= 1
+#     return count + 1
 
-#     # if word.startswith("Hippocratic"):
-#     #     print("syllables: ")
 
-#     #     pprint(syllables)
 
-#     return syllables
+# def clean_english(text):
+#     return text.replace(".", "·").replace(" · ", " ").replace("·ˈ", "ˈ").replace("·ˌ", "ˌ").replace("ˈ·", "ˈ").replace("ˌ·", "ˌ")#.replace(" ", "")
 
-def split_word(text):
-    # Split the text into words by space
-    words = text.split(' ')
+# def clean_japanese(text):
+#     return text.replace(".", "").replace("·", "").replace("(", "（").replace(")", "）").replace(" ", "")
+
+
+# # def split_word(word):
+# #     # print("word before clean: ", word)
+# #     word = clean_english(word)
+# #     # print("word after clean: ", word)
+
+# #     if word.startswith('ˈ') or word.startswith('ˌ'):
+# #         word = word[0] + word[1:].replace('ˈ', '·ˈ').replace('ˌ', '·ˌ').replace(" ", " ·")
+# #     else:
+# #         word = word.replace('ˈ', '·ˈ').replace('ˌ', '·ˌ').replace("-", "·-").replace(" ", " ·")
+
+# #     # print("word after add dot: ", word)
+
+# #     syllables = word.split('·')
+
+# #     # print(word)
+
+# #     # if word.startswith("Hippocratic"):
+# #     #     print("syllables: ")
+
+# #     #     pprint(syllables)
+
+# #     return syllables
+
+# def split_word(text):
+#     # Split the text into words by space
+#     words = text.split(' ')
     
-    all_syllables = []
-    for word in words:
-        # Clean each word
-        cleaned_word = clean_english(word)
+#     all_syllables = []
+#     for word in words:
+#         # Clean each word
+#         cleaned_word = clean_english(word)
 
-        # Apply the existing logic to each word
-        if cleaned_word.startswith('ˈ') or cleaned_word.startswith('ˌ'):
-            syllable_word = cleaned_word[0] + cleaned_word[1:].replace('ˈ', '·ˈ').replace('ˌ', '·ˌ').replace(" ", " ·")
-        else:
-            syllable_word = cleaned_word.replace('ˈ', '·ˈ').replace('ˌ', '·ˌ').replace("-", "·-").replace(" ", " ·")
+#         # Apply the existing logic to each word
+#         if cleaned_word.startswith('ˈ') or cleaned_word.startswith('ˌ'):
+#             syllable_word = cleaned_word[0] + cleaned_word[1:].replace('ˈ', '·ˈ').replace('ˌ', '·ˌ').replace(" ", " ·")
+#         else:
+#             syllable_word = cleaned_word.replace('ˈ', '·ˈ').replace('ˌ', '·ˌ').replace("-", "·-").replace(" ", " ·")
 
-        # Split into syllables
-        syllables = syllable_word.split('·')
-        syllables[-1] = syllables[-1] + " "
-        all_syllables.extend(syllables)
+#         # Split into syllables
+#         syllables = syllable_word.split('·')
+#         syllables[-1] = syllables[-1] + " "
+#         all_syllables.extend(syllables)
 
-    return all_syllables
+#     return all_syllables
 
 
-# Function to split words into syllables and get color for each syllable
-def split_word_with_color(word, colors):
-        # Replace stress symbols with a preceding dot, except at the beginning
+# # Function to split words into syllables and get color for each syllable
+# def split_word_with_color(word, colors):
+#         # Replace stress symbols with a preceding dot, except at the beginning
 
-        syllables = split_word(word)
+#         syllables = split_word(word)
         
-        color_syllables = [(syllable, colors[i % len(colors)]) for i, syllable in enumerate(syllables)]
-        return color_syllables
+#         color_syllables = [(syllable, colors[i % len(colors)]) for i, syllable in enumerate(syllables)]
+#         return color_syllables
 
 
 
 
-def extract_kanji(japanese_text):
-    """
-    Remove parentheses, hiragana, and katakana from Japanese text, leaving only kanji.
-    """
-    # Regex to match hiragana, katakana, and characters in parentheses
-    regex = u"[\u3040-\u309F\u30A0-\u30FF]|[（(].*?[)）]"
-    kanji = re.sub(regex, '', japanese_text)
-    if kanji.startswith("、"):
-        kanji = kanji[1:]
-    return kanji
+# def extract_kanji(japanese_text):
+#     """
+#     Remove parentheses, hiragana, and katakana from Japanese text, leaving only kanji.
+#     """
+#     # Regex to match hiragana, katakana, and characters in parentheses
+#     regex = u"[\u3040-\u309F\u30A0-\u30FF]|[（(].*?[)）]"
+#     kanji = re.sub(regex, '', japanese_text)
+#     if kanji.startswith("、"):
+#         kanji = kanji[1:]
+#     return kanji
 
-def remove_second_parentheses(text):
-    regex = re.compile(r'(（[^）]*）)(（[^）]*）)')
-    return re.sub(regex, lambda match: match.group(1), text)
-
-
-# Function to remove text inside parentheses
-def remove_text_including_parentheses(text):
-    while '（' in text and '）' in text:
-        start = text.find('（')
-        end = text.find('）') + 1
-        text = text[:start] + text[end:]
-    return text
+# def remove_second_parentheses(text):
+#     regex = re.compile(r'(（[^）]*）)(（[^）]*）)')
+#     return re.sub(regex, lambda match: match.group(1), text)
 
 
-def remove_text_inside_parentheses(text):
-    new_text = ""
-    in_parentheses = False
-
-    for char in text:
-        if char == '（':
-            in_parentheses = True
-            new_text += char
-        elif char == '）' and in_parentheses:
-            in_parentheses = False
-            new_text += char
-        elif not in_parentheses:
-            new_text += char
-
-    return new_text
+# # Function to remove text inside parentheses
+# def remove_text_including_parentheses(text):
+#     while '（' in text and '）' in text:
+#         start = text.find('（')
+#         end = text.find('）') + 1
+#         text = text[:start] + text[end:]
+#     return text
 
 
-def remove_content_inside_parentheses(text):
-    # This regex matches anything inside parentheses and removes it, including the parentheses
-    return re.sub(r'（[^）]*）', '', text)
+# def remove_text_inside_parentheses(text):
+#     new_text = ""
+#     in_parentheses = False
+
+#     for char in text:
+#         if char == '（':
+#             in_parentheses = True
+#             new_text += char
+#         elif char == '）' and in_parentheses:
+#             in_parentheses = False
+#             new_text += char
+#         elif not in_parentheses:
+#             new_text += char
+
+#     return new_text
 
 
-# pattern = r'[ぁ-んァ-ンヴゔーヵヶㇰ-ㇿガ-ドヰヱヵヶ]'
-# [一-龠]+|[ぁ-ゔ]+|[ァ-ヴー]+|[a-zA-Z0-9]+|[ａ-ｚＡ-Ｚ０-９]+|[々〆〤ヶ]+
-
-def remove_japanese_letter_including_parentheses(text):
-    # This regex matches hiragana or katakana inside parentheses and removes them, keeping the parentheses
-    return re.sub(r'（[ぁ-ゔァ-ヴガ-ドㇰ-ㇿヵヶ々ヰヱ〆〤ー\-]+）', '', text)
-    # return re.sub(r'(?<=（)[ぁ-ゔ々ー\-]+(?=）)', '', text)
+# def remove_content_inside_parentheses(text):
+#     # This regex matches anything inside parentheses and removes it, including the parentheses
+#     return re.sub(r'（[^）]*）', '', text)
 
 
-def remove_japanese_letter_inside_parentheses(text):
-    # This regex matches hiragana or katakana inside parentheses and removes them, keeping the parentheses
-    return re.sub(r'(?<=（)[ぁ-ゔァ-ヴガ-ドㇰ-ㇿヵヶ々ヰヱ〆〤ー\-]+(?=）)', '', text)
-    # return re.sub(r'(?<=（)[ぁ-ゔ々ー\-]+(?=）)', '', text)
+# # pattern = r'[ぁ-んァ-ンヴゔーヵヶㇰ-ㇿガ-ドヰヱヵヶ]'
+# # [一-龠]+|[ぁ-ゔ]+|[ァ-ヴー]+|[a-zA-Z0-9]+|[ａ-ｚＡ-Ｚ０-９]+|[々〆〤ヶ]+
+
+# def remove_japanese_letter_including_parentheses(text):
+#     # This regex matches hiragana or katakana inside parentheses and removes them, keeping the parentheses
+#     return re.sub(r'（[ぁ-ゔァ-ヴガ-ドㇰ-ㇿヵヶ々ヰヱ〆〤ー\-]+）', '', text)
+#     # return re.sub(r'(?<=（)[ぁ-ゔ々ー\-]+(?=）)', '', text)
+
+
+# def remove_japanese_letter_inside_parentheses(text):
+#     # This regex matches hiragana or katakana inside parentheses and removes them, keeping the parentheses
+#     return re.sub(r'(?<=（)[ぁ-ゔァ-ヴガ-ドㇰ-ㇿヵヶ々ヰヱ〆〤ー\-]+(?=）)', '', text)
+#     # return re.sub(r'(?<=（)[ぁ-ゔ々ー\-]+(?=）)', '', text)
 
 
 
-def remove_hiragana_including_parentheses(text):
-    # Comprehensive regex pattern for Japanese characters
+# def remove_hiragana_including_parentheses(text):
+#     # Comprehensive regex pattern for Japanese characters
     
-    # return re.sub(r'（[ぁ-ゔァ-ヴガ-ドㇰ-ㇿヵヶ々ー\-（）]+）', '', text)
-    return re.sub(r'（[ぁ-ゔ々ー\-（）]+）', '', text)
-    # return remove_text_including_parentheses(text)
+#     # return re.sub(r'（[ぁ-ゔァ-ヴガ-ドㇰ-ㇿヵヶ々ー\-（）]+）', '', text)
+#     return re.sub(r'（[ぁ-ゔ々ー\-（）]+）', '', text)
+#     # return remove_text_including_parentheses(text)
 
 
-def remove_hiragana_inside_parentheses(text):
-    # This regex matches hiragana or katakana inside parentheses and removes them, keeping the parentheses
+# def remove_hiragana_inside_parentheses(text):
+#     # This regex matches hiragana or katakana inside parentheses and removes them, keeping the parentheses
 
-    # return re.sub(r'(?<=（)[ぁ-ゔァ-ヴガ-ドㇰ-ㇿヵヶ々ー\-（）]+(?=）)', '', text)
-    return re.sub(r'(?<=（)[ぁ-ゔ々ー\-（）]+(?=）)', '', text)
-    # return remove_content_inside_parentheses(text)
-
-
-def remove_hiragana_and_parentheses(text):
-    """
-    Remove all Hiragana, related letters, and parentheses from the text.
-
-    Parameters:
-    text (str): The input string from which Hiragana and parentheses will be removed.
-
-    Returns:
-    str: The text with Hiragana and parentheses removed.
-    """
-    # Regex pattern to remove Hiragana, related letters, and full-width parentheses
-    pattern = r'[（）ぁ-ゔ-゚〜ー\-]'
-
-    return re.sub(pattern, '', text)
+#     # return re.sub(r'(?<=（)[ぁ-ゔァ-ヴガ-ドㇰ-ㇿヵヶ々ー\-（）]+(?=）)', '', text)
+#     return re.sub(r'(?<=（)[ぁ-ゔ々ー\-（）]+(?=）)', '', text)
+#     # return remove_content_inside_parentheses(text)
 
 
+# def remove_hiragana_and_parentheses(text):
+#     """
+#     Remove all Hiragana, related letters, and parentheses from the text.
 
-def transcribe_japanese(text):
-    from pykakasi import kakasi
+#     Parameters:
+#     text (str): The input string from which Hiragana and parentheses will be removed.
 
-    text = remove_hiragana_including_parentheses(text)
+#     Returns:
+#     str: The text with Hiragana and parentheses removed.
+#     """
+#     # Regex pattern to remove Hiragana, related letters, and full-width parentheses
+#     pattern = r'[（）ぁ-ゔ-゚〜ー\-]'
 
-    kks = kakasi()
-    kks.setMode("J", "H")  # Japanese to Hiragana
-    kks.setMode("K", "H")  # Katakana to Hiragana
-    conv = kks.getConverter()
-
-    result = ""
-    current_chunk = ""
-    last_kanji_hiragana = ""
-    is_kanji = False
-    is_katakana = False
-
-    for char in text:
-        if '\u4E00' <= char <= '\u9FFF':  # Kanji
-            if is_katakana:  # Close katakana chunk if open
-                result += f"({current_chunk})"
-                current_chunk = ""
-                is_katakana = False
-
-            hiragana = conv.do(char)
-            last_kanji_hiragana = hiragana  # Store the hiragana of the current kanji
-            if not is_kanji:
-                is_kanji = True
-                current_chunk = ""
-            current_chunk += hiragana
-            result += char
-        elif char == '々':  # Ideographic Iteration Mark
-            if is_katakana:  # Close katakana chunk if open
-                result += f"({current_chunk})"
-                current_chunk = ""
-                is_katakana = False
-
-            if not is_kanji:
-                is_kanji = True
-                current_chunk = ""
-            current_chunk += last_kanji_hiragana
-            result += char
-        elif '\u30A0' <= char <= '\u30FF':  # Katakana
-            if is_kanji:  # Close kanji chunk if open
-                result += f"({current_chunk})"
-                current_chunk = ""
-                is_kanji = False
-
-            hiragana = conv.do(char)
-            if not is_katakana:
-                is_katakana = True
-                current_chunk = ""
-            current_chunk += hiragana
-            result += char
-        else:  # Hiragana or others
-            if is_kanji or is_katakana:
-                result += f"({current_chunk}){char}"
-                is_kanji = False
-                is_katakana = False
-            else:
-                result += char
-
-    if is_kanji or is_katakana:  # Remaining kanji or katakana chunk at the end
-        result += f"({current_chunk})"
+#     return re.sub(pattern, '', text)
 
 
-    return clean_japanese(result)
+
+# def transcribe_japanese(text):
+#     from pykakasi import kakasi
+
+#     text = remove_hiragana_including_parentheses(text)
+
+#     kks = kakasi()
+#     kks.setMode("J", "H")  # Japanese to Hiragana
+#     kks.setMode("K", "H")  # Katakana to Hiragana
+#     conv = kks.getConverter()
+
+#     result = ""
+#     current_chunk = ""
+#     last_kanji_hiragana = ""
+#     is_kanji = False
+#     is_katakana = False
+
+#     for char in text:
+#         if '\u4E00' <= char <= '\u9FFF':  # Kanji
+#             if is_katakana:  # Close katakana chunk if open
+#                 result += f"({current_chunk})"
+#                 current_chunk = ""
+#                 is_katakana = False
+
+#             hiragana = conv.do(char)
+#             last_kanji_hiragana = hiragana  # Store the hiragana of the current kanji
+#             if not is_kanji:
+#                 is_kanji = True
+#                 current_chunk = ""
+#             current_chunk += hiragana
+#             result += char
+#         elif char == '々':  # Ideographic Iteration Mark
+#             if is_katakana:  # Close katakana chunk if open
+#                 result += f"({current_chunk})"
+#                 current_chunk = ""
+#                 is_katakana = False
+
+#             if not is_kanji:
+#                 is_kanji = True
+#                 current_chunk = ""
+#             current_chunk += last_kanji_hiragana
+#             result += char
+#         elif '\u30A0' <= char <= '\u30FF':  # Katakana
+#             if is_kanji:  # Close kanji chunk if open
+#                 result += f"({current_chunk})"
+#                 current_chunk = ""
+#                 is_kanji = False
+
+#             hiragana = conv.do(char)
+#             if not is_katakana:
+#                 is_katakana = True
+#                 current_chunk = ""
+#             current_chunk += hiragana
+#             result += char
+#         else:  # Hiragana or others
+#             if is_kanji or is_katakana:
+#                 result += f"({current_chunk}){char}"
+#                 is_kanji = False
+#                 is_katakana = False
+#             else:
+#                 result += char
+
+#     if is_kanji or is_katakana:  # Remaining kanji or katakana chunk at the end
+#         result += f"({current_chunk})"
 
 
-def count_hiragana_repetitions(japanese_string):
-    # Regex pattern to find kanji followed by parentheses containing hiragana
-    # pattern = r'([一-龠]+)\（([ぁ-んァ-ン]+)\）'
-    pattern = r'([一-龠ァ-ヴガ-ドㇰ-ㇿヵヶヰヱ々〆〤ー\-]+)（([ぁ-ゔー\-]+)）'
+#     return clean_japanese(result)
+
+
+# def count_hiragana_repetitions(japanese_string):
+#     # Regex pattern to find kanji followed by parentheses containing hiragana
+#     # pattern = r'([一-龠]+)\（([ぁ-んァ-ン]+)\）'
+#     pattern = r'([一-龠ァ-ヴガ-ドㇰ-ㇿヵヶヰヱ々〆〤ー\-]+)（([ぁ-ゔー\-]+)）'
     
-    results = []
-    prev_end = 0
-    for match in re.finditer(pattern, japanese_string):
-        kanji, hiragana_in_parentheses = match.groups()
-        kanji_start, _ = match.span(1)
+#     results = []
+#     prev_end = 0
+#     for match in re.finditer(pattern, japanese_string):
+#         kanji, hiragana_in_parentheses = match.groups()
+#         kanji_start, _ = match.span(1)
 
-        # Extracting the preceding hiragana substring
-        preceding_hiragana = japanese_string[prev_end:kanji_start]
+#         # Extracting the preceding hiragana substring
+#         preceding_hiragana = japanese_string[prev_end:kanji_start]
 
-        # Counting the overlap of hiragana before kanji and hiragana inside the parenthesis
-        overlap_count = 0
-        for i in range(1, min(len(preceding_hiragana), len(hiragana_in_parentheses)) + 1):
-            if preceding_hiragana[-i:] == hiragana_in_parentheses[:i]:
-                overlap_count = i
+#         # Counting the overlap of hiragana before kanji and hiragana inside the parenthesis
+#         overlap_count = 0
+#         for i in range(1, min(len(preceding_hiragana), len(hiragana_in_parentheses)) + 1):
+#             if preceding_hiragana[-i:] == hiragana_in_parentheses[:i]:
+#                 overlap_count = i
 
-        results.append((kanji, overlap_count))
+#         results.append((kanji, overlap_count))
 
-        prev_end = kanji_start + len(kanji)
+#         prev_end = kanji_start + len(kanji)
 
-    return results
+#     return results
 
-def smallest_non_zero_repetition(japanese_string):
-    """
-    Find the smallest non-zero repetition count in the results.
+# def smallest_non_zero_repetition(japanese_string):
+#     """
+#     Find the smallest non-zero repetition count in the results.
 
-    :param repetition_results: List of tuples with kanji and repetition count.
-    :return: The smallest non-zero repetition count, or None if all are zero.
-    """
-    repetition_results = count_hiragana_repetitions(japanese_string)
+#     :param repetition_results: List of tuples with kanji and repetition count.
+#     :return: The smallest non-zero repetition count, or None if all are zero.
+#     """
+#     repetition_results = count_hiragana_repetitions(japanese_string)
 
-    print("repetition_results: ", repetition_results)
-
-
-    smallest_non_zero = None
-    for _, count in repetition_results:
-        if count > 0 and (smallest_non_zero is None or count < smallest_non_zero):
-            smallest_non_zero = count
-    return 0 if smallest_non_zero is None else smallest_non_zero
-
-def compare_repetition_results(string1, string2):
-    """
-    Compares two sets of hiragana repetition results and identifies discrepancies.
-
-    :param results1: First set of repetition results.
-    :param results2: Second set of repetition results.
-    :return: A list of tuples indicating discrepancies. Each tuple contains the kanji and the two different counts.
-    """
-
-    # string1 = clean_japanese(string1)
-    # string2 = clean_japanese(string2)
-
-    print("string1: ", string1)
-    print("string2: ", string2)
-
-    results1 = count_hiragana_repetitions(string1)
-    results2 = count_hiragana_repetitions(string2)
+#     print("repetition_results: ", repetition_results)
 
 
-    discrepancies = []
+#     smallest_non_zero = None
+#     for _, count in repetition_results:
+#         if count > 0 and (smallest_non_zero is None or count < smallest_non_zero):
+#             smallest_non_zero = count
+#     return 0 if smallest_non_zero is None else smallest_non_zero
 
-    # Convert results to dictionaries for easier comparison
-    dict1 = {kanji: count for kanji, count in results1}
-    dict2 = {kanji: count for kanji, count in results2}
+# def compare_repetition_results(string1, string2):
+#     """
+#     Compares two sets of hiragana repetition results and identifies discrepancies.
 
-    # Compare the two dictionaries
-    for kanji in set(dict1.keys()).union(dict2.keys()):
-        count1 = dict1.get(kanji, None)
-        count2 = dict2.get(kanji, None)
+#     :param results1: First set of repetition results.
+#     :param results2: Second set of repetition results.
+#     :return: A list of tuples indicating discrepancies. Each tuple contains the kanji and the two different counts.
+#     """
 
-        # if count1 != count2:
-        if count1 != count2:
-            if (not count1 is None) and (not count2 is None):
-                if count1 < count2:
-                    continue
-            discrepancies.append((kanji, count1, count2))
+#     # string1 = clean_japanese(string1)
+#     # string2 = clean_japanese(string2)
 
-    return discrepancies
+#     print("string1: ", string1)
+#     print("string2: ", string2)
 
-
-def clean_and_transcribe(word_details):
-    word_details_new = word_details.copy()
-
-    for word in word_details_new:
-        # Update phonetic field if it exists
-        if "phonetic" in word:
-            word["phonetic"] = clean_english(word["phonetic"])
-
-        # Update syllable_word field if it exists
-        if "syllable_word" in word:
-            word["syllable_word"] = clean_english(word.get("syllable_word", ""))
-
-        # Update japanese_synonym field if it exists
-        if "japanese_synonym" in word:
-            # Clean and transcribe japanese_synonym
-            # word['japanese_synonym'] = clean_japanese(word['japanese_synonym'])
-            # cleaned_synonym = remove_hiragana_including_parentheses(clean_japanese(word["japanese_synonym"]))
-            cleaned_synonym = remove_japanese_letter_including_parentheses(clean_japanese(word["japanese_synonym"]))
+#     results1 = count_hiragana_repetitions(string1)
+#     results2 = count_hiragana_repetitions(string2)
 
 
-            # word["japanese_synonym"] = clean_japanese(remove_second_parentheses(transcribe_japanese(cleaned_synonym)))  # Replace with your transcription function
-            word["japanese_synonym"] = clean_japanese(transcribe_japanese(cleaned_synonym))  # Replace with your transcription function
+#     discrepancies = []
 
-    return word_details_new
+#     # Convert results to dictionaries for easier comparison
+#     dict1 = {kanji: count for kanji, count in results1}
+#     dict2 = {kanji: count for kanji, count in results2}
+
+#     # Compare the two dictionaries
+#     for kanji in set(dict1.keys()).union(dict2.keys()):
+#         count1 = dict1.get(kanji, None)
+#         count2 = dict2.get(kanji, None)
+
+#         # if count1 != count2:
+#         if count1 != count2:
+#             if (not count1 is None) and (not count2 is None):
+#                 if count1 < count2:
+#                     continue
+#             discrepancies.append((kanji, count1, count2))
+
+#     return discrepancies
 
 
-def clean_word_details(word_details):
-    for word in word_details:
-        # Update phonetic field if it exists
-        if "phonetic" in word:
-            word["phonetic"] = clean_english(word.get("phonetic", ""))
+# def clean_and_transcribe(word_details):
+#     word_details_new = word_details.copy()
 
-        # Update syllable_word field if it exists
-        if "syllable_word" in word:
-            word["syllable_word"] = clean_english(word.get("syllable_word", ""))
+#     for word in word_details_new:
+#         # Update phonetic field if it exists
+#         if "phonetic" in word:
+#             word["phonetic"] = clean_english(word["phonetic"])
 
-        # Update japanese_synonym field if it exists
-        if "japanese_synonym" in word:
-            word["japanese_synonym"] = clean_japanese(word["japanese_synonym"])
+#         # Update syllable_word field if it exists
+#         if "syllable_word" in word:
+#             word["syllable_word"] = clean_english(word.get("syllable_word", ""))
+
+#         # Update japanese_synonym field if it exists
+#         if "japanese_synonym" in word:
+#             # Clean and transcribe japanese_synonym
+#             # word['japanese_synonym'] = clean_japanese(word['japanese_synonym'])
+#             # cleaned_synonym = remove_hiragana_including_parentheses(clean_japanese(word["japanese_synonym"]))
+#             cleaned_synonym = remove_japanese_letter_including_parentheses(clean_japanese(word["japanese_synonym"]))
+
+
+#             # word["japanese_synonym"] = clean_japanese(remove_second_parentheses(transcribe_japanese(cleaned_synonym)))  # Replace with your transcription function
+#             word["japanese_synonym"] = clean_japanese(transcribe_japanese(cleaned_synonym))  # Replace with your transcription function
+
+#     return word_details_new
+
+
+# def clean_word_details(word_details):
+#     for word in word_details:
+#         # Update phonetic field if it exists
+#         if "phonetic" in word:
+#             word["phonetic"] = clean_english(word.get("phonetic", ""))
+
+#         # Update syllable_word field if it exists
+#         if "syllable_word" in word:
+#             word["syllable_word"] = clean_english(word.get("syllable_word", ""))
+
+#         # Update japanese_synonym field if it exists
+#         if "japanese_synonym" in word:
+#             word["japanese_synonym"] = clean_japanese(word["japanese_synonym"])
 
         
 
-    return word_details
+#     return word_details
 
-class WordsDatabase:
-    # def __init__(self, db_path):
-    #     self.db_path = db_path
-    #     self.conn = None
-    #     if os.path.exists(db_path):
-    #         self.conn = sqlite3.connect(db_path)
-    #         self.cursor = self.conn.cursor()
+# class WordsDatabase:
+#     # def __init__(self, db_path):
+#     #     self.db_path = db_path
+#     #     self.conn = None
+#     #     if os.path.exists(db_path):
+#     #         self.conn = sqlite3.connect(db_path)
+#     #         self.cursor = self.conn.cursor()
 
-    #         self.create_field_if_not_exists("words_phonetics", "kanji_synonym", "TEXT")
-    #         self.create_field_if_not_exists("words_phonetics", "chinese_synonym", "TEXT")
-    #         self.create_field_if_not_exists("words_phonetics", "simplified_chinese_synonym", "TEXT")
-    #         self.create_field_if_not_exists("words_phonetics", "arabic_synonym", "TEXT")
-    #         self.create_field_if_not_exists("words_phonetics", "french_synonym", "TEXT")
+#     #         self.create_field_if_not_exists("words_phonetics", "kanji_synonym", "TEXT")
+#     #         self.create_field_if_not_exists("words_phonetics", "chinese_synonym", "TEXT")
+#     #         self.create_field_if_not_exists("words_phonetics", "simplified_chinese_synonym", "TEXT")
+#     #         self.create_field_if_not_exists("words_phonetics", "arabic_synonym", "TEXT")
+#     #         self.create_field_if_not_exists("words_phonetics", "french_synonym", "TEXT")
 
-    def __init__(self, db_path, table_name='words_phonetics', fields=None):
-        self.db_path = db_path
-        self.table_name = table_name
-        self.fields = fields
-        self.conn = None
+#     def __init__(self, db_path, table_name='words_phonetics', fields=None):
+#         self.db_path = db_path
+#         self.table_name = table_name
+#         self.fields = fields
+#         self.conn = None
 
-        if os.path.exists(db_path):
-            self.conn = sqlite3.connect(db_path)
-            self.cursor = self.conn.cursor()
+#         if os.path.exists(db_path):
+#             self.conn = sqlite3.connect(db_path)
+#             self.cursor = self.conn.cursor()
 
-            self.create_table_if_not_exists()
-            if fields:
-                self.create_fields_if_not_exists()
+#             self.create_table_if_not_exists()
+#             if fields:
+#                 self.create_fields_if_not_exists()
 
-    def sync_database_to_csv(self, csv_file_path=None):
-        """Export the database table to a CSV file."""
-        if not csv_file_path:
-            base_name = os.path.splitext(os.path.basename(self.db_path))[0]
-            csv_file_path = f"data/{base_name}/{self.table_name}.csv"
-            os.makedirs(os.path.dirname(csv_file_path), exist_ok=True)
+#     def sync_database_to_csv(self, csv_file_path=None):
+#         """Export the database table to a CSV file."""
+#         if not csv_file_path:
+#             base_name = os.path.splitext(os.path.basename(self.db_path))[0]
+#             csv_file_path = f"data/{base_name}/{self.table_name}.csv"
+#             os.makedirs(os.path.dirname(csv_file_path), exist_ok=True)
 
-        if self.conn:
-            try:
-                query = f"SELECT * FROM {self.table_name}"
-                df = pd.read_sql_query(query, self.conn)
-                df.to_csv(csv_file_path, index=False)
-                print(f"Database exported to {csv_file_path}")
-            except Exception as e:
-                print(f"Error during database export: {e}")
-
-
-    def update_database_from_csv(self, csv_file_path=None):
-        """Update the database using data from a CSV file."""
-        if not csv_file_path:
-            base_name = os.path.splitext(os.path.basename(self.db_path))[0]
-            csv_file_path = f"data/{base_name}/{self.table_name}.csv"
-        if self.conn:
-            try:
-                # Load CSV data into a DataFrame
-                df = pd.read_csv(csv_file_path)
-
-                # Add columns from CSV to database if they don't exist
-                for column in df.columns:
-                    self.cursor.execute(f"PRAGMA table_info({self.table_name});")
-                    existing_columns = [row[1] for row in self.cursor.fetchall()]
-                    if column not in existing_columns:
-                        self.create_field_if_not_exists(self.table_name, column, "TEXT")
-
-                # Insert or update rows from the CSV
-                for _, row in df.iterrows():
-                    columns = ', '.join(row.index)
-                    placeholders = ', '.join(['?'] * len(row))
-                    update_clause = ', '.join([f"{col}=excluded.{col}" for col in row.index])
-
-                    query = f"""
-                        INSERT INTO {self.table_name} ({columns})
-                        VALUES ({placeholders})
-                        ON CONFLICT(id) DO UPDATE SET
-                        {update_clause};
-                    """
-                    self.cursor.execute(query, tuple(row))
-                    self.conn.commit()
-            except Exception as e:
-                print(f"Error during database update: {e}")
-
-    def sync_from_csv_to_database(self, csv_file_path=None, confirm=False):
-        """Sync the database with the structure and content of a CSV file."""
-        if not csv_file_path:
-            base_name = os.path.splitext(os.path.basename(self.db_path))[0]
-            csv_file_path = f"data/{base_name}/{self.table_name}.csv"
-
-        if not confirm:
-            print("Sync operation requires confirmation. Set confirm=True to proceed.")
-            return
-
-        if self.conn:
-            try:
-                # Load CSV data
-                df_csv = pd.read_csv(csv_file_path)
-                csv_columns = set(df_csv.columns)
-
-                # Get database columns
-                self.cursor.execute(f"PRAGMA table_info({self.table_name});")
-                db_columns = {row[1] for row in self.cursor.fetchall()}
-
-                # Add new columns from CSV to database
-                for column in csv_columns - db_columns:
-                    self.create_field_if_not_exists(self.table_name, column, "TEXT")
-
-                # Delete columns from database not in CSV
-                for column in db_columns - csv_columns:
-                    self.delete_column_if_exists(self.table_name, column)
-
-                # Update or insert rows
-                for _, row in df_csv.iterrows():
-                    columns = ', '.join(row.index)
-                    placeholders = ', '.join(['?'] * len(row))
-                    update_clause = ', '.join([f"{col}=excluded.{col}" for col in row.index])
-
-                    query = f"""
-                        INSERT INTO {self.table_name} ({columns})
-                        VALUES ({placeholders})
-                        ON CONFLICT(id) DO UPDATE SET
-                        {update_clause};
-                    """
-                    self.cursor.execute(query, tuple(row))
-
-                # Delete rows not in CSV
-                df_db = pd.read_sql_query(f"SELECT * FROM {self.table_name}", self.conn)
-                db_ids = set(df_db['id'])
-                csv_ids = set(df_csv['id'])
-                ids_to_delete = db_ids - csv_ids
-                for id in ids_to_delete:
-                    self.cursor.execute(f"DELETE FROM {self.table_name} WHERE id = ?", (id,))
-
-                self.conn.commit()
-                print("Database successfully synced with CSV.")
-
-            except Exception as e:
-                print(f"Error during syncing database with CSV: {e}")
+#         if self.conn:
+#             try:
+#                 query = f"SELECT * FROM {self.table_name}"
+#                 df = pd.read_sql_query(query, self.conn)
+#                 df.to_csv(csv_file_path, index=False)
+#                 print(f"Database exported to {csv_file_path}")
+#             except Exception as e:
+#                 print(f"Error during database export: {e}")
 
 
+#     def update_database_from_csv(self, csv_file_path=None):
+#         """Update the database using data from a CSV file."""
+#         if not csv_file_path:
+#             base_name = os.path.splitext(os.path.basename(self.db_path))[0]
+#             csv_file_path = f"data/{base_name}/{self.table_name}.csv"
+#         if self.conn:
+#             try:
+#                 # Load CSV data into a DataFrame
+#                 df = pd.read_csv(csv_file_path)
+
+#                 # Add columns from CSV to database if they don't exist
+#                 for column in df.columns:
+#                     self.cursor.execute(f"PRAGMA table_info({self.table_name});")
+#                     existing_columns = [row[1] for row in self.cursor.fetchall()]
+#                     if column not in existing_columns:
+#                         self.create_field_if_not_exists(self.table_name, column, "TEXT")
+
+#                 # Insert or update rows from the CSV
+#                 for _, row in df.iterrows():
+#                     columns = ', '.join(row.index)
+#                     placeholders = ', '.join(['?'] * len(row))
+#                     update_clause = ', '.join([f"{col}=excluded.{col}" for col in row.index])
+
+#                     query = f"""
+#                         INSERT INTO {self.table_name} ({columns})
+#                         VALUES ({placeholders})
+#                         ON CONFLICT(id) DO UPDATE SET
+#                         {update_clause};
+#                     """
+#                     self.cursor.execute(query, tuple(row))
+#                     self.conn.commit()
+#             except Exception as e:
+#                 print(f"Error during database update: {e}")
+
+#     def sync_from_csv_to_database(self, csv_file_path=None, confirm=False):
+#         """Sync the database with the structure and content of a CSV file."""
+#         if not csv_file_path:
+#             base_name = os.path.splitext(os.path.basename(self.db_path))[0]
+#             csv_file_path = f"data/{base_name}/{self.table_name}.csv"
+
+#         if not confirm:
+#             print("Sync operation requires confirmation. Set confirm=True to proceed.")
+#             return
+
+#         if self.conn:
+#             try:
+#                 # Load CSV data
+#                 df_csv = pd.read_csv(csv_file_path)
+#                 csv_columns = set(df_csv.columns)
+
+#                 # Get database columns
+#                 self.cursor.execute(f"PRAGMA table_info({self.table_name});")
+#                 db_columns = {row[1] for row in self.cursor.fetchall()}
+
+#                 # Add new columns from CSV to database
+#                 for column in csv_columns - db_columns:
+#                     self.create_field_if_not_exists(self.table_name, column, "TEXT")
+
+#                 # Delete columns from database not in CSV
+#                 for column in db_columns - csv_columns:
+#                     self.delete_column_if_exists(self.table_name, column)
+
+#                 # Update or insert rows
+#                 for _, row in df_csv.iterrows():
+#                     columns = ', '.join(row.index)
+#                     placeholders = ', '.join(['?'] * len(row))
+#                     update_clause = ', '.join([f"{col}=excluded.{col}" for col in row.index])
+
+#                     query = f"""
+#                         INSERT INTO {self.table_name} ({columns})
+#                         VALUES ({placeholders})
+#                         ON CONFLICT(id) DO UPDATE SET
+#                         {update_clause};
+#                     """
+#                     self.cursor.execute(query, tuple(row))
+
+#                 # Delete rows not in CSV
+#                 df_db = pd.read_sql_query(f"SELECT * FROM {self.table_name}", self.conn)
+#                 db_ids = set(df_db['id'])
+#                 csv_ids = set(df_csv['id'])
+#                 ids_to_delete = db_ids - csv_ids
+#                 for id in ids_to_delete:
+#                     self.cursor.execute(f"DELETE FROM {self.table_name} WHERE id = ?", (id,))
+
+#                 self.conn.commit()
+#                 print("Database successfully synced with CSV.")
+
+#             except Exception as e:
+#                 print(f"Error during syncing database with CSV: {e}")
 
 
-    def create_table_if_not_exists(self):
-        if self.conn:
-            try:
-                self.cursor.execute(f"PRAGMA table_info({self.table_name});")
-                if not self.cursor.fetchall():
-                    # If fields are provided, use them; otherwise, create default columns
-                    if self.fields:
-                        columns = ', '.join([f"{name} {type}" for name, type in self.fields])
-                    else:
-                        columns = "id INTEGER PRIMARY KEY, create_date TEXT, update_date TEXT"
+
+
+#     def create_table_if_not_exists(self):
+#         if self.conn:
+#             try:
+#                 self.cursor.execute(f"PRAGMA table_info({self.table_name});")
+#                 if not self.cursor.fetchall():
+#                     # If fields are provided, use them; otherwise, create default columns
+#                     if self.fields:
+#                         columns = ', '.join([f"{name} {type}" for name, type in self.fields])
+#                     else:
+#                         columns = "id INTEGER PRIMARY KEY, create_date TEXT, update_date TEXT"
                     
-                    self.cursor.execute(f"CREATE TABLE {self.table_name} ({columns});")
-                    self.conn.commit()
-            except sqlite3.Error as e:
-                print(f"SQLite Error: {e}")
-                traceback.print_exc()
+#                     self.cursor.execute(f"CREATE TABLE {self.table_name} ({columns});")
+#                     self.conn.commit()
+#             except sqlite3.Error as e:
+#                 print(f"SQLite Error: {e}")
+#                 traceback.print_exc()
 
     
 
 
 
-    def create_fields_if_not_exists(self):
-        if self.conn:
-            try:
-                for field_name, field_type in self.fields:
-                    self.create_field_if_not_exists(self.table_name, field_name, field_type)
-            except sqlite3.Error as e:
-                print(f"SQLite Error: {e}")
-                traceback.print_exc()
+#     def create_fields_if_not_exists(self):
+#         if self.conn:
+#             try:
+#                 for field_name, field_type in self.fields:
+#                     self.create_field_if_not_exists(self.table_name, field_name, field_type)
+#             except sqlite3.Error as e:
+#                 print(f"SQLite Error: {e}")
+#                 traceback.print_exc()
 
 
-    def create_field_if_not_exists(self, table_name, field_name, field_type, default_value=None):
-        """
-        Add a new field to a table if it doesn't already exist, with an optional default value.
+#     def create_field_if_not_exists(self, table_name, field_name, field_type, default_value=None):
+#         """
+#         Add a new field to a table if it doesn't already exist, with an optional default value.
 
-        Args:
-        - table_name (str): Name of the table to alter.
-        - field_name (str): Name of the new field to add.
-        - field_type (str): Data type of the new field. Common SQLite data types include:
-            * INTEGER: Whole numbers. Default: 0.
-            * TEXT: Text strings. Default: '' (empty string).
-            * REAL: Floating point numbers. Default: 0.0.
-            * BLOB: Binary data. Default: NULL.
-            * NUMERIC: Flexible type for numbers, dates, booleans. Default: 0 or NULL.
-            * DATE: Dates in 'YYYY-MM-DD' format. Default: NULL or specific date like '1970-01-01'.
-            * BOOLEAN: Stored as INTEGER 0 (false) or 1 (true). Default: 0.
-        - default_value (optional): The default value for the new field. If not provided, SQLite uses NULL.
+#         Args:
+#         - table_name (str): Name of the table to alter.
+#         - field_name (str): Name of the new field to add.
+#         - field_type (str): Data type of the new field. Common SQLite data types include:
+#             * INTEGER: Whole numbers. Default: 0.
+#             * TEXT: Text strings. Default: '' (empty string).
+#             * REAL: Floating point numbers. Default: 0.0.
+#             * BLOB: Binary data. Default: NULL.
+#             * NUMERIC: Flexible type for numbers, dates, booleans. Default: 0 or NULL.
+#             * DATE: Dates in 'YYYY-MM-DD' format. Default: NULL or specific date like '1970-01-01'.
+#             * BOOLEAN: Stored as INTEGER 0 (false) or 1 (true). Default: 0.
+#         - default_value (optional): The default value for the new field. If not provided, SQLite uses NULL.
 
-        Example usage:
-        create_field_if_not_exists('my_table', 'new_column', 'TEXT', 'default text')
-        """
-        if self.conn:
-            try:
-                # Check if the column exists
-                self.cursor.execute(f"PRAGMA table_info({table_name});")
-                columns = [row[1] for row in self.cursor.fetchall()]
-                if field_name not in columns:
-                    default_clause = f"DEFAULT {default_value}" if default_value is not None else ""
-                    alter_query = f"ALTER TABLE {table_name} ADD COLUMN {field_name} {field_type} {default_clause};"
-                    self.cursor.execute(alter_query)
-                    self.conn.commit()
-            except sqlite3.Error as e:
-                print(f"SQLite Error: {e}")
-                traceback.print_exc()
+#         Example usage:
+#         create_field_if_not_exists('my_table', 'new_column', 'TEXT', 'default text')
+#         """
+#         if self.conn:
+#             try:
+#                 # Check if the column exists
+#                 self.cursor.execute(f"PRAGMA table_info({table_name});")
+#                 columns = [row[1] for row in self.cursor.fetchall()]
+#                 if field_name not in columns:
+#                     default_clause = f"DEFAULT {default_value}" if default_value is not None else ""
+#                     alter_query = f"ALTER TABLE {table_name} ADD COLUMN {field_name} {field_type} {default_clause};"
+#                     self.cursor.execute(alter_query)
+#                     self.conn.commit()
+#             except sqlite3.Error as e:
+#                 print(f"SQLite Error: {e}")
+#                 traceback.print_exc()
 
 
 
-    def delete_column_if_exists(self, table_name, column_name):
-        """
-        Remove a field from a table if it exists.
+#     def delete_column_if_exists(self, table_name, column_name):
+#         """
+#         Remove a field from a table if it exists.
 
-        Args:
-        - table_name (str): Name of the table to alter.
-        - column_name (str): Name of the field to remove.
+#         Args:
+#         - table_name (str): Name of the table to alter.
+#         - column_name (str): Name of the field to remove.
 
-        Example usage:
-        delete_column_if_exists('my_table', 'column_to_remove')
-        """
-        if self.conn:
-            try:
-                # Check if the column exists
-                self.cursor.execute(f"PRAGMA table_info({table_name});")
-                columns = [row[1] for row in self.cursor.fetchall()]
-                if column_name in columns:
-                    # Create a list of columns to retain (excluding the one to be deleted)
-                    columns.remove(column_name)
-                    retained_columns = ', '.join(columns)
+#         Example usage:
+#         delete_column_if_exists('my_table', 'column_to_remove')
+#         """
+#         if self.conn:
+#             try:
+#                 # Check if the column exists
+#                 self.cursor.execute(f"PRAGMA table_info({table_name});")
+#                 columns = [row[1] for row in self.cursor.fetchall()]
+#                 if column_name in columns:
+#                     # Create a list of columns to retain (excluding the one to be deleted)
+#                     columns.remove(column_name)
+#                     retained_columns = ', '.join(columns)
 
-                    # Create a new table with the same structure minus the column
-                    temp_table_name = f"{table_name}_temp"
-                    self.cursor.execute(f"CREATE TABLE {temp_table_name} AS SELECT {retained_columns} FROM {table_name};")
+#                     # Create a new table with the same structure minus the column
+#                     temp_table_name = f"{table_name}_temp"
+#                     self.cursor.execute(f"CREATE TABLE {temp_table_name} AS SELECT {retained_columns} FROM {table_name};")
 
-                    # Drop the old table
-                    self.cursor.execute(f"DROP TABLE {table_name};")
+#                     # Drop the old table
+#                     self.cursor.execute(f"DROP TABLE {table_name};")
 
-                    # Rename the new table to the old table's name
-                    self.cursor.execute(f"ALTER TABLE {temp_table_name} RENAME TO {table_name};")
+#                     # Rename the new table to the old table's name
+#                     self.cursor.execute(f"ALTER TABLE {temp_table_name} RENAME TO {table_name};")
 
-                    self.conn.commit()
-            except sqlite3.Error as e:
-                print(f"SQLite Error: {e}")
-                traceback.print_exc()
+#                     self.conn.commit()
+#             except sqlite3.Error as e:
+#                 print(f"SQLite Error: {e}")
+#                 traceback.print_exc()
 
-    def log_history_update(self, old_new_word_details_pairs, history_csv_path='data/words_update_history.csv'):
-        with open(history_csv_path, 'a', newline='', encoding='utf-8') as history_file:
-            history_writer = csv.writer(history_file)
-            for old_details, new_details in old_new_word_details_pairs:
-                for key in old_details.keys():
-                    old_value = old_details[key]
-                    new_value = new_details[key]
-                    if old_value != new_value:
-                        history_writer.writerow([key, old_value, "→", new_value])
+#     def log_history_update(self, old_new_word_details_pairs, history_csv_path='data/words_update_history.csv'):
+#         with open(history_csv_path, 'a', newline='', encoding='utf-8') as history_file:
+#             history_writer = csv.writer(history_file)
+#             for old_details, new_details in old_new_word_details_pairs:
+#                 for key in old_details.keys():
+#                     old_value = old_details[key]
+#                     new_value = new_details[key]
+#                     if old_value != new_value:
+#                         history_writer.writerow([key, old_value, "→", new_value])
 
-    # def word_exists(self, word):
-    #     if self.conn:
-    #         self.cursor.execute("SELECT COUNT(*) FROM words_phonetics WHERE word = ?", (word.strip(),))
-    #         return self.cursor.fetchone()[0] > 0
-    #     return False
+#     # def word_exists(self, word):
+#     #     if self.conn:
+#     #         self.cursor.execute("SELECT COUNT(*) FROM words_phonetics WHERE word = ?", (word.strip(),))
+#     #         return self.cursor.fetchone()[0] > 0
+#     #     return False
 
-    def word_exists(self, word):
-        if self.conn:
-            # print("Checking existence: ", word)
+#     def word_exists(self, word):
+#         if self.conn:
+#             # print("Checking existence: ", word)
 
-            # Prepare the word in lowercase
-            word_lower = word.strip().lower()
+#             # Prepare the word in lowercase
+#             word_lower = word.strip().lower()
             
-            # Update the SQL query to check for both exact and lowercase match
-            # self.cursor.execute("SELECT COUNT(*) FROM words_phonetics WHERE word = ? OR LOWER(word) = ?", (word.strip(), word_lower))
-            self.cursor.execute("SELECT COUNT(*) FROM words_phonetics WHERE word = ? OR word = ?", (word.strip(), word_lower))
+#             # Update the SQL query to check for both exact and lowercase match
+#             # self.cursor.execute("SELECT COUNT(*) FROM words_phonetics WHERE word = ? OR LOWER(word) = ?", (word.strip(), word_lower))
+#             self.cursor.execute("SELECT COUNT(*) FROM words_phonetics WHERE word = ? OR word = ?", (word.strip(), word_lower))
             
-            return self.cursor.fetchone()[0] > 0
-        return False
+#             return self.cursor.fetchone()[0] > 0
+#         return False
     
 
 
-    def insert_word_details(self, word_details, force=False):
-        if self.conn:
-            # Extracting word details
-            word = word_details.get('word', '').lower()
-            fields_to_update = ['syllable_word', 'phonetic', 'japanese_synonym', 'arabic_synonym', 
-                                'french_synonym', 'chinese_synonym', 'simplified_chinese_synonym', 'kanji_synonym']
+#     def insert_word_details(self, word_details, force=False):
+#         if self.conn:
+#             # Extracting word details
+#             word = word_details.get('word', '').lower()
+#             fields_to_update = ['syllable_word', 'phonetic', 'japanese_synonym', 'arabic_synonym', 
+#                                 'french_synonym', 'chinese_synonym', 'simplified_chinese_synonym', 'kanji_synonym']
 
-            # Cleaning and preparing data for insertion
-            data_to_insert = [word]
-            columns = ['word']
-            placeholders = ['?']
-            update_parts = []
+#             # Cleaning and preparing data for insertion
+#             data_to_insert = [word]
+#             columns = ['word']
+#             placeholders = ['?']
+#             update_parts = []
 
-            for field in fields_to_update:
-                if field in word_details:
-                    # value = clean_english(word_details[field]) if field != 'japanese_synonym' else clean_japanese(word_details[field])
-                    # Choose the appropriate cleaning function based on the field
-                    if field == 'japanese_synonym':
-                        value = clean_japanese(word_details[field])
-                    elif field in ['syllable_word', 'phonetic']:
-                        value = clean_english(word_details[field])
-                    # elif field == "word":
-                    #     value = word_details[field].lower()
-                    else:
-                        value = word_details[field]  # No cleaning function for other fields
-                    data_to_insert.append(value)
-                    columns.append(field)
-                    placeholders.append('?')
-                    update_parts.append(f"{field} = excluded.{field}")
+#             for field in fields_to_update:
+#                 if field in word_details:
+#                     # value = clean_english(word_details[field]) if field != 'japanese_synonym' else clean_japanese(word_details[field])
+#                     # Choose the appropriate cleaning function based on the field
+#                     if field == 'japanese_synonym':
+#                         value = clean_japanese(word_details[field])
+#                     elif field in ['syllable_word', 'phonetic']:
+#                         value = clean_english(word_details[field])
+#                     # elif field == "word":
+#                     #     value = word_details[field].lower()
+#                     else:
+#                         value = word_details[field]  # No cleaning function for other fields
+#                     data_to_insert.append(value)
+#                     columns.append(field)
+#                     placeholders.append('?')
+#                     update_parts.append(f"{field} = excluded.{field}")
 
-            try:
-                if force:
-                    # Dynamically constructing the UPSERT query
-                    query = f"""
-                        INSERT INTO words_phonetics ({', '.join(columns)})
-                        VALUES ({', '.join(placeholders)})
-                        ON CONFLICT(word) DO UPDATE SET
-                            {', '.join(update_parts)};
-                    """
-                    self.cursor.execute(query, data_to_insert)
-                else:
-                    # Insert new record, ignore on duplicate
-                    query = f"""
-                        INSERT INTO words_phonetics ({', '.join(columns)})
-                        VALUES ({', '.join(placeholders)});
-                    """
-                    self.cursor.execute(query, data_to_insert)
+#             try:
+#                 if force:
+#                     # Dynamically constructing the UPSERT query
+#                     query = f"""
+#                         INSERT INTO words_phonetics ({', '.join(columns)})
+#                         VALUES ({', '.join(placeholders)})
+#                         ON CONFLICT(word) DO UPDATE SET
+#                             {', '.join(update_parts)};
+#                     """
+#                     self.cursor.execute(query, data_to_insert)
+#                 else:
+#                     # Insert new record, ignore on duplicate
+#                     query = f"""
+#                         INSERT INTO words_phonetics ({', '.join(columns)})
+#                         VALUES ({', '.join(placeholders)});
+#                     """
+#                     self.cursor.execute(query, data_to_insert)
 
-                self.conn.commit()
-            except sqlite3.Error as e:
-                print(f"SQLite Error: {e}")
-                traceback.print_exc()
-
-
-    def update_word_details(self, word_details, force=False):
-        if self.conn:
-            word = word_details.get('word', '').lower()  # Ensure the word is in lowercase
-
-            # Prepare data and query for dynamic update
-            data_to_update = []
-            update_parts = []
-
-            for key in ['syllable_word', 'phonetic', 'japanese_synonym', 'arabic_synonym', 'french_synonym', 'chinese_synonym', 'simplified_chinese_synonym', 'kanji_synonym']:
-                if key in word_details:
-                    # Choose the appropriate cleaning function based on the field
-                    if key == 'japanese_synonym':
-                        cleaned_value = clean_japanese(word_details[key])
-                    elif key in ['syllable_word', 'phonetic']:
-                        cleaned_value = clean_english(word_details[key])
-                    # elif key == "word":
-                    #     cleaned_value = word_details[key].lower()
-                    else:
-                        cleaned_value = word_details[key]  # No cleaning function for other fields
-
-                    if cleaned_value:
-                        data_to_update.append(cleaned_value)
-                        update_parts.append(f"{key} = ?")
-
-            if not update_parts:
-                # No data to update
-                return
-
-            query = f"UPDATE words_phonetics SET {', '.join(update_parts)} WHERE word = ?"
-            data_to_update.append(word)
-
-            try:
-                # Execute the query with the values
-                self.cursor.execute(query, data_to_update)
-                self.conn.commit()
-            except sqlite3.Error as e:
-                print(f"SQLite Error: {e}")
-                traceback.print_exc()
+#                 self.conn.commit()
+#             except sqlite3.Error as e:
+#                 print(f"SQLite Error: {e}")
+#                 traceback.print_exc()
 
 
+#     def update_word_details(self, word_details, force=False):
+#         if self.conn:
+#             word = word_details.get('word', '').lower()  # Ensure the word is in lowercase
 
-    def get_total_word_count(self):
-        if self.conn:
-            self.cursor.execute("SELECT COUNT(*) FROM words_phonetics")
-            return self.cursor.fetchone()[0]
-        return 0
+#             # Prepare data and query for dynamic update
+#             data_to_update = []
+#             update_parts = []
 
-    def process_and_store_kanji(self, word):
-        """
-        For a given word, if it exists in the database, create and populate the 'kanji' field.
-        """
-        if self.conn:
-            # Check if word exists
-            if self.word_exists(word):
-                # Extract and process the Japanese synonym to obtain the kanji
-                self.cursor.execute("SELECT japanese_synonym FROM words_phonetics WHERE word = ?", (word,))
-                japanese_synonym = self.cursor.fetchone()[0]
-                kanji = extract_kanji(japanese_synonym)
+#             for key in ['syllable_word', 'phonetic', 'japanese_synonym', 'arabic_synonym', 'french_synonym', 'chinese_synonym', 'simplified_chinese_synonym', 'kanji_synonym']:
+#                 if key in word_details:
+#                     # Choose the appropriate cleaning function based on the field
+#                     if key == 'japanese_synonym':
+#                         cleaned_value = clean_japanese(word_details[key])
+#                     elif key in ['syllable_word', 'phonetic']:
+#                         cleaned_value = clean_english(word_details[key])
+#                     # elif key == "word":
+#                     #     cleaned_value = word_details[key].lower()
+#                     else:
+#                         cleaned_value = word_details[key]  # No cleaning function for other fields
 
-                # Update the kanji field
-                update_query = "UPDATE words_phonetics SET kanji = ? WHERE word = ?"
-                try:
-                    self.cursor.execute(update_query, (kanji, word))
-                    self.conn.commit()
-                except sqlite3.Error as e:
-                    print(f"SQLite Error: {e}")
-                    traceback.print_exc()
+#                     if cleaned_value:
+#                         data_to_update.append(cleaned_value)
+#                         update_parts.append(f"{key} = ?")
+
+#             if not update_parts:
+#                 # No data to update
+#                 return
+
+#             query = f"UPDATE words_phonetics SET {', '.join(update_parts)} WHERE word = ?"
+#             data_to_update.append(word)
+
+#             try:
+#                 # Execute the query with the values
+#                 self.cursor.execute(query, data_to_update)
+#                 self.conn.commit()
+#             except sqlite3.Error as e:
+#                 print(f"SQLite Error: {e}")
+#                 traceback.print_exc()
+
+
+
+#     def get_total_word_count(self):
+#         if self.conn:
+#             self.cursor.execute("SELECT COUNT(*) FROM words_phonetics")
+#             return self.cursor.fetchone()[0]
+#         return 0
+
+#     def process_and_store_kanji(self, word):
+#         """
+#         For a given word, if it exists in the database, create and populate the 'kanji' field.
+#         """
+#         if self.conn:
+#             # Check if word exists
+#             if self.word_exists(word):
+#                 # Extract and process the Japanese synonym to obtain the kanji
+#                 self.cursor.execute("SELECT japanese_synonym FROM words_phonetics WHERE word = ?", (word,))
+#                 japanese_synonym = self.cursor.fetchone()[0]
+#                 kanji = extract_kanji(japanese_synonym)
+
+#                 # Update the kanji field
+#                 update_query = "UPDATE words_phonetics SET kanji = ? WHERE word = ?"
+#                 try:
+#                     self.cursor.execute(update_query, (kanji, word))
+#                     self.conn.commit()
+#                 except sqlite3.Error as e:
+#                     print(f"SQLite Error: {e}")
+#                     traceback.print_exc()
 
  
 
-    def update_kanji_for_all_words(self):
-        """
-        Loop through all words in the database and update the 'kanji' field.
-        """
+#     def update_kanji_for_all_words(self):
+#         """
+#         Loop through all words in the database and update the 'kanji' field.
+#         """
 
-        self.create_field_if_not_exists("words_phonetics", "kanji_synonym", "TEXT")
-        if self.conn:
-            self.cursor.execute("SELECT word, japanese_synonym FROM words_phonetics")
-            rows = self.cursor.fetchall()
-            for word, japanese_synonym in rows:
-                kanji = extract_kanji(japanese_synonym)
-                update_query = "UPDATE words_phonetics SET kanji = ? WHERE word = ?"
-                try:
-                    self.cursor.execute(update_query, (kanji, word))
-                except sqlite3.Error as e:
-                    print(f"SQLite Error: {e}")
-                    traceback.print_exc()
+#         self.create_field_if_not_exists("words_phonetics", "kanji_synonym", "TEXT")
+#         if self.conn:
+#             self.cursor.execute("SELECT word, japanese_synonym FROM words_phonetics")
+#             rows = self.cursor.fetchall()
+#             for word, japanese_synonym in rows:
+#                 kanji = extract_kanji(japanese_synonym)
+#                 update_query = "UPDATE words_phonetics SET kanji = ? WHERE word = ?"
+#                 try:
+#                     self.cursor.execute(update_query, (kanji, word))
+#                 except sqlite3.Error as e:
+#                     print(f"SQLite Error: {e}")
+#                     traceback.print_exc()
 
-            self.conn.commit()
+#             self.conn.commit()
 
 
-    def fetch_and_clean_word_details(self, words):
-        updated_words = []
-        for word in words:
-            word_details = self.find_word_details(word)
+#     def fetch_and_clean_word_details(self, words):
+#         updated_words = []
+#         for word in words:
+#             word_details = self.find_word_details(word)
 
-            if word_details:
-                original_word_details = word_details.copy()
+#             if word_details:
+#                 original_word_details = word_details.copy()
 
-                # Clean English and Japanese text
-                word_details['syllable_word'] = clean_english(word_details.get('syllable_word', ''))
-                word_details['phonetic'] = clean_english(word_details.get('phonetic', ''))
-                word_details['japanese_synonym'] = clean_japanese(word_details.get('japanese_synonym', ''))
+#                 # Clean English and Japanese text
+#                 word_details['syllable_word'] = clean_english(word_details.get('syllable_word', ''))
+#                 word_details['phonetic'] = clean_english(word_details.get('phonetic', ''))
+#                 word_details['japanese_synonym'] = clean_japanese(word_details.get('japanese_synonym', ''))
 
-                # Check if cleaning resulted in changes
-                if word_details != original_word_details:
-                    self.update_word_details(word_details, force=True)
-                    updated_words.append(word_details)
+#                 # Check if cleaning resulted in changes
+#                 if word_details != original_word_details:
+#                     self.update_word_details(word_details, force=True)
+#                     updated_words.append(word_details)
 
-        return updated_words
+#         return updated_words
 
-    def update_all_words(self, batch_size=10):
-        total_words = self.get_total_word_count()
-        processed = 0
+#     def update_all_words(self, batch_size=10):
+#         total_words = self.get_total_word_count()
+#         processed = 0
 
-        while processed < total_words:
-            # Fetch a batch of words from the database
-            words_batch = self.fetch_words_batch(processed, batch_size)
-            words_to_update = []
+#         while processed < total_words:
+#             # Fetch a batch of words from the database
+#             words_batch = self.fetch_words_batch(processed, batch_size)
+#             words_to_update = []
 
-            for word_detail in words_batch:
-                cleaned_word_detail = self.fetch_and_clean_word_details([word_detail["word"]])
-                if cleaned_word_detail != word_detail:
-                    words_to_update.extend(cleaned_word_detail)
+#             for word_detail in words_batch:
+#                 cleaned_word_detail = self.fetch_and_clean_word_details([word_detail["word"]])
+#                 if cleaned_word_detail != word_detail:
+#                     words_to_update.extend(cleaned_word_detail)
 
-            # Update the database with cleaned and updated word details
-            for updated_word in words_to_update:
-                # print("updateing words: ", updated_word)
-                self.update_word_details(updated_word, force=True)
+#             # Update the database with cleaned and updated word details
+#             for updated_word in words_to_update:
+#                 # print("updateing words: ", updated_word)
+#                 self.update_word_details(updated_word, force=True)
 
-            processed += len(words_batch)
+#             processed += len(words_batch)
 
-    def convert_and_update_chinese_synonyms(self):
-        if self.conn:
-            # self.create_field_if_not_exists("words_phonetics", "simplified_chinese_synonym", "TEXT")
+#     def convert_and_update_chinese_synonyms(self):
+#         if self.conn:
+#             # self.create_field_if_not_exists("words_phonetics", "simplified_chinese_synonym", "TEXT")
 
-            # Initialize OpenCC converters
-            s2t_converter = opencc.OpenCC('s2t')  # Simplified to Traditional
-            t2s_converter = opencc.OpenCC('t2s')  # Traditional to Simplified
+#             # Initialize OpenCC converters
+#             s2t_converter = opencc.OpenCC('s2t')  # Simplified to Traditional
+#             t2s_converter = opencc.OpenCC('t2s')  # Traditional to Simplified
 
-            self.cursor.execute("SELECT word, chinese_synonym, simplified_chinese_synonym FROM words_phonetics")
-            rows = self.cursor.fetchall()
+#             self.cursor.execute("SELECT word, chinese_synonym, simplified_chinese_synonym FROM words_phonetics")
+#             rows = self.cursor.fetchall()
 
-            for word, chinese_synonym, simplified_chinese_synonym in rows:
-                if chinese_synonym:
-                    # Check and convert to traditional Chinese if it's simplified
-                    traditional_chinese = s2t_converter.convert(chinese_synonym)
+#             for word, chinese_synonym, simplified_chinese_synonym in rows:
+#                 if chinese_synonym:
+#                     # Check and convert to traditional Chinese if it's simplified
+#                     traditional_chinese = s2t_converter.convert(chinese_synonym)
 
-                    # Check if conversion actually happened, update if different
-                    if traditional_chinese != chinese_synonym:
-                        update_query = "UPDATE words_phonetics SET chinese_synonym = ? WHERE word = ?"
-                        try:
-                            self.cursor.execute(update_query, (traditional_chinese, word))
-                        except sqlite3.Error as e:
-                            print(f"SQLite Error: {e}")
-                            traceback.print_exc()
+#                     # Check if conversion actually happened, update if different
+#                     if traditional_chinese != chinese_synonym:
+#                         update_query = "UPDATE words_phonetics SET chinese_synonym = ? WHERE word = ?"
+#                         try:
+#                             self.cursor.execute(update_query, (traditional_chinese, word))
+#                         except sqlite3.Error as e:
+#                             print(f"SQLite Error: {e}")
+#                             traceback.print_exc()
 
-                    # Convert to simplified Chinese if simplified_chinese_synonym is empty
-                    if not simplified_chinese_synonym:
-                        simplified_chinese = t2s_converter.convert(traditional_chinese)
-                        update_simplified_query = "UPDATE words_phonetics SET simplified_chinese_synonym = ? WHERE word = ?"
-                        try:
-                            self.cursor.execute(update_simplified_query, (simplified_chinese, word))
-                        except sqlite3.Error as e:
-                            print(f"SQLite Error: {e}")
-                            traceback.print_exc()
+#                     # Convert to simplified Chinese if simplified_chinese_synonym is empty
+#                     if not simplified_chinese_synonym:
+#                         simplified_chinese = t2s_converter.convert(traditional_chinese)
+#                         update_simplified_query = "UPDATE words_phonetics SET simplified_chinese_synonym = ? WHERE word = ?"
+#                         try:
+#                             self.cursor.execute(update_simplified_query, (simplified_chinese, word))
+#                         except sqlite3.Error as e:
+#                             print(f"SQLite Error: {e}")
+#                             traceback.print_exc()
 
-            self.conn.commit()
+#             self.conn.commit()
     
 
-    def process_word_rows(self, rows, field_names):
+#     def process_word_rows(self, rows, field_names):
 
-        # print("rows:", rows)
-        # print("field_names: ", field_names)
-        """
-        Process rows from the database into a list of dictionaries with word details.
-        Process specific fields and keep other fields unprocessed.
-        """
-        processed_rows = []
-        for row in [rows]:
-            processed_row = {}
-            for field, value in zip(field_names, row):
-                if field in ["word", "syllable_word", "phonetic"]:
-                    processed_row[field] = clean_english(value)
-                else:
-                    processed_row[field] = value
-            processed_rows.append(processed_row)
-        return processed_rows[0]
+#         # print("rows:", rows)
+#         # print("field_names: ", field_names)
+#         """
+#         Process rows from the database into a list of dictionaries with word details.
+#         Process specific fields and keep other fields unprocessed.
+#         """
+#         processed_rows = []
+#         for row in [rows]:
+#             processed_row = {}
+#             for field, value in zip(field_names, row):
+#                 if field in ["word", "syllable_word", "phonetic"]:
+#                     processed_row[field] = clean_english(value)
+#                 else:
+#                     processed_row[field] = value
+#             processed_rows.append(processed_row)
+#         return processed_rows[0]
 
-    def get_table_fields(self, table_name, excluded=None):
-        if self.conn:
-            self.cursor.execute(f"PRAGMA table_info({table_name});")
-            columns = [row[1] for row in self.cursor.fetchall()]
-            if excluded:
-                columns = [column for column in columns if column not in excluded]
-            return columns
+#     def get_table_fields(self, table_name, excluded=None):
+#         if self.conn:
+#             self.cursor.execute(f"PRAGMA table_info({table_name});")
+#             columns = [row[1] for row in self.cursor.fetchall()]
+#             if excluded:
+#                 columns = [column for column in columns if column not in excluded]
+#             return columns
 
-    def find_word_details(self, word, fields=None, excluded=["id"]):
-        if self.conn:
-            all_fields = self.get_table_fields('words_phonetics', excluded)
-            selected_fields = ', '.join(fields if fields else all_fields)
+#     def find_word_details(self, word, fields=None, excluded=["id"]):
+#         if self.conn:
+#             all_fields = self.get_table_fields('words_phonetics', excluded)
+#             selected_fields = ', '.join(fields if fields else all_fields)
 
-            self.cursor.execute(f"SELECT {selected_fields} FROM words_phonetics WHERE word = ?", (word,))
-            result = self.cursor.fetchone()
-
-
-            # print("all_fields: ", all_fields)
-            if result:
-                field_names = fields if fields else all_fields
-                return self.process_word_rows(result, field_names)
-        return None
+#             self.cursor.execute(f"SELECT {selected_fields} FROM words_phonetics WHERE word = ?", (word,))
+#             result = self.cursor.fetchone()
 
 
-    def fetch_random_words(self, num_words, fields=None, excluded=["id"]):
-        if self.conn:
-            all_fields = self.get_table_fields('words_phonetics', excluded)
-            selected_fields = ', '.join(fields if fields else all_fields)
-
-            # Fetch all rows
-            query = f"SELECT {selected_fields} FROM words_phonetics ORDER BY RANDOM()"
-            # query = f"SELECT {selected_fields} FROM words_phonetics ORDER BY RANDOM() LIMIT ?"
-            self.cursor.execute(query)
-            # self.cursor.execute(query, (num_words*10,))
-            rows = self.cursor.fetchall()
-
-            # Convert rows to a NumPy array and shuffle
-            rows_array = np.array(rows)
-            # np.random.shuffle(rows_array)
-            rows_array = random_shuffle(rows_array)
-
-            # Select the first 'num_words' rows
-            selected_rows = rows_array[:num_words]
-
-            # Convert each row back to the original format if needed
-            return [self.process_word_rows(tuple(row), fields if fields else all_fields) for row in selected_rows]
-
-    def fetch_last_10_words(self, fields=None, excluded=["id"]):
-        if self.conn:
-            all_fields = self.get_table_fields('words_phonetics', excluded)
-            selected_fields = ', '.join(fields if fields else all_fields)
-
-            query = f"SELECT {selected_fields} FROM words_phonetics ORDER BY rowid DESC LIMIT 10"
-            self.cursor.execute(query)
-            rows = self.cursor.fetchall()
-            return [self.process_word_rows(row, fields if fields else all_fields) for row in rows]
-
-    def fetch_words_batch(self, offset, limit, fields=None, excluded=["id"]):
-        if self.conn:
-            all_fields = self.get_table_fields('words_phonetics', excluded)
-            selected_fields = ', '.join(fields if fields else all_fields)
-
-            # print("all_fields: ", all_fields)
-
-            query = f"SELECT {selected_fields} FROM words_phonetics LIMIT ? OFFSET ?"
-            self.cursor.execute(query, (limit, offset))
-            rows = self.cursor.fetchall()
-
-            # print("rows: ", rows)
-            return [self.process_word_rows(row, fields if fields else all_fields) for row in rows]
+#             # print("all_fields: ", all_fields)
+#             if result:
+#                 field_names = fields if fields else all_fields
+#                 return self.process_word_rows(result, field_names)
+#         return None
 
 
+#     def fetch_random_words(self, num_words, fields=None, excluded=["id"]):
+#         if self.conn:
+#             all_fields = self.get_table_fields('words_phonetics', excluded)
+#             selected_fields = ', '.join(fields if fields else all_fields)
+
+#             # Fetch all rows
+#             query = f"SELECT {selected_fields} FROM words_phonetics ORDER BY RANDOM()"
+#             # query = f"SELECT {selected_fields} FROM words_phonetics ORDER BY RANDOM() LIMIT ?"
+#             self.cursor.execute(query)
+#             # self.cursor.execute(query, (num_words*10,))
+#             rows = self.cursor.fetchall()
+
+#             # Convert rows to a NumPy array and shuffle
+#             rows_array = np.array(rows)
+#             # np.random.shuffle(rows_array)
+#             rows_array = random_shuffle(rows_array)
+
+#             # Select the first 'num_words' rows
+#             selected_rows = rows_array[:num_words]
+
+#             # Convert each row back to the original format if needed
+#             return [self.process_word_rows(tuple(row), fields if fields else all_fields) for row in selected_rows]
+
+#     def fetch_last_10_words(self, fields=None, excluded=["id"]):
+#         if self.conn:
+#             all_fields = self.get_table_fields('words_phonetics', excluded)
+#             selected_fields = ', '.join(fields if fields else all_fields)
+
+#             query = f"SELECT {selected_fields} FROM words_phonetics ORDER BY rowid DESC LIMIT 10"
+#             self.cursor.execute(query)
+#             rows = self.cursor.fetchall()
+#             return [self.process_word_rows(row, fields if fields else all_fields) for row in rows]
+
+#     def fetch_words_batch(self, offset, limit, fields=None, excluded=["id"]):
+#         if self.conn:
+#             all_fields = self.get_table_fields('words_phonetics', excluded)
+#             selected_fields = ', '.join(fields if fields else all_fields)
+
+#             # print("all_fields: ", all_fields)
+
+#             query = f"SELECT {selected_fields} FROM words_phonetics LIMIT ? OFFSET ?"
+#             self.cursor.execute(query, (limit, offset))
+#             rows = self.cursor.fetchall()
+
+#             # print("rows: ", rows)
+#             return [self.process_word_rows(row, fields if fields else all_fields) for row in rows]
 
 
 
-    def update_from_word_details_correction_csv(self, word_details_correction_csv_path):
-        history_csv_path = 'data/words_update_history.csv'
 
-        with open(word_details_correction_csv_path, 'r+', newline='', encoding='utf-8') as file:
-            reader = csv.DictReader(file)
-            lines = list(reader)
-            remaining_lines = []
 
-            for line in lines:
-                # Fetch old details from the database
-                old_detail = self.find_word_details(line['word'])
+#     def update_from_word_details_correction_csv(self, word_details_correction_csv_path):
+#         history_csv_path = 'data/words_update_history.csv'
 
-                # Update word details in the database
-                self.insert_word_details(line, force=True)
+#         with open(word_details_correction_csv_path, 'r+', newline='', encoding='utf-8') as file:
+#             reader = csv.DictReader(file)
+#             lines = list(reader)
+#             remaining_lines = []
 
-                # Fetch updated details for logging
-                updated_detail = self.find_word_details(line['word'])
+#             for line in lines:
+#                 # Fetch old details from the database
+#                 old_detail = self.find_word_details(line['word'])
 
-                if old_detail and updated_detail:
-                    # Log changes to history if there were any updates
-                    old_new_pairs = [(old_detail, updated_detail)]
-                    self.log_history_update(old_new_pairs, history_csv_path)
-                else:
-                    remaining_lines.append(line)
+#                 # Update word details in the database
+#                 self.insert_word_details(line, force=True)
 
-            # Remove updated items from the error CSV
-            file.seek(0)
-            file.truncate()
-            writer = csv.DictWriter(file, fieldnames=reader.fieldnames)
-            writer.writeheader()
-            writer.writerows(remaining_lines)
+#                 # Fetch updated details for logging
+#                 updated_detail = self.find_word_details(line['word'])
 
-    def update_from_word_list_csv(self, words_update_csv_path, fetcher):
-        words = []
+#                 if old_detail and updated_detail:
+#                     # Log changes to history if there were any updates
+#                     old_new_pairs = [(old_detail, updated_detail)]
+#                     self.log_history_update(old_new_pairs, history_csv_path)
+#                 else:
+#                     remaining_lines.append(line)
 
-        # Extract words from data/words_update.csv
-        with open(words_update_csv_path, 'r', newline='', encoding='utf-8') as file:
-            reader = csv.reader(file)
-            for row in reader:
-                words.append(row[0])
+#             # Remove updated items from the error CSV
+#             file.seek(0)
+#             file.truncate()
+#             writer = csv.DictWriter(file, fieldnames=reader.fieldnames)
+#             writer.writeheader()
+#             writer.writerows(remaining_lines)
 
-        word_details = []
-        for word in words:
-            word_detail = self.find_word_details(word)
-            if word_detail is None:
-                # Fetch word details if not found in the database
-                word_detail = fetcher.fetch_word_details([word], self)[0]
-            word_details.append(word_detail)
+#     def update_from_word_list_csv(self, words_update_csv_path, fetcher):
+#         words = []
 
-        # Recheck and fetch details for the words
-        rechecked_details = fetcher.recheck_word_details(word_details, self)
+#         # Extract words from data/words_update.csv
+#         with open(words_update_csv_path, 'r', newline='', encoding='utf-8') as file:
+#             reader = csv.reader(file)
+#             for row in reader:
+#                 words.append(row[0])
+
+#         word_details = []
+#         for word in words:
+#             word_detail = self.find_word_details(word)
+#             if word_detail is None:
+#                 # Fetch word details if not found in the database
+#                 word_detail = fetcher.fetch_word_details([word], self)[0]
+#             word_details.append(word_detail)
+
+#         # Recheck and fetch details for the words
+#         rechecked_details = fetcher.recheck_word_details(word_details, self)
 
         
 
-        # Update the database with these details
-        self.update_from_list(word_details_list, words_update_csv_path)
+#         # Update the database with these details
+#         self.update_from_list(word_details_list, words_update_csv_path)
 
-    def update_from_list(self, word_details_list, words_update_csv_path):
-        history_csv_path = 'data/words_update_history.csv'
+#     def update_from_list(self, word_details_list, words_update_csv_path):
+#         history_csv_path = 'data/words_update_history.csv'
 
-        for new_details in word_details_list:
-            # Fetch old details from the database
-            old_detail = self.find_word_details(new_details['word'])
+#         for new_details in word_details_list:
+#             # Fetch old details from the database
+#             old_detail = self.find_word_details(new_details['word'])
 
-            # Update the word details in the database
-            self.insert_word_details(new_details, force=True)
+#             # Update the word details in the database
+#             self.insert_word_details(new_details, force=True)
 
-            # Fetch updated details for logging
-            updated_detail = self.find_word_details(new_details['word'])
+#             # Fetch updated details for logging
+#             updated_detail = self.find_word_details(new_details['word'])
 
-            if old_detail and updated_detail:
-                # Log changes to history if there were any updates
-                old_new_pairs = [(old_detail, updated_detail)]
-                self.log_history_update(old_new_pairs, history_csv_path)
+#             if old_detail and updated_detail:
+#                 # Log changes to history if there were any updates
+#                 old_new_pairs = [(old_detail, updated_detail)]
+#                 self.log_history_update(old_new_pairs, history_csv_path)
 
-        # Remove updated words from data/words_update.csv
-        self.remove_words_from_csv(words_update_csv_path, word_details_list)
-
-
-    def remove_words_from_csv(self, csv_path, word_details_list):
-        updated_words = {details['word'] for details in word_details_list}
-
-        with open(csv_path, 'r+', newline='', encoding='utf-8') as file:
-            reader = csv.reader(file)
-            remaining_words = [row[0] for row in reader if row[0] not in updated_words]
-
-            file.seek(0)
-            file.truncate()
-
-            writer = csv.writer(file)
-            for word in remaining_words:
-                writer.writerow([word])
+#         # Remove updated words from data/words_update.csv
+#         self.remove_words_from_csv(words_update_csv_path, word_details_list)
 
 
+#     def remove_words_from_csv(self, csv_path, word_details_list):
+#         updated_words = {details['word'] for details in word_details_list}
+
+#         with open(csv_path, 'r+', newline='', encoding='utf-8') as file:
+#             reader = csv.reader(file)
+#             remaining_words = [row[0] for row in reader if row[0] not in updated_words]
+
+#             file.seek(0)
+#             file.truncate()
+
+#             writer = csv.writer(file)
+#             for word in remaining_words:
+#                 writer.writerow([word])
 
 
-    def close(self):
-        if self.conn:
-            self.conn.close()
+
+
+#     def close(self):
+#         if self.conn:
+#             self.conn.close()
 
 
 class AdvancedWordFetcher:
@@ -2695,88 +2737,88 @@ class PhoneticRechecker(AdvancedWordFetcher):
 # chosen_word = chooser.choose()
 # print(chosen_word)
 
-class OpenAiChooser:
-    def __init__(self, db, word_fetcher, words_list=None):
-        self.db = db
-        self.word_fetcher = word_fetcher
-        self.original_words_list = words_list
-        self.current_words = []
-        self.words_iterator = iter([])
-        self.enable_openai = False
+# class OpenAiChooser:
+#     def __init__(self, db, word_fetcher, words_list=None):
+#         self.db = db
+#         self.word_fetcher = word_fetcher
+#         self.original_words_list = words_list
+#         self.current_words = []
+#         self.words_iterator = iter([])
+#         self.enable_openai = False
 
-        # Process the provided words_list only if it's not None
-        if self.original_words_list:
-            self.process_words_list()
+#         # Process the provided words_list only if it's not None
+#         if self.original_words_list:
+#             self.process_words_list()
 
-    def process_words_list(self):
-        self.current_words = []
-        for word in self.original_words_list:
-            word_details = self.db.find_word_details(word)
-            if not word_details:
-                word_details = self.word_fetcher.fetch_word_details([word], self.db)[0]
-            self.current_words.append(word_details)
-        self.words_iterator = iter(self.current_words)
+#     def process_words_list(self):
+#         self.current_words = []
+#         for word in self.original_words_list:
+#             word_details = self.db.find_word_details(word)
+#             if not word_details:
+#                 word_details = self.word_fetcher.fetch_word_details([word], self.db)[0]
+#             self.current_words.append(word_details)
+#         self.words_iterator = iter(self.current_words)
 
-    def update_words_list(self, words_list):
-        self.original_words_list = words_list
-        self.process_words_list()
-        self.words_iterator = iter(self.current_words)
+#     def update_words_list(self, words_list):
+#         self.original_words_list = words_list
+#         self.process_words_list()
+#         self.words_iterator = iter(self.current_words)
 
-    def _is_daytime_in_hk(self, start=9, end=22):
-        hk_timezone = pytz.timezone('Asia/Hong_Kong')
-        hk_time = datetime.now(hk_timezone)
-        # if self.enable_openai:
-        #     return 9 <= hk_time.hour < 22  # Daytime hours in Hong Kong
-        # else:
-        #     return False
+#     def _is_daytime_in_hk(self, start=9, end=22):
+#         hk_timezone = pytz.timezone('Asia/Hong_Kong')
+#         hk_time = datetime.now(hk_timezone)
+#         # if self.enable_openai:
+#         #     return 9 <= hk_time.hour < 22  # Daytime hours in Hong Kong
+#         # else:
+#         #     return False
 
-        print("hk hour: ", hk_time.hour)
+#         print("hk hour: ", hk_time.hour)
 
-        return start <= hk_time.hour < end  # Daytime hours in Hong Kong
-        # return True
-        # return False
+#         return start <= hk_time.hour < end  # Daytime hours in Hong Kong
+#         # return True
+#         # return False
 
-    def fetch_new_words(self):
-        # If original_words_list is None, fetch new words dynamically
-        if not self.original_words_list:
-            if self._is_daytime_in_hk() and self.enable_openai:
-                words = self.word_fetcher.fetch_words(10, self.db, include_existing=True)
-                openai_words = self.word_fetcher.fetch_word_details(words, self.db, num_words_phonetic=10)
-                db_words = self.db.fetch_random_words(10)
-            else:
-                db_words = self.db.fetch_random_words(20)
-                # db_words = []
-                openai_words = []
+#     def fetch_new_words(self):
+#         # If original_words_list is None, fetch new words dynamically
+#         if not self.original_words_list:
+#             if self._is_daytime_in_hk() and self.enable_openai:
+#                 words = self.word_fetcher.fetch_words(10, self.db, include_existing=True)
+#                 openai_words = self.word_fetcher.fetch_word_details(words, self.db, num_words_phonetic=10)
+#                 db_words = self.db.fetch_random_words(10)
+#             else:
+#                 db_words = self.db.fetch_random_words(20)
+#                 # db_words = []
+#                 openai_words = []
 
-            self.current_words = openai_words + db_words
-            # random.shuffle(self.current_words)
-            self.current_words= random_shuffle(self.current_words)
-        else:
-            # Repopulate current_words using original_words_list
-            self.process_words_list()
+#             self.current_words = openai_words + db_words
+#             # random.shuffle(self.current_words)
+#             self.current_words= random_shuffle(self.current_words)
+#         else:
+#             # Repopulate current_words using original_words_list
+#             self.process_words_list()
 
-        self.words_iterator = iter(self.current_words)
+#         self.words_iterator = iter(self.current_words)
 
-    def choose(self):
+#     def choose(self):
 
-        word = None
-        try:
-            word = next(self.words_iterator)
-        except StopIteration:
-            # print("StopIteration encountered in choose method.")
-            if self.original_words_list:
-                # print("Restarting iterator from the beginning.")
-                self.words_iterator = iter(self.current_words)
-                word = next(self.words_iterator)
-            else:
-                # print("Fetching new words as original_words_list is None.")
-                self.fetch_new_words()
-                word = next(self.words_iterator)
-        # word = clean_and_transcribe([word])[0]
-        return word
+#         word = None
+#         try:
+#             word = next(self.words_iterator)
+#         except StopIteration:
+#             # print("StopIteration encountered in choose method.")
+#             if self.original_words_list:
+#                 # print("Restarting iterator from the beginning.")
+#                 self.words_iterator = iter(self.current_words)
+#                 word = next(self.words_iterator)
+#             else:
+#                 # print("Fetching new words as original_words_list is None.")
+#                 self.fetch_new_words()
+#                 word = next(self.words_iterator)
+#         # word = clean_and_transcribe([word])[0]
+#         return word
 
-    def get_current_words(self):
-        return self.current_words
+#     def get_current_words(self):
+#         return self.current_words
 
 # class EmojiWordChooser:
 #     def __init__(self, csv_file_path='data/words_emoji.csv'):
@@ -2809,45 +2851,45 @@ class OpenAiChooser:
 #         """Returns the current list of words."""
 #         return self.current_words
 
-class EmojiWordChooser:
-    def __init__(self, csv_file_path='data/words_emoji.csv'):
-        self.csv_file_path = csv_file_path
-        self.current_words = []
-        self.words_iterator = iter([])
-        self.load_words_from_csv()
+# class EmojiWordChooser:
+#     def __init__(self, csv_file_path='data/words_emoji.csv'):
+#         self.csv_file_path = csv_file_path
+#         self.current_words = []
+#         self.words_iterator = iter([])
+#         self.load_words_from_csv()
 
-    def load_words_from_csv(self):
-        try:
-            # Load words from the CSV file
-            df = pd.read_csv(self.csv_file_path)
-            # Remove leading and trailing spaces from column names
-            df.columns = [col.strip() for col in df.columns]
-            # Convert DataFrame rows to dictionaries and clean values
-            self.current_words = [self.clean_row(row) for row in df.to_dict(orient='records')]
-            self.words_iterator = iter(self.current_words)
-        except Exception as e:
-            print(f"Error loading CSV file: {e}")
+#     def load_words_from_csv(self):
+#         try:
+#             # Load words from the CSV file
+#             df = pd.read_csv(self.csv_file_path)
+#             # Remove leading and trailing spaces from column names
+#             df.columns = [col.strip() for col in df.columns]
+#             # Convert DataFrame rows to dictionaries and clean values
+#             self.current_words = [self.clean_row(row) for row in df.to_dict(orient='records')]
+#             self.words_iterator = iter(self.current_words)
+#         except Exception as e:
+#             print(f"Error loading CSV file: {e}")
 
-    def clean_row(self, row):
-        """Strip spaces and quotes from each value in the row, depending on its type."""
-        cleaned_row = {}
-        for key, value in row.items():
-            if isinstance(value, str):
-                cleaned_row[key] = value.strip().strip('"')
-            else:
-                cleaned_row[key] = value
-        return cleaned_row
+#     def clean_row(self, row):
+#         """Strip spaces and quotes from each value in the row, depending on its type."""
+#         cleaned_row = {}
+#         for key, value in row.items():
+#             if isinstance(value, str):
+#                 cleaned_row[key] = value.strip().strip('"')
+#             else:
+#                 cleaned_row[key] = value
+#         return cleaned_row
 
-    def choose(self):
-        """Returns the next word from the iterator, or raises StopIteration if exhausted."""
-        try:
-            return next(self.words_iterator)
-        except StopIteration:
-            raise StopIteration
+#     def choose(self):
+#         """Returns the next word from the iterator, or raises StopIteration if exhausted."""
+#         try:
+#             return next(self.words_iterator)
+#         except StopIteration:
+#             raise StopIteration
 
-    def get_current_words(self):
-        """Returns the current list of words."""
-        return self.current_words
+#     def get_current_words(self):
+#         """Returns the current list of words."""
+#         return self.current_words
 
 if __name__ == "__main__":
 
