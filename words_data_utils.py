@@ -466,3 +466,168 @@ def clean_word_details(word_details):
         
 
     return word_details
+
+
+
+
+# Example usage
+# words_db = WordsDatabase(db_path)
+# word_fetcher = AdvancedWordFetcher()
+# chooser = OpenAiChooser(words_db, word_fetcher)
+
+# chosen_word = chooser.choose()
+# print(chosen_word)
+
+class OpenAiChooser:
+    def __init__(self, db, word_fetcher, words_list=None):
+        self.db = db
+        self.word_fetcher = word_fetcher
+        self.original_words_list = words_list
+        self.current_words = []
+        self.words_iterator = iter([])
+        self.enable_openai = False
+
+        # Process the provided words_list only if it's not None
+        if self.original_words_list:
+            self.process_words_list()
+
+    def process_words_list(self):
+        self.current_words = []
+        for word in self.original_words_list:
+            word_details = self.db.find_word_details(word)
+            if not word_details:
+                word_details = self.word_fetcher.fetch_word_details([word], self.db)[0]
+            self.current_words.append(word_details)
+        self.words_iterator = iter(self.current_words)
+
+    def update_words_list(self, words_list):
+        self.original_words_list = words_list
+        self.process_words_list()
+        self.words_iterator = iter(self.current_words)
+
+    def _is_daytime_in_hk(self, start=9, end=22):
+        hk_timezone = pytz.timezone('Asia/Hong_Kong')
+        hk_time = datetime.now(hk_timezone)
+        # if self.enable_openai:
+        #     return 9 <= hk_time.hour < 22  # Daytime hours in Hong Kong
+        # else:
+        #     return False
+
+        print("hk hour: ", hk_time.hour)
+
+        return start <= hk_time.hour < end  # Daytime hours in Hong Kong
+        # return True
+        # return False
+
+    def fetch_new_words(self):
+        # If original_words_list is None, fetch new words dynamically
+        if not self.original_words_list:
+            if self._is_daytime_in_hk() and self.enable_openai:
+                words = self.word_fetcher.fetch_words(10, self.db, include_existing=True)
+                openai_words = self.word_fetcher.fetch_word_details(words, self.db, num_words_phonetic=10)
+                db_words = self.db.fetch_random_words(10)
+            else:
+                db_words = self.db.fetch_random_words(20)
+                # db_words = []
+                openai_words = []
+
+            self.current_words = openai_words + db_words
+            # random.shuffle(self.current_words)
+            self.current_words= random_shuffle(self.current_words)
+        else:
+            # Repopulate current_words using original_words_list
+            self.process_words_list()
+
+        self.words_iterator = iter(self.current_words)
+
+    def choose(self):
+
+        word = None
+        try:
+            word = next(self.words_iterator)
+        except StopIteration:
+            # print("StopIteration encountered in choose method.")
+            if self.original_words_list:
+                # print("Restarting iterator from the beginning.")
+                self.words_iterator = iter(self.current_words)
+                word = next(self.words_iterator)
+            else:
+                # print("Fetching new words as original_words_list is None.")
+                self.fetch_new_words()
+                word = next(self.words_iterator)
+        # word = clean_and_transcribe([word])[0]
+        return word
+
+    def get_current_words(self):
+        return self.current_words
+
+# class EmojiWordChooser:
+#     def __init__(self, csv_file_path='data/words_emoji.csv'):
+#         self.csv_file_path = csv_file_path
+#         self.current_words = []
+#         self.words_iterator = iter([])
+#         self.load_words_from_csv()
+
+#     def load_words_from_csv(self):
+#         # Load the words from the CSV file
+#         try:
+#             df = pd.read_csv(self.csv_file_path)
+#             self.current_words = df.to_dict(orient='records')
+#             self.words_iterator = iter(self.current_words)
+#         except Exception as e:
+#             print(f"Error loading CSV file: {e}")
+
+#     def choose(self):
+#         """Returns the next word from the iterator, or fetches new words if the iterator is exhausted."""
+#         try:
+#             return next(self.words_iterator)
+#         except StopIteration:
+#             # # If all words have been iterated, restart from the beginning
+#             # self.words_iterator = iter(self.current_words)
+#             # return next(self.words_iterator)
+
+#             raise StopIteration
+
+#     def get_current_words(self):
+#         """Returns the current list of words."""
+#         return self.current_words
+
+class EmojiWordChooser:
+    def __init__(self, csv_file_path='data/words_emoji.csv'):
+        self.csv_file_path = csv_file_path
+        self.current_words = []
+        self.words_iterator = iter([])
+        self.load_words_from_csv()
+
+    def load_words_from_csv(self):
+        try:
+            # Load words from the CSV file
+            df = pd.read_csv(self.csv_file_path)
+            # Remove leading and trailing spaces from column names
+            df.columns = [col.strip() for col in df.columns]
+            # Convert DataFrame rows to dictionaries and clean values
+            self.current_words = [self.clean_row(row) for row in df.to_dict(orient='records')]
+            self.words_iterator = iter(self.current_words)
+        except Exception as e:
+            print(f"Error loading CSV file: {e}")
+
+    def clean_row(self, row):
+        """Strip spaces and quotes from each value in the row, depending on its type."""
+        cleaned_row = {}
+        for key, value in row.items():
+            if isinstance(value, str):
+                cleaned_row[key] = value.strip().strip('"')
+            else:
+                cleaned_row[key] = value
+        return cleaned_row
+
+    def choose(self):
+        """Returns the next word from the iterator, or raises StopIteration if exhausted."""
+        try:
+            return next(self.words_iterator)
+        except StopIteration:
+            raise StopIteration
+
+    def get_current_words(self):
+        """Returns the current list of words."""
+        return self.current_words

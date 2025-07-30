@@ -18,12 +18,28 @@ from typing import List, Dict, Any
 from pprint import pprint
 
 # Import specific classes and functions from the legacy module
+
 from words_data_legacy import (
-    WordsDatabase, 
-    OpenAiChooser, 
-    EmojiWordChooser,
+    # WordsDatabase, 
+    # OpenAiChooser, 
+    # EmojiWordChooser,
     AdvancedWordFetcher as LegacyAdvancedWordFetcher,
     PhoneticRechecker as LegacyPhoneticRechecker,
+    # split_word, 
+    # split_word_with_color, 
+    # count_syllables,
+    # clean_word_details,
+    # clean_and_transcribe,
+    # JSONParsingError,
+    # NotEnoughUniqueWordsError
+)
+
+from words_data_utils import (
+    # WordsDatabase, 
+    OpenAiChooser, 
+    EmojiWordChooser,
+    # AdvancedWordFetcher as LegacyAdvancedWordFetcher,
+    # PhoneticRechecker as LegacyPhoneticRechecker,
     split_word, 
     split_word_with_color, 
     count_syllables,
@@ -32,6 +48,22 @@ from words_data_legacy import (
     JSONParsingError,
     NotEnoughUniqueWordsError
 )
+
+from words_database import (
+    WordsDatabase, 
+    # OpenAiChooser, 
+    # EmojiWordChooser,
+    # AdvancedWordFetcher as LegacyAdvancedWordFetcher,
+    # PhoneticRechecker as LegacyPhoneticRechecker,
+    # split_word, 
+    # split_word_with_color, 
+    # count_syllables,
+    # clean_word_details,
+    # clean_and_transcribe,
+    # JSONParsingError,
+    # NotEnoughUniqueWordsError
+)
+
 from openai_request_json import OpenAIRequestJSONBase
 
 
