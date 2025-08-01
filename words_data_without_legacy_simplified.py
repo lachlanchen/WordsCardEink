@@ -223,30 +223,30 @@ class AdvancedWordFetcher(OpenAIRequestJSONBase):
             "additionalProperties": False
         }
     
-    # def get_word_details_schema(self):
-    #     """Schema for detailed word information - simplified to essential fields"""
-    #     return {
-    #         "type": "object",
-    #         "properties": {
-    #             "word_details": {
-    #                 "type": "array",
-    #                 "items": {
-    #                     "type": "object",
-    #                     "properties": {
-    #                         "word": {"type": "string"},
-    #                         "syllable_word": {"type": "string"},
-    #                         "phonetic": {"type": "string"},
-    #                         "japanese_synonym": {"type": "string"}
-    #                     },
-    #                     "required": ["word", "syllable_word", "phonetic", "japanese_synonym"],
-    #                     "additionalProperties": False
-    #                 },
-    #                 "minItems": 1
-    #             }
-    #         },
-    #         "required": ["word_details"],
-    #         "additionalProperties": False
-    #     }
+    def get_word_details_schema(self):
+        """Schema for detailed word information - simplified to essential fields"""
+        return {
+            "type": "object",
+            "properties": {
+                "word_details": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "word": {"type": "string"},
+                            "syllable_word": {"type": "string"},
+                            "phonetic": {"type": "string"},
+                            "japanese_synonym": {"type": "string"}
+                        },
+                        "required": ["word", "syllable_word", "phonetic", "japanese_synonym"],
+                        "additionalProperties": False
+                    },
+                    "minItems": 1
+                }
+            },
+            "required": ["word_details"],
+            "additionalProperties": False
+        }
     
     def get_basic_phonetics_schema(self):
         """Schema for basic word phonetics without syllable separation"""
@@ -364,52 +364,52 @@ class AdvancedWordFetcher(OpenAIRequestJSONBase):
             "additionalProperties": False
         }
     
-    # def get_syllable_phonetic_schema(self):
-    #     """Schema for syllable and phonetic information"""
-    #     return {
-    #         "type": "object",
-    #         "properties": {
-    #             "word_details": {
-    #                 "type": "array",
-    #                 "items": {
-    #                     "type": "object",
-    #                     "properties": {
-    #                         "word": {"type": "string"},
-    #                         "syllable_word": {"type": "string"},
-    #                         "phonetic": {"type": "string"}
-    #                     },
-    #                     "required": ["word", "syllable_word", "phonetic"],
-    #                     "additionalProperties": False
-    #                 },
-    #                 "minItems": 1
-    #             }
-    #         },
-    #         "required": ["word_details"],
-    #         "additionalProperties": False
-    #     }
+    def get_syllable_phonetic_schema(self):
+        """Schema for syllable and phonetic information"""
+        return {
+            "type": "object",
+            "properties": {
+                "word_details": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "word": {"type": "string"},
+                            "syllable_word": {"type": "string"},
+                            "phonetic": {"type": "string"}
+                        },
+                        "required": ["word", "syllable_word", "phonetic"],
+                        "additionalProperties": False
+                    },
+                    "minItems": 1
+                }
+            },
+            "required": ["word_details"],
+            "additionalProperties": False
+        }
     
-    # def get_japanese_synonym_schema(self):
-    #     """Schema for Japanese synonym information"""
-    #     return {
-    #         "type": "object",
-    #         "properties": {
-    #             "word_details": {
-    #                 "type": "array",
-    #                 "items": {
-    #                     "type": "object",
-    #                     "properties": {
-    #                         "word": {"type": "string"},
-    #                         "japanese_synonym": {"type": "string"}
-    #                     },
-    #                     "required": ["word", "japanese_synonym"],
-    #                     "additionalProperties": False
-    #                 },
-    #                 "minItems": 1
-    #             }
-    #         },
-    #         "required": ["word_details"],
-    #         "additionalProperties": False
-    #     }
+    def get_japanese_synonym_schema(self):
+        """Schema for Japanese synonym information"""
+        return {
+            "type": "object",
+            "properties": {
+                "word_details": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "word": {"type": "string"},
+                            "japanese_synonym": {"type": "string"}
+                        },
+                        "required": ["word", "japanese_synonym"],
+                        "additionalProperties": False
+                    },
+                    "minItems": 1
+                }
+            },
+            "required": ["word_details"],
+            "additionalProperties": False
+        }
     
     def get_kanji_chinese_schema(self):
         """Schema for kanji and Chinese synonyms"""
@@ -436,51 +436,51 @@ class AdvancedWordFetcher(OpenAIRequestJSONBase):
             "additionalProperties": False
         }
     
-    # def get_arabic_synonym_schema(self):
-    #     """Schema for Arabic synonym information"""
-    #     return {
-    #         "type": "object",
-    #         "properties": {
-    #             "word_details": {
-    #                 "type": "array",
-    #                 "items": {
-    #                     "type": "object",
-    #                     "properties": {
-    #                         "word": {"type": "string"},
-    #                         "arabic_synonym": {"type": "string"}
-    #                     },
-    #                     "required": ["word", "arabic_synonym"],
-    #                     "additionalProperties": False
-    #                 },
-    #                 "minItems": 1
-    #             }
-    #         },
-    #         "required": ["word_details"],
-    #         "additionalProperties": False
-    #     }
+    def get_arabic_synonym_schema(self):
+        """Schema for Arabic synonym information"""
+        return {
+            "type": "object",
+            "properties": {
+                "word_details": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "word": {"type": "string"},
+                            "arabic_synonym": {"type": "string"}
+                        },
+                        "required": ["word", "arabic_synonym"],
+                        "additionalProperties": False
+                    },
+                    "minItems": 1
+                }
+            },
+            "required": ["word_details"],
+            "additionalProperties": False
+        }
     
-    # def get_french_synonym_schema(self):
-    #     """Schema for French synonym information"""
-    #     return {
-    #         "type": "object",
-    #         "properties": {
-    #             "word_details": {
-    #                 "type": "array",
-    #                 "items": {
-    #                     "type": "object",
-    #                     "properties": {
-    #                         "word": {"type": "string"},
-    #                         "french_synonym": {"type": "string"}
-    #                     },
-    #                     "required": ["word", "french_synonym"],
-    #                     "additionalProperties": False
-    #                 },
-    #                 "minItems": 1
-    #             }
-    #         },
-    #         "required": ["word_details"],
-    #         "additionalProperties": False
-    #     }
+    def get_french_synonym_schema(self):
+        """Schema for French synonym information"""
+        return {
+            "type": "object",
+            "properties": {
+                "word_details": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "word": {"type": "string"},
+                            "french_synonym": {"type": "string"}
+                        },
+                        "required": ["word", "french_synonym"],
+                        "additionalProperties": False
+                    },
+                    "minItems": 1
+                }
+            },
+            "required": ["word_details"],
+            "additionalProperties": False
+        }
 
     def fetch_words(self, num_words, word_database, include_existing=True):
         """Main method to fetch words - delegates to openai or local with fallback"""
@@ -502,7 +502,7 @@ class AdvancedWordFetcher(OpenAIRequestJSONBase):
         propensities = self.load_propensities()
         local_words = self.fetch_words_local(num_words, word_database)
         
-        words_number_scale_factor = 3
+        words_number_scale_factor = 2
         num_words_scaled = num_words * words_number_scale_factor
         
         # Try multiple strategies to get unique words, starting with common words
