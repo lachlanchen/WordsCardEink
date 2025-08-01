@@ -503,9 +503,9 @@ class OpenAiChooser:
         if not self.original_words_list:
             if self._is_daytime_in_hk() and self.enable_openai:
                 words = self.word_fetcher.fetch_words(
-                    10, 
+                    1, 
                     self.db, 
-                    include_existing=True
+                    include_existing=False
                 )
                 openai_words = self.word_fetcher.fetch_word_details(
                     words, 

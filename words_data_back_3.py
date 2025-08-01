@@ -315,8 +315,8 @@ class AdvancedWordFetcher(OpenAIRequestJSONBase):
             "additionalProperties": False
         }
     
-    def get_arabic_data_schema(self):
-        """Schema for Arabic synonym, transliteration, and phonetics"""
+    def get_arabic_transliteration_schema(self):
+        """Schema for Arabic transliteration and phonetics"""
         return {
             "type": "object",
             "properties": {
@@ -327,10 +327,9 @@ class AdvancedWordFetcher(OpenAIRequestJSONBase):
                         "properties": {
                             "word": {"type": "string"},
                             "arabic_synonym": {"type": "string"},
-                            "arabic_transliteration": {"type": "string"},
-                            "arabic_phonetic": {"type": "string"}
+                            "arabic_transliteration": {"type": "string"}
                         },
-                        "required": ["word", "arabic_synonym", "arabic_transliteration", "arabic_phonetic"],
+                        "required": ["word", "arabic_synonym", "arabic_transliteration"],
                         "additionalProperties": False
                     },
                     "minItems": 1
@@ -340,8 +339,8 @@ class AdvancedWordFetcher(OpenAIRequestJSONBase):
             "additionalProperties": False
         }
     
-    def get_french_data_schema(self):
-        """Schema for French synonym and phonetics"""
+    def get_french_transliteration_schema(self):
+        """Schema for French transliteration and phonetics"""
         return {
             "type": "object",
             "properties": {
@@ -352,9 +351,9 @@ class AdvancedWordFetcher(OpenAIRequestJSONBase):
                         "properties": {
                             "word": {"type": "string"},
                             "french_synonym": {"type": "string"},
-                            "french_phonetic": {"type": "string"}
+                            "french_phonetics": {"type": "string"}
                         },
-                        "required": ["word", "french_synonym", "french_phonetic"],
+                        "required": ["word", "french_synonym", "french_phonetics"],
                         "additionalProperties": False
                     },
                     "minItems": 1
@@ -785,40 +784,38 @@ class AdvancedWordFetcher(OpenAIRequestJSONBase):
                 
         return result
 
-    def fetch_arabic_data(self, words):
+    def fetch_arabic_transliteration(self, words):
         """
-        Fetch Arabic synonym, transliteration, and phonetics using structured schema
+        Fetch Arabic transliteration and phonetics using structured schema
         """
         words_string = ', '.join(words)
         
         prompt = (
             f"For these English words: {words_string}\n"
             "Provide for each word:\n"
-            "0) word: The original English word\n"
-            "1) arabic_synonym: The Arabic translation/synonym of the English word\n"
-            "2) arabic_transliteration: The Arabic word converted to Latin letters (romanization)\n"
-            "3) arabic_phonetic: The IPA phonetic transcription of the Arabic word\n"
+            "1) arabic_synonym: The Arabic translation/synonym of the word\n"
+            "2) arabic_transliteration: The IPA phonetic transcription of the English word\n"
             "Return the data in a JSON object with an 'arabic_data' array."
         )
         
-        system_content = "You are an expert in Arabic language, Arabic romanization, and IPA phonetic transcription. Provide accurate Arabic translations, Latin transliterations, and Arabic's IPA phonetics."
+        system_content = "You are an expert in Arabic language and IPA phonetic transcription. Provide accurate Arabic translations and English phonetics."
         
         try:
             response = self.send_request_with_json_schema(
                 prompt=prompt,
-                json_schema=self.get_arabic_data_schema(),
+                json_schema=self.get_arabic_transliteration_schema(),
                 system_content=system_content,
-                filename=f"arabic_data_{'_'.join(words[:3])}.json"
+                filename=f"arabic_transliteration_{'_'.join(words[:3])}.json"
             )
             
             return response["arabic_data"]
             
         except Exception as e:
-            print(f"Error in fetch_arabic_data: {e}")
+            print(f"Error in fetch_arabic_transliteration: {e}")
             traceback.print_exc()
             return []
 
-    def fetch_french_data(self, words):
+    def fetch_french_transliteration(self, words):
         """
         Fetch French synonyms and phonetics using structured schema
         """
@@ -827,26 +824,25 @@ class AdvancedWordFetcher(OpenAIRequestJSONBase):
         prompt = (
             f"For these English words: {words_string}\n"
             "Provide for each word:\n"
-            "0) word: The original English word\n"
-            "1) french_synonym: The French translation/synonym of the English word\n"
-            "2) french_phonetic: The IPA phonetic transcription of the French word\n"
+            "1) french_synonym: The French translation/synonym of the word\n"
+            "2) french_phonetics: The IPA phonetic transcription of the English word\n"
             "Return the data in a JSON object with a 'french_data' array."
         )
         
-        system_content = "You are an expert in French language and IPA phonetic transcription. Provide accurate French translations and French phonetics."
+        system_content = "You are an expert in French language and IPA phonetic transcription. Provide accurate French translations and English phonetics."
         
         try:
             response = self.send_request_with_json_schema(
                 prompt=prompt,
-                json_schema=self.get_french_data_schema(),
+                json_schema=self.get_french_transliteration_schema(),
                 system_content=system_content,
-                filename=f"french_data_{'_'.join(words[:3])}.json"
+                filename=f"french_transliteration_{'_'.join(words[:3])}.json"
             )
             
             return response["french_data"]
             
         except Exception as e:
-            print(f"Error in fetch_french_data: {e}")
+            print(f"Error in fetch_french_transliteration: {e}")
             traceback.print_exc()
             return []
 
@@ -947,8 +943,6 @@ class AdvancedWordFetcher(OpenAIRequestJSONBase):
                     print("Starting check Arabic...")
                     word_database.convert_and_update_chinese_synonyms()
                     self.recheck_arabic_synonym(word_phonetics.copy(), word_database)
-                    print("Starting check French...")
-                    self.recheck_french_synonym(word_phonetics.copy(), word_database)
 
                     # Get updated word details from database for all words (new + existing)
                     all_processed_words = words_list + existing_words
@@ -1303,49 +1297,11 @@ class AdvancedWordFetcher(OpenAIRequestJSONBase):
             for n_try in range(self.max_retries):
                 arabic_synonym = word_detail.get('arabic_synonym', '')
                 arabic_transliteration = word_detail.get('arabic_transliteration', '')
-                arabic_phonetic = word_detail.get('arabic_phonetic', '')
 
                 # Check if Arabic fields are empty
-                if not (arabic_synonym and arabic_transliteration and arabic_phonetic):
+                if not (arabic_synonym and arabic_transliteration):
                     print("Updating arabic data for word: ", word)
                     word_detail = self.fetch_arabic_synonyms([word], word_database)[0]
-                else:
-                    if n_try == 0:
-                        print("No need to update: ", word)
-                    else: 
-                        print("Successfully updated: ", word)
-                    rechecked_word_details.append(word_detail)
-                    break
-
-                if n_try == self.max_retries - 1:
-                    print(f"Max retries reached for word '{word_detail['word']}'. Final attempt may still have issues.")
-
-        return rechecked_word_details
-
-    def recheck_french_synonym(self, word_details, word_database=None):
-        """
-        Recheck French synonyms for words
-        """
-        print('Checking french synonym for these words: ')
-        pprint([word["word"] for word in word_details])
-        print("\n")
-
-        rechecked_word_details = []
-
-        for word_detail in word_details:
-            if 'word' not in word_detail:
-                raise ValueError(f"Missing 'word' key in word_detail: {word_detail}")
-
-            word = word_detail['word']
-
-            for n_try in range(self.max_retries):
-                french_synonym = word_detail.get('french_synonym', '')
-                french_phonetic = word_detail.get('french_phonetic', '')
-
-                # Check if French fields are empty
-                if not (french_synonym and french_phonetic):
-                    print("Updating french data for word: ", word)
-                    word_detail = self.fetch_french_synonyms([word], word_database)[0]
                 else:
                     if n_try == 0:
                         print("No need to update: ", word)
@@ -1401,13 +1357,13 @@ class AdvancedWordFetcher(OpenAIRequestJSONBase):
 
     def fetch_arabic_synonyms(self, words, word_database, messages=None):
         """
-        Fetch Arabic synonyms, transliteration, and phonetics using structured schema
+        Fetch Arabic synonyms and transliteration using structured schema
         """
         print("Words to fetch arabic: ", words)
         
         try:
-            # Use the unified Arabic data method
-            arabic_data = self.fetch_arabic_data(words)
+            # Use the unified Arabic transliteration method
+            arabic_data = self.fetch_arabic_transliteration(words)
             
             # Convert to the expected format with unified field names
             synonyms = []
@@ -1415,8 +1371,7 @@ class AdvancedWordFetcher(OpenAIRequestJSONBase):
                 synonyms.append({
                     'word': item['word'],
                     'arabic_synonym': item['arabic_synonym'],
-                    'arabic_transliteration': item['arabic_transliteration'],
-                    'arabic_phonetic': item['arabic_phonetic']
+                    'arabic_transliteration': item['arabic_transliteration']
                 })
 
             # Save synonyms to database
@@ -1435,11 +1390,9 @@ class AdvancedWordFetcher(OpenAIRequestJSONBase):
         """
         Fetch French synonyms and phonetics using structured schema
         """
-        print("Words to fetch french: ", words)
-        
         try:
-            # Use the unified French data method
-            french_data = self.fetch_french_data(words)
+            # Use the unified French transliteration method
+            french_data = self.fetch_french_transliteration(words)
             
             # Convert to the expected format with unified field names
             synonyms = []
@@ -1447,7 +1400,7 @@ class AdvancedWordFetcher(OpenAIRequestJSONBase):
                 synonyms.append({
                     'word': item['word'],
                     'french_synonym': item['french_synonym'],
-                    'french_phonetic': item['french_phonetic']
+                    'french_phonetics': item['french_phonetics']
                 })
 
             # Save synonyms to database

@@ -113,6 +113,25 @@ class WordsDatabase:
             if fields:
                 self.create_fields_if_not_exists()
 
+            # Ensure all synonym and phonetic fields exist
+            self.ensure_all_synonym_fields()
+
+    def ensure_all_synonym_fields(self):
+        """Ensure all synonym and phonetic fields exist in the database"""
+        synonym_fields = [
+            ("kanji_synonym", "TEXT"),
+            ("chinese_synonym", "TEXT"),
+            ("simplified_chinese_synonym", "TEXT"), 
+            ("arabic_synonym", "TEXT"),
+            ("arabic_phonetic", "TEXT"),
+            ("arabic_transliteration", "TEXT"),
+            ("french_synonym", "TEXT"),
+            ("french_phonetic", "TEXT")
+        ]
+    
+        for field_name, field_type in synonym_fields:
+            self.create_field_if_not_exists("words_phonetics", field_name, field_type)
+
     def sync_database_to_csv(self, csv_file_path=None):
         """Export the database table to a CSV file."""
         if not csv_file_path:
@@ -362,8 +381,12 @@ class WordsDatabase:
         if self.conn:
             # Extracting word details
             word = word_details.get('word', '').lower()
+            # fields_to_update = ['syllable_word', 'phonetic', 'japanese_synonym', 'arabic_synonym', 
+            #                     'french_synonym', 'chinese_synonym', 'simplified_chinese_synonym', 'kanji_synonym']
+
             fields_to_update = ['syllable_word', 'phonetic', 'japanese_synonym', 'arabic_synonym', 
-                                'french_synonym', 'chinese_synonym', 'simplified_chinese_synonym', 'kanji_synonym']
+                                'french_synonym', 'chinese_synonym', 'simplified_chinese_synonym', 'kanji_synonym',
+                                'arabic_phonetic', 'arabic_transliteration', 'french_phonetic']
 
             # Cleaning and preparing data for insertion
             data_to_insert = [word]
@@ -413,6 +436,10 @@ class WordsDatabase:
 
 
     def update_word_details(self, word_details, force=False):
+        fields_to_update = ['syllable_word', 'phonetic', 'japanese_synonym', 'arabic_synonym', 
+                            'french_synonym', 'chinese_synonym', 'simplified_chinese_synonym', 'kanji_synonym',
+                            'arabic_phonetic', 'arabic_transliteration', 'french_phonetic']
+
         if self.conn:
             word = word_details.get('word', '').lower()  # Ensure the word is in lowercase
 
@@ -420,7 +447,8 @@ class WordsDatabase:
             data_to_update = []
             update_parts = []
 
-            for key in ['syllable_word', 'phonetic', 'japanese_synonym', 'arabic_synonym', 'french_synonym', 'chinese_synonym', 'simplified_chinese_synonym', 'kanji_synonym']:
+            # for key in ['syllable_word', 'phonetic', 'japanese_synonym', 'arabic_synonym', 'french_synonym', 'chinese_synonym', 'simplified_chinese_synonym', 'kanji_synonym']:
+            for key in fields_to_update:
                 if key in word_details:
                     # Choose the appropriate cleaning function based on the field
                     if key == 'japanese_synonym':
@@ -447,6 +475,7 @@ class WordsDatabase:
                 # Execute the query with the values
                 self.cursor.execute(query, data_to_update)
                 self.conn.commit()
+                print(f"Successfully updated word '{word}' with fields: {[key for key in word_details.keys() if key != 'word']}")
             except sqlite3.Error as e:
                 print(f"SQLite Error: {e}")
                 traceback.print_exc()
