@@ -10,6 +10,7 @@ sudo apt-get update
 sudo apt-get install -y \
   python3-venv python3-pip python3-dev \
   libjpeg-dev zlib1g-dev libfreetype6-dev \
+  python3-spidev python3-rpi.gpio \
   tmux
 
 # OpenCC package name differs across Debian/RPi releases
