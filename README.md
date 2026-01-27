@@ -8,6 +8,9 @@ A Raspberry Pi + Waveshare e‑ink project that displays dynamically selected vo
 - OpenAI-backed word selection and phonetic enrichment with structured JSON outputs.
 - HTTP service for external triggers and image retrieval.
 
+## Demos
+<p align=\"center\">\n  <img src=\"demos/demo.jpg\" alt=\"Demo\" width=\"48%\" />\n  <img src=\"demos/words_card_arabic.JPG\" alt=\"Arabic word card\" width=\"48%\" />\n</p>
+
 ## Project Layout
 - `app.py`: Tornado web server that drives word selection + display updates.
 - `words_gpt.py`: Main standalone runner for rendering to hardware or virtual images.
