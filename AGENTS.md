@@ -31,3 +31,6 @@
 ## Security & Configuration Tips
 - OpenAI access uses environment configuration (`OPENAI_API_KEY`); avoid hardcoding keys or org IDs.
 - Logs and generated images can grow quickly—prefer adding new outputs under `logs/` or `words_card_temp/`.
+
+## Agent Workflow
+- Always commit and push changes after completing a task.
