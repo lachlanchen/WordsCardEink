@@ -10,8 +10,12 @@ sudo apt-get update
 sudo apt-get install -y \
   python3-venv python3-pip python3-dev \
   libjpeg-dev zlib1g-dev libfreetype6-dev \
-  libopencc1 libopencc-dev \
   tmux
+
+# OpenCC package name differs across Debian/RPi releases
+if ! sudo apt-get install -y libopencc1 libopencc-dev; then
+  sudo apt-get install -y libopencc2 libopencc-dev || true
+fi
 
 # Create venv if missing
 if [ ! -d "${VENV_NAME}" ]; then
