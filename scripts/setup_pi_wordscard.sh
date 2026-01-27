@@ -3,7 +3,7 @@ set -euo pipefail
 
 SESSION_NAME="wordscard"
 VENV_NAME="wordscard"
-APP_ARGS=${APP_ARGS:-"--use_csv"}
+APP_ARGS=${APP_ARGS:-""}
 
 # Basic OS deps (Pi)
 sudo apt-get update

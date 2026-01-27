@@ -3,7 +3,7 @@ set -euo pipefail
 
 SESSION_NAME="wordscard"
 VENV_NAME="wordscard"
-APP_ARGS=${APP_ARGS:-"--use_csv"}
+APP_ARGS=${APP_ARGS:-""}
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 

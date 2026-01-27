@@ -4,7 +4,7 @@ set -euo pipefail
 SERVICE_NAME="wordscard"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 USER_NAME="${SUDO_USER:-$(whoami)}"
-APP_ARGS=${APP_ARGS:-"--use_csv"}
+APP_ARGS=${APP_ARGS:-""}
 
 SERVICE_PATH="/etc/systemd/system/${SERVICE_NAME}.service"
 
