@@ -16,6 +16,14 @@ sudo apt-get install -y \
   swig \
   tmux
 
+# Ensure SPI is enabled
+sudo raspi-config nonint do_spi 0 || true
+
+# Pi 5 can expose /dev/spidev10.0; create a compatible alias if needed
+if [ ! -e /dev/spidev0.0 ] && [ -e /dev/spidev10.0 ]; then
+  sudo ln -sf /dev/spidev10.0 /dev/spidev0.0
+fi
+
 # OpenCC package name differs across Debian/RPi releases
 if ! sudo apt-get install -y libopencc1 libopencc-dev; then
   sudo apt-get install -y libopencc2 libopencc-dev || true
