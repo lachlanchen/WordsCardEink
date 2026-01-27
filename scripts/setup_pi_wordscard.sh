@@ -12,6 +12,7 @@ sudo apt-get install -y \
   libjpeg-dev zlib1g-dev libfreetype6-dev \
   python3-spidev python3-rpi.gpio \
   python3-lgpio \
+  liblgpio-dev liblgpio1 \
   swig \
   tmux
 
@@ -34,7 +35,7 @@ python -m pip install --upgrade pip wheel setuptools
 # Python deps (runtime)
 python -m pip install \
   openai tornado Pillow numpy nltk opencc pykakasi arabic-reshaper python-bidi pytz \
-  spidev RPi.GPIO gpiozero
+  spidev RPi.GPIO gpiozero lgpio
 
 # Optional: download NLTK words corpus (used by some word fetchers)
 python -m nltk.downloader words || true
@@ -46,7 +47,7 @@ python setup.py install
 if tmux has-session -t "${SESSION_NAME}" 2>/dev/null; then
   echo "tmux session '${SESSION_NAME}' already exists"
 else
-  tmux new-session -d -s "${SESSION_NAME}" "bash -lc 'cd $(pwd) && source ${VENV_NAME}/bin/activate && PYTHONPATH=/usr/lib/python3/dist-packages:${PYTHONPATH:-} GPIOZERO_PIN_FACTORY=lgpio python app.py ${APP_ARGS}'"
+  tmux new-session -d -s "${SESSION_NAME}" "bash -lc 'cd $(pwd) && source ${VENV_NAME}/bin/activate && GPIOZERO_PIN_FACTORY=lgpio python app.py ${APP_ARGS}'"
   echo "tmux session '${SESSION_NAME}' started"
 fi
 
