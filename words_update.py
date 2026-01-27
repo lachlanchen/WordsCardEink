@@ -1,5 +1,9 @@
 from openai import OpenAI
 from words_data import WordsDatabase, AdvancedWordFetcher
+
+from env_loader import load_env
+
+load_env()
 import csv
 from pykakasi import kakasi
 

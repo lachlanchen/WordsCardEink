@@ -1,12 +1,16 @@
+import os
 import re
-
-from openai import OpenAI
+import json
 from pprint import pprint
 
-import json
+from openai import OpenAI
+
+from env_loader import load_env
+
+load_env()
 
 client = OpenAI(
-    organization='org-xF8Z1A5a0u1ocDuPE5cVWJbK',
+    organization=os.environ.get("OPENAI_ORG_ID"),
 )
 # print(*client.models.list(), sep="\n")
 

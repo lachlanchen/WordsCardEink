@@ -71,6 +71,10 @@ from bidi.algorithm import get_display
 import opencc
 import csv
 
+from env_loader import load_env
+
+load_env()
+
 
 
 # Usage example
@@ -836,4 +840,3 @@ if __name__=="__main__":
         logging.info(e)
     finally:
         epd_hardware.clear_and_sleep()
-

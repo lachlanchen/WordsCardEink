@@ -4,6 +4,10 @@ import traceback
 from datetime import datetime
 from openai import OpenAI
 
+from env_loader import load_env
+
+load_env()
+
 
 class JSONValidationError(Exception):
     def __init__(self, message, json_string=None):

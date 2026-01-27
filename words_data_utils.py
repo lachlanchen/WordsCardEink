@@ -23,6 +23,10 @@ import json5
 import random
 from openai import OpenAI
 
+from env_loader import load_env
+
+load_env()
+
 import sqlite3
 import os
 

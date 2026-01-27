@@ -31,6 +31,10 @@ from pykakasi import kakasi
 import opencc
 from openai import OpenAI
 
+from env_loader import load_env
+
+load_env()
+
 # Import specific classes and functions from other modules
 from words_data_utils import (
     OpenAiChooser, 

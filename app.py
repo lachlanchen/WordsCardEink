@@ -46,6 +46,11 @@ from PIL import Image, ImageDraw, ImageFont
 from PIL.Image import Resampling
 from openai import OpenAI
 
+# Load env overrides early for OpenAI config
+from env_loader import load_env
+
+load_env()
+
 # Custom imports from the local library
 pic_root = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'pic')
 lib_root = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'lib')
