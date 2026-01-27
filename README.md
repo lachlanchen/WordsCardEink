@@ -9,7 +9,10 @@ A Raspberry Pi + Waveshare e‑ink project that displays dynamically selected vo
 - HTTP service for external triggers and image retrieval.
 
 ## Demos
-<p align=\"center\">\n  <img src=\"demos/demo.jpg\" alt=\"Demo\" width=\"48%\" />\n  <img src=\"demos/words_card_arabic.JPG\" alt=\"Arabic word card\" width=\"48%\" />\n</p>
+<p align="center">
+  <img src="demos/demo.jpg" alt="Demo" width="48%" />
+  <img src="demos/words_card_arabic.JPG" alt="Arabic word card" width="48%" />
+</p>
 
 ## Project Layout
 - `app.py`: Tornado web server that drives word selection + display updates.

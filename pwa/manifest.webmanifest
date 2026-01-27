@@ -1,0 +1,17 @@
+{
+  "name": "WordsCardEink Studio",
+  "short_name": "WordsCardEink",
+  "description": "Configure e-ink word card layouts, languages, and AI routing.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f7f3ea",
+  "theme_color": "#f2f6fb",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

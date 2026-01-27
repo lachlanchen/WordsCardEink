@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WordsCardEink Studio</title>
+  <meta name="theme-color" content="#f2f6fb" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@300;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand__mark">WG</span>
+      <div>
+        <h1>WordsCardEink Studio</h1>
+        <p>Design word cards, languages, and AI routing in one place.</p>
+      </div>
+    </div>
+    <div class="actions">
+      <button id="installButton" class="btn ghost" hidden>Install</button>
+      <button id="resetButton" class="btn ghost">Reset</button>
+      <button id="copyButton" class="btn">Copy JSON</button>
+      <button id="exportButton" class="btn primary">Download JSON</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="preview">
+      <div class="preview__card" id="previewCard">
+        <div class="preview__header">
+          <span id="previewLang">EN + JP</span>
+          <span id="previewMode">Mixed</span>
+        </div>
+        <div class="preview__word" id="previewWord">Serendipity</div>
+        <div class="preview__phonetic" id="previewPhonetic">/ˌsɛrənˈdɪpɪti/</div>
+        <div class="preview__synonyms" id="previewSynonyms">
+          <span>幸運な偶然 (こううんなぐうぜん)</span>
+          <span>السعادة بالصدفة</span>
+        </div>
+        <div class="preview__footer">
+          <div>
+            <small>Model</small>
+            <strong id="previewModel">gpt-4o-mini → deepseek-chat</strong>
+          </div>
+          <div>
+            <small>Layout</small>
+            <strong id="previewLayout">Modern Grid</strong>
+          </div>
+        </div>
+      </div>
+      <div class="preview__meta">
+        <h2>Live Preview</h2>
+        <p>Adjust the controls to see how your word card will look. Export settings as JSON and use it for refactors.</p>
+      </div>
+    </section>
+
+    <section class="controls">
+      <form id="configForm">
+        <div class="panel">
+          <h3>Layout</h3>
+          <div class="grid two">
+            <label>
+              Layout preset
+              <select name="layoutPreset">
+                <option value="modern-grid">Modern Grid</option>
+                <option value="classic-serif">Classic Serif</option>
+                <option value="minimal-stack">Minimal Stack</option>
+                <option value="poster">Poster</option>
+              </select>
+            </label>
+            <label>
+              Card ratio
+              <select name="cardRatio">
+                <option value="4:3">4:3</option>
+                <option value="3:2">3:2</option>
+                <option value="16:9">16:9</option>
+              </select>
+            </label>
+            <label>
+              Padding
+              <input name="padding" type="range" min="16" max="64" value="32" />
+            </label>
+            <label>
+              Accent color
+              <input name="accentColor" type="color" value="#f97316" />
+            </label>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Typography</h3>
+          <div class="grid two">
+            <label>
+              Heading font
+              <select name="headingFont">
+                <option value="Fraunces">Fraunces</option>
+                <option value="Space Grotesk">Space Grotesk</option>
+              </select>
+            </label>
+            <label>
+              Body font
+              <select name="bodyFont">
+                <option value="Space Grotesk">Space Grotesk</option>
+                <option value="Fraunces">Fraunces</option>
+              </select>
+            </label>
+            <label>
+              Word size
+              <input name="wordSize" type="range" min="28" max="72" value="48" />
+            </label>
+            <label>
+              Phonetic size
+              <input name="phoneticSize" type="range" min="12" max="28" value="18" />
+            </label>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Language & Content</h3>
+          <div class="grid two">
+            <label>
+              Primary language
+              <select name="primaryLanguage">
+                <option value="en">English</option>
+                <option value="ja">Japanese</option>
+                <option value="zh">Chinese</option>
+                <option value="ar">Arabic</option>
+              </select>
+            </label>
+            <label>
+              Secondary language
+              <select name="secondaryLanguage">
+                <option value="ja">Japanese</option>
+                <option value="zh">Chinese</option>
+                <option value="ar">Arabic</option>
+                <option value="fr">French</option>
+                <option value="none">None</option>
+              </select>
+            </label>
+            <label>
+              Content mode
+              <select name="contentMode">
+                <option value="word+phonetic+synonyms">Word + Phonetic + Synonyms</option>
+                <option value="word+synonyms">Word + Synonyms</option>
+                <option value="word+emoji">Word + Emoji</option>
+                <option value="word-only">Word Only</option>
+              </select>
+            </label>
+            <label>
+              Chinese strategy
+              <select name="chineseStrategy">
+                <option value="simplified_main">Simplified main</option>
+                <option value="traditional_main">Traditional main</option>
+                <option value="independent">Independent</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>AI Routing</h3>
+          <div class="grid two">
+            <label>
+              Mode
+              <select name="aiMode">
+                <option value="openai">OpenAI</option>
+                <option value="deepseek">DeepSeek</option>
+                <option value="mixed">Mixed</option>
+              </select>
+            </label>
+            <label>
+              Primary provider
+              <select name="primaryProvider">
+                <option value="openai">OpenAI</option>
+                <option value="deepseek">DeepSeek</option>
+              </select>
+            </label>
+            <label>
+              Secondary provider
+              <select name="secondaryProvider">
+                <option value="deepseek">DeepSeek</option>
+                <option value="openai">OpenAI</option>
+              </select>
+            </label>
+            <label>
+              OpenAI model
+              <input name="openaiModel" type="text" value="gpt-4o-mini" />
+            </label>
+            <label>
+              DeepSeek model
+              <input name="deepseekModel" type="text" value="deepseek-chat" />
+            </label>
+            <label>
+              Fallback policy
+              <select name="fallbackPolicy">
+                <option value="first-success">First success</option>
+                <option value="primary-only">Primary only</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Sample Content</h3>
+          <div class="grid two">
+            <label>
+              Word
+              <input name="sampleWord" type="text" value="Serendipity" />
+            </label>
+            <label>
+              Phonetic
+              <input name="samplePhonetic" type="text" value="/ˌsɛrənˈdɪpɪti/" />
+            </label>
+            <label>
+              Synonym 1
+              <input name="synonymOne" type="text" value="幸運な偶然 (こううんなぐうぜん)" />
+            </label>
+            <label>
+              Synonym 2
+              <input name="synonymTwo" type="text" value="السعادة بالصدفة" />
+            </label>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Config JSON</h3>
+          <textarea id="configOutput" rows="12" readonly></textarea>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
