@@ -87,5 +87,54 @@ More examples live in `waveshare/examples/`.
 ## Notes on OpenAI Usage
 OpenAI access is optional but recommended for fresh word generation and phonetic enrichment. The structured JSON helper in `openai_request_json.py` caches results under `cache/` to reduce repeated calls.
 
+## Support
+
+### What your support makes possible
+- <b>Keep tools open</b>: hosting, inference, data storage, and community ops.  
+- <b>Ship faster</b>: focused open‑source time on WordsCardEink and related learning tools.  
+- <b>Prototype devices</b>: e‑ink hardware iterations and display layout research.  
+- <b>Access for all</b>: subsidized deployments for students, creators, and community groups.
+
+### Donate
+
+<div align="center">
+<table style="margin:0 auto; text-align:center; border-collapse:collapse;">
+  <tr>
+    <td style="text-align:center; vertical-align:middle; padding:6px 12px;">
+      <a href="https://chat.lazying.art/donate">https://chat.lazying.art/donate</a>
+    </td>
+    <td style="text-align:center; vertical-align:middle; padding:6px 12px;">
+      <a href="https://chat.lazying.art/donate"><img src="figs/donate_button.svg" alt="Donate" height="44"></a>
+    </td>
+  </tr>
+  <tr>
+    <td style="text-align:center; vertical-align:middle; padding:6px 12px;">
+      <a href="https://paypal.me/RongzhouChen">
+        <img src="https://img.shields.io/badge/PayPal-Donate-003087?logo=paypal&logoColor=white" alt="Donate with PayPal">
+      </a>
+    </td>
+    <td style="text-align:center; vertical-align:middle; padding:6px 12px;">
+      <a href="https://buy.stripe.com/aFadR8gIaflgfQV6T4fw400">
+        <img src="https://img.shields.io/badge/Stripe-Donate-635bff?logo=stripe&logoColor=white" alt="Donate with Stripe">
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <td style="text-align:center; vertical-align:middle; padding:6px 12px;"><strong>WeChat</strong></td>
+    <td style="text-align:center; vertical-align:middle; padding:6px 12px;"><strong>Alipay</strong></td>
+  </tr>
+  <tr>
+    <td style="text-align:center; vertical-align:middle; padding:6px 12px;"><img alt="WeChat QR" src="figs/donate_wechat.png" width="240"/></td>
+    <td style="text-align:center; vertical-align:middle; padding:6px 12px;"><img alt="Alipay QR" src="figs/donate_alipay.png" width="240"/></td>
+  </tr>
+</table>
+</div>
+
+**支援 / Donate**
+
+- ご支援は研究・開発と運用の継続に役立ち、より多くのオープンなプロジェクトを皆さんに届ける力になります。  
+- 你的支持将用于研发与运维，帮助我持续公开分享更多项目与改进。  
+- Your support sustains my research, development, and ops so I can keep sharing more open projects and improvements.
+
 ## Contributing
 See `AGENTS.md` for contributor guidelines, coding style, and PR expectations.
