@@ -11,6 +11,7 @@ sudo apt-get install -y \
   python3-venv python3-pip python3-dev \
   libjpeg-dev zlib1g-dev libfreetype6-dev \
   python3-spidev python3-rpi.gpio \
+  python3-lgpio \
   tmux
 
 # OpenCC package name differs across Debian/RPi releases
@@ -44,7 +45,7 @@ python setup.py install
 if tmux has-session -t "${SESSION_NAME}" 2>/dev/null; then
   echo "tmux session '${SESSION_NAME}' already exists"
 else
-  tmux new-session -d -s "${SESSION_NAME}" "bash -lc 'cd $(pwd) && source ${VENV_NAME}/bin/activate && python app.py ${APP_ARGS}'"
+  tmux new-session -d -s "${SESSION_NAME}" "bash -lc 'cd $(pwd) && source ${VENV_NAME}/bin/activate && GPIOZERO_PIN_FACTORY=lgpio python app.py ${APP_ARGS}'"
   echo "tmux session '${SESSION_NAME}' started"
 fi
 
