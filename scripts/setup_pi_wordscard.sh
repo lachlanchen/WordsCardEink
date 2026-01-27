@@ -12,6 +12,7 @@ sudo apt-get install -y \
   libjpeg-dev zlib1g-dev libfreetype6-dev \
   python3-spidev python3-rpi.gpio \
   python3-lgpio \
+  swig \
   tmux
 
 # OpenCC package name differs across Debian/RPi releases
