@@ -33,7 +33,7 @@ python -m pip install --upgrade pip wheel setuptools
 # Python deps (runtime)
 python -m pip install \
   openai tornado Pillow numpy nltk opencc pykakasi arabic-reshaper python-bidi pytz \
-  spidev RPi.GPIO gpiozero
+  spidev RPi.GPIO gpiozero lgpio
 
 # Optional: download NLTK words corpus (used by some word fetchers)
 python -m nltk.downloader words || true
