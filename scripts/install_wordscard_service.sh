@@ -18,9 +18,9 @@ Wants=network-online.target
 Type=simple
 User=${USER_NAME}
 WorkingDirectory=${ROOT_DIR}
-Environment=GPIOZERO_PIN_FACTORY=lgpio
 Environment=APP_ARGS=${APP_ARGS}
-ExecStart=/bin/bash -lc 'cd ${ROOT_DIR} && source wordscard/bin/activate && python app.py ${APP_ARGS}'
+ExecStart=/bin/bash -lc '${ROOT_DIR}/scripts/start_wordscard.sh'
+ExecStop=/bin/bash -lc '${ROOT_DIR}/scripts/stop_wordscard.sh'
 Restart=on-failure
 RestartSec=5
 
