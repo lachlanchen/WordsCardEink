@@ -15,14 +15,13 @@ After=network-online.target
 Wants=network-online.target
 
 [Service]
-Type=simple
+Type=oneshot
+RemainAfterExit=yes
 User=${USER_NAME}
 WorkingDirectory=${ROOT_DIR}
 Environment=APP_ARGS=${APP_ARGS}
 ExecStart=/bin/bash -lc '${ROOT_DIR}/scripts/start_wordscard.sh'
 ExecStop=/bin/bash -lc '${ROOT_DIR}/scripts/stop_wordscard.sh'
-Restart=on-failure
-RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
