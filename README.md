@@ -16,6 +16,26 @@
 
 A Raspberry Pi + Waveshare e-ink project that displays dynamically selected vocabulary with phonetics and multilingual synonyms. The system can fetch words from local datasets or OpenAI, render them into a layout, and push the result to supported e-paper panels. It also exposes a small HTTP service for triggering word updates and retrieving rendered images.
 
+## 📚 Table of Contents
+- [Overview](#overview)
+- [Highlights](#highlights)
+- [Quick Start](#quick-start)
+- [Demos](#demos)
+- [Features](#features)
+- [Project Structure](#project-structure)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Usage](#usage)
+- [Examples](#examples)
+- [Data, Cache, and Logs](#data-cache-and-logs)
+- [Development Notes](#development-notes)
+- [Troubleshooting](#troubleshooting)
+- [Notes on OpenAI Usage](#notes-on-openai-usage)
+- [Roadmap](#roadmap)
+- [Contributing](#contributing)
+- [License](#license)
+
 ## Overview
 `words_gpt` is a Python-based vocabulary card generation and display system for e-ink devices.
 
