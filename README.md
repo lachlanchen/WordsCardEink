@@ -1,12 +1,43 @@
 # Eink Words GPT
 
-A Raspberry Pi + Waveshare e‑ink project that displays dynamically selected vocabulary with phonetics and multilingual synonyms. The system can fetch words from local datasets or OpenAI, render them into a layout, and push the result to supported e‑paper panels. It also exposes a small HTTP service for triggering word updates and retrieving rendered images.
+**Language options:** English (this draft)
+
+![Python](https://img.shields.io/badge/python-3.9%2B-blue)
+![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi-green)
+![Display](https://img.shields.io/badge/display-Waveshare%20e--Paper-black)
+![Status](https://img.shields.io/badge/status-active%20prototype-orange)
+![Server](https://img.shields.io/badge/http-Tornado-0A7EA4)
+![Storage](https://img.shields.io/badge/storage-SQLite-003B57)
+![AI](https://img.shields.io/badge/OpenAI-optional-412991)
+
+A Raspberry Pi + Waveshare e-ink project that displays dynamically selected vocabulary with phonetics and multilingual synonyms. The system can fetch words from local datasets or OpenAI, render them into a layout, and push the result to supported e-paper panels. It also exposes a small HTTP service for triggering word updates and retrieving rendered images.
+
+## Overview
+`words_gpt` is a Python-based vocabulary card generation and display system for e-ink devices.
+
+It combines:
+- Word sourcing from CSV/local datasets and optional OpenAI generation.
+- Enrichment (IPA phonetics + multilingual synonym fields).
+- Rendering pipelines for hardware and virtual outputs.
+- A Tornado HTTP service for remote triggering and image retrieval.
+
+The current codebase centers on `app.py`, `words_gpt.py`, `words_data.py`, `words_database.py`, and `openai_request_json.py`.
 
 ## Highlights
-- E‑ink rendering pipeline with multiple content modes (kanji, Japanese, Arabic, Chinese, emoji).
-- Local word database (`words_phonetics.db`) with CSV-backed word lists in `data/`.
-- OpenAI-backed word selection and phonetic enrichment with structured JSON outputs.
-- HTTP service for external triggers and image retrieval.
+- 🖼️ E-ink rendering pipeline with multiple content modes (kanji, Japanese, Arabic, Chinese, emoji).
+- 🗃️ Local word database (`words_phonetics.db`) with CSV-backed word lists in `data/`.
+- 🤖 OpenAI-backed word selection and phonetic enrichment with structured JSON outputs.
+- 🌐 HTTP service for external triggers and image retrieval.
+- ⚡ Caching layer (`cache/`) to reduce repeated OpenAI calls.
+
+## Quick Start
+| Goal | Command |
+|---|---|
+| Start HTTP server (port `8082`) | `python app.py` |
+| Run standalone renderer (CSV) | `python words_gpt.py --use_csv` |
+| Run with OpenAI + CSV | `python words_gpt.py --enable_openai --use_csv` |
+| Emoji + simplified CJK mode | `python words_gpt.py --make_emoji --simplify` |
+| Raspberry Pi auto setup | `bash scripts/setup_pi_wordscard.sh` |
 
 ## Demos
 <p align="center">
@@ -14,85 +45,246 @@ A Raspberry Pi + Waveshare e‑ink project that displays dynamically selected vo
   <img src="demos/words_card_arabic.JPG" alt="Arabic word card" width="48%" />
 </p>
 
-## Project Layout
-- `app.py`: Tornado web server that drives word selection + display updates.
-- `words_gpt.py`: Main standalone runner for rendering to hardware or virtual images.
-- `words_data*.py`, `words_data_utils.py`, `words_database.py`: Data access, word selection, and OpenAI helpers.
-- `openai_request_json.py`: Structured output helper + caching.
-- `data/`: CSV word lists and curated datasets.
-- `font/`, `pic/`, `words_card_temp/`: Fonts and images.
-- `waveshare/`, `lib/`: Waveshare e‑paper drivers and examples.
+## Features
+- Hardware + virtual rendering flow (`EPaperHardware`, `EPaperDisplay`) from `words_gpt.py`.
+- Multi-language enrichment pipeline in `words_data.py` (IPA, Japanese variants, Arabic, French, Chinese fields).
+- SQLite-backed persistence with dynamic field update helpers in `words_database.py`.
+- OpenAI structured JSON request helper with file cache in `openai_request_json.py`.
+- Optional PWA assets in `pwa/` for lightweight frontend configuration/preview workflows.
 
-## Requirements
-- Python 3.9+ recommended.
-- Hardware: Raspberry Pi and a supported Waveshare e‑paper panel (examples in `waveshare/examples/`).
-- Python packages used throughout the project include: `openai`, `tornado`, `Pillow`, `numpy`, `nltk`, `opencc`, `pykakasi`, `arabic_reshaper`, `python-bidi`, `pytz`.
+## Project Structure
+```text
+words_gpt/
+├─ README.md
+├─ AGENTS.md
+├─ app.py
+├─ words_gpt.py
+├─ words_data.py
+├─ words_data_utils.py
+├─ words_database.py
+├─ openai_request_json.py
+├─ env_loader.py
+├─ words_update.py
+├─ setup.py
+├─ epd_7in3f_test.py
+├─ epd_13in3k_test.py
+├─ words_phonetics.db
+├─ word_phonetics_processed.csv
+├─ data/
+├─ font/
+├─ pic/
+├─ demos/
+├─ figs/
+├─ cache/
+├─ logs/
+├─ logs-word-phonetics/
+├─ words_card_temp/
+├─ pwa/
+├─ scripts/
+├─ utilities/
+├─ references/
+├─ i18n/
+└─ waveshare/
+```
 
-Install the Waveshare driver on device:
+Important runtime files:
+- `app.py`: Tornado web server (default port `8082`) and periodic update loop.
+- `words_gpt.py`: Standalone renderer loop and display classes.
+- `words_data.py`: Core word fetching/enrichment orchestration.
+- `words_database.py`: SQLite store helpers.
+- `scripts/*.sh`: Raspberry Pi setup, service install, and tmux lifecycle scripts.
+
+## Prerequisites
+- Python `3.9+` (recommended).
+- Raspberry Pi target (for hardware mode).
+- Supported Waveshare e-paper panel.
+- SPI enabled on Pi (`raspi-config`), plus panel-specific wiring.
+
+Python packages used in this project include:
+- `openai`, `tornado`, `Pillow`, `numpy`, `nltk`, `opencc`, `pykakasi`, `arabic_reshaper`, `python-bidi`, `pytz`.
+- Setup script additionally installs: `json5`, `pandas`, `spidev`, `RPi.GPIO`, `gpiozero`, `lgpio`.
+
+## Installation
+
+### Option A: Minimal/manual install
+Install Waveshare driver package:
 ```bash
 python setup.py install
 ```
 
-If you use the NLTK word list, you may need to download it once:
+If you use the NLTK word list, download once:
 ```bash
 python -m nltk.downloader words
 ```
 
-## Configuration (.env)
-This repo loads environment variables from `.env` at import time and **overrides** any existing shell values. This makes local overrides deterministic even when you have values in `.bashrc` or `.profile`.
-
-Create or update `.env` with your keys:
+### Option B: Raspberry Pi automated setup (recommended on device)
+From repo root:
+```bash
+bash scripts/setup_pi_wordscard.sh
 ```
+
+This script:
+- Installs apt dependencies.
+- Ensures SPI is enabled.
+- Creates and activates `wordscard` virtual env.
+- Installs Python runtime dependencies.
+- Installs Waveshare package.
+- Starts `app.py` inside a tmux session.
+
+## Configuration
+
+### `.env` behavior
+This repo loads environment variables from `.env` at import time and **overrides** any existing shell values. This makes local overrides deterministic even when you already export values in shell profiles.
+
+Create or update `.env`:
+```env
 OPENAI_API_KEY=sk-your-key-here
 OPENAI_ORG_ID=org-your-org-id
 OPENAI_MODEL=gpt-4o-mini
 ```
 
-## Running the Server
-Start the HTTP service (default port 8082):
+### App argument passthrough
+The systemd/tmux scripts support:
+```bash
+APP_ARGS="--enable_openai --use_csv" ./scripts/start_wordscard.sh
+```
+
+### CLI flags (server and renderer)
+Both `app.py` and `words_gpt.py` support:
+- `--enable_openai`
+- `--make_emoji`
+- `--ignore_list`
+- `--simplify`
+- `--use_csv`
+- `--complete_csv`
+- `--filename <csv_file>`
+
+## Usage
+
+### Running the HTTP server
+Start service (default port `8082`):
 ```bash
 python app.py
 ```
-Key routes:
-- `GET /current_word` (returns JSON + base64 image)
-- `POST /display_word` (send a word or list of words)
-- `GET /next_random_word` (triggers selection + display)
 
-## Running the Renderer
-Basic run with CSV-based word list:
+Observed routes in code:
+- `POST /display_word`
+- `GET /get_current_word`
+- `GET /get_current_word_page`
+- `GET /next_random_word`
+- `POST /get_words_card`
+- `GET /static/(.*)` (from `words_card_temp/`)
+
+Compatibility note: earlier docs referenced `GET /current_word`; current `app.py` route is `GET /get_current_word`.
+
+### Running standalone renderer
+CSV-based list:
 ```bash
 python words_gpt.py --use_csv
 ```
+
 Enable OpenAI:
 ```bash
 python words_gpt.py --enable_openai --use_csv
 ```
+
 Emoji rendering + simplified CJK:
 ```bash
 python words_gpt.py --make_emoji --simplify
 ```
 
-## Data & Logs
-- Word lists live in `data/` (e.g., `data/words_list.csv`).
-- Logs are stored in `logs/` and `logs-word-phonetics/`.
-- Generated card images may be written under `words_card_temp/` depending on mode.
+### Service mode on Raspberry Pi
+Install service unit:
+```bash
+bash scripts/install_wordscard_service.sh
+```
 
-## Hardware Tests
-Use a display-specific demo script (match your panel model):
+Then:
+```bash
+sudo systemctl start wordscard
+sudo systemctl status wordscard -n 50
+journalctl -u wordscard -n 100 --no-pager
+```
+
+## Examples
+
+### Trigger next random word
+```bash
+curl "http://127.0.0.1:8082/next_random_word"
+```
+
+### Read current word payload
+```bash
+curl "http://127.0.0.1:8082/get_current_word"
+```
+
+### Submit explicit word
+```bash
+curl -X POST "http://127.0.0.1:8082/display_word" \
+  -H "Content-Type: application/json" \
+  -d '{"word":"serendipity"}'
+```
+
+### Hardware smoke tests
+Use display-specific script:
 ```bash
 python epd_7in3f_test.py
 ```
+
+Or:
+```bash
+python epd_13in3k_test.py
+```
+
 More examples live in `waveshare/examples/`.
+
+## Data, Cache, and Logs
+| Area | Path(s) | Notes |
+|---|---|---|
+| Word lists | `data/` | Includes `data/words_list.csv` and themed CSV files |
+| Persistent DB | `words_phonetics.db` | Local phonetics/enrichment store |
+| OpenAI/cache artifacts | `cache/` | Reduces repeated requests |
+| Logs | `logs/`, `logs-word-phonetics/` | Runtime and update logs |
+| Generated cards | `words_card_temp/` | Image outputs and static serving source |
+
+## Development Notes
+- Dependency management is script-first (`scripts/setup_pi_wordscard.sh`) + `setup.py`; there is no `requirements.txt` or `pyproject.toml` yet.
+- Multiple backup/legacy files exist (`words_data_*`, `words_gpt_old.py`); active runtime path is primarily `app.py` + `words_gpt.py` + `words_data.py` + `words_database.py`.
+- `env_loader.py` always overwrites environment variables from `.env` when keys are present.
+- Server mode runs a periodic refresh flow (every ~5 minutes) that can call the update endpoint internally.
+
+## Troubleshooting
+- `ModuleNotFoundError` or import issues:
+  - Ensure virtual environment is active and dependencies are installed.
+  - Re-run `bash scripts/setup_pi_wordscard.sh` on Pi.
+- OpenAI errors (`401`, missing model/key):
+  - Verify `OPENAI_API_KEY` and optional `OPENAI_MODEL` in `.env`.
+  - Confirm network connectivity from device.
+- Display not updating:
+  - Verify panel model/wiring and run matching test script (`epd_7in3f_test.py` or `epd_13in3k_test.py`).
+  - Confirm SPI is enabled (`sudo raspi-config nonint do_spi 0`).
+  - On Pi 5, ensure `/dev/spidev0.0` compatibility symlink if device exposes `/dev/spidev10.0`.
+- OpenCC install issues:
+  - Use distro-compatible package (`libopencc1` or `libopencc2`) as done in setup script.
+- API route mismatch:
+  - Use `/get_current_word` for current payload, not `/current_word`.
 
 ## Notes on OpenAI Usage
 OpenAI access is optional but recommended for fresh word generation and phonetic enrichment. The structured JSON helper in `openai_request_json.py` caches results under `cache/` to reduce repeated calls.
+
+## Roadmap
+- Add formal dependency manifest (`requirements.txt` or `pyproject.toml`) for reproducible installs.
+- Expand `i18n/` with maintained translated README variants.
+- Consolidate legacy/backup script variants after canonical flow is finalized.
+- Document the PWA workflow (`pwa/`) with endpoint examples and screenshots.
+- Add repeatable automated tests for data and route-level behavior.
 
 ## Support
 
 ### What your support makes possible
 - <b>Keep tools open</b>: hosting, inference, data storage, and community ops.  
-- <b>Ship faster</b>: focused open‑source time on WordsCardEink and related learning tools.  
-- <b>Prototype devices</b>: e‑ink hardware iterations and display layout research.  
+- <b>Ship faster</b>: focused open-source time on WordsCardEink and related learning tools.  
+- <b>Prototype devices</b>: e-ink hardware iterations and display layout research.  
 - <b>Access for all</b>: subsidized deployments for students, creators, and community groups.
 
 ### Donate
@@ -138,3 +330,14 @@ OpenAI access is optional but recommended for fresh word generation and phonetic
 
 ## Contributing
 See `AGENTS.md` for contributor guidelines, coding style, and PR expectations.
+
+Suggested contribution checklist:
+- Include panel model + hardware notes for display changes.
+- List exact commands run for validation.
+- Attach screenshots/photos for UI or e-ink output changes.
+- Describe dataset edits (file + row/column impact).
+
+## License
+No `LICENSE` file is currently present in the repository root (observed in this draft pass). Until a license file is added, reuse rights are not explicitly granted.
+
+Assumption: maintainers may add an explicit open-source license in a follow-up update.
