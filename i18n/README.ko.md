@@ -1,58 +1,97 @@
 [English](../README.md) · [العربية](README.ar.md) · [Español](README.es.md) · [Français](README.fr.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Tiếng Việt](README.vi.md) · [中文 (简体)](README.zh-Hans.md) · [中文（繁體）](README.zh-Hant.md) · [Deutsch](README.de.md) · [Русский](README.ru.md)
 
 
+[![LazyingArt banner](https://github.com/lachlanchen/lachlanchen/raw/main/figs/banner.png)](https://github.com/lachlanchen/lachlanchen/blob/main/figs/banner.png)
+
 # Eink Words GPT
 
-![Python](https://img.shields.io/badge/python-3.9%2B-blue)
-![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi-green)
-![Display](https://img.shields.io/badge/display-Waveshare%20e--Paper-black)
-![Status](https://img.shields.io/badge/status-active%20prototype-orange)
-![Server](https://img.shields.io/badge/http-Tornado-0A7EA4)
-![Storage](https://img.shields.io/badge/storage-SQLite-003B57)
-![AI](https://img.shields.io/badge/OpenAI-optional-412991)
+**언어 옵션:** 한국어 (이 문서)
 
-Raspberry Pi + Waveshare e-ink 기반 프로젝트로, 동적으로 선택된 어휘를 발음 정보와 다국어 동의어와 함께 표시합니다. 시스템은 로컬 데이터셋 또는 OpenAI에서 단어를 가져와 레이아웃으로 렌더링한 뒤 지원되는 e-paper 패널에 출력할 수 있습니다. 또한 단어 갱신 트리거와 렌더링 이미지 조회를 위한 소형 HTTP 서비스도 제공합니다.
+![Python](https://img.shields.io/badge/Python-3.9%2B-3776AB?style=flat-square&logo=python&logoColor=white)
+![Platform](https://img.shields.io/badge/Platform-Raspberry%20Pi-C51A4A?style=flat-square&logo=raspberrypi&logoColor=white)
+![Display](https://img.shields.io/badge/Display-Waveshare%20e--Paper-111111?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Active%20Prototype-F59E0B?style=flat-square)
+![Server](https://img.shields.io/badge/HTTP-Tornado-0A7EA4?style=flat-square)
+![Storage](https://img.shields.io/badge/Storage-SQLite-003B57?style=flat-square&logo=sqlite&logoColor=white)
+![AI](https://img.shields.io/badge/OpenAI-Optional-412991?style=flat-square&logo=openai&logoColor=white)
 
+Raspberry Pi + Waveshare e-ink 기반 프로젝트로, 음성(phonetics)과 다국어 동의어가 포함된 단어 카드를 동적으로 표시합니다. 로컬 데이터셋 또는 OpenAI에서 단어를 가져와 레이아웃으로 렌더링한 뒤 지원되는 e-paper 패널로 출력할 수 있습니다. 또한 단어 업데이트 트리거와 렌더링 이미지 조회를 위한 경량 HTTP 서비스도 제공합니다.
+
+| 🔎 한눈에 보기 | 상세 |
+|---|---|
+| 핵심 런타임 | `app.py` (HTTP 서비스) + `words_gpt.py` (렌더링 루프) |
+| 데이터 경로 | `data/`의 CSV 데이터셋 + SQLite 저장소 `words_phonetics.db` |
+| 출력 대상 | Waveshare e-paper 패널 및 가상 이미지 출력 |
+| AI 의존성 | 선택 사항 (`--enable_openai`), 캐시 위치: `cache/` |
+
+<a id="table-of-contents"></a>
+## 📚 목차
+- [개요](#overview)
+- [주요 특징](#highlights)
+- [빠른 시작](#quick-start)
+- [데모](#demos)
+- [기능](#features)
+- [프로젝트 구조](#project-structure)
+- [사전 요구사항](#prerequisites)
+- [설치](#installation)
+- [설정](#configuration)
+- [사용법](#usage)
+- [예제](#examples)
+- [데이터, 캐시, 로그](#data-cache-and-logs)
+- [개발 노트](#development-notes)
+- [문제 해결](#troubleshooting)
+- [OpenAI 사용 메모](#notes-on-openai-usage)
+- [로드맵](#roadmap)
+- [지원](#-support)
+- [기여](#contributing)
+- [라이선스](#license)
+
+<a id="overview"></a>
 ## 개요
-`words_gpt`는 e-ink 기기를 위한 Python 기반 어휘 카드 생성 및 표시 시스템입니다.
+`words_gpt`는 e-ink 디바이스용 어휘 카드 생성 및 표시 시스템입니다.
 
-다음을 결합합니다:
-- CSV/로컬 데이터셋 기반 단어 소싱과 선택적 OpenAI 생성.
-- 보강 처리(IPA 발음 기호 + 다국어 동의어 필드).
-- 하드웨어 출력 및 가상 출력용 렌더링 파이프라인.
+다음 요소를 결합합니다:
+- CSV/로컬 데이터셋 기반 단어 소싱 및 선택적 OpenAI 생성.
+- 보강 처리(IPA 음성 표기 + 다국어 동의어 필드).
+- 하드웨어 및 가상 출력 렌더링 파이프라인.
 - 원격 트리거 및 이미지 조회를 위한 Tornado HTTP 서비스.
 
-현재 코드베이스의 중심은 `app.py`, `words_gpt.py`, `words_data.py`, `words_database.py`, `openai_request_json.py`입니다.
+현재 코드베이스의 핵심 파일은 `app.py`, `words_gpt.py`, `words_data.py`, `words_database.py`, `openai_request_json.py`입니다.
 
+<a id="highlights"></a>
 ## 주요 특징
-- 🖼️ 다양한 콘텐츠 모드(kanji, Japanese, Arabic, Chinese, emoji)를 지원하는 e-ink 렌더링 파이프라인.
-- 🗃️ `data/`의 CSV 단어 목록과 연동되는 로컬 단어 DB(`words_phonetics.db`).
-- 🤖 구조화된 JSON 출력 기반 OpenAI 단어 선택 및 발음 보강.
-- 🌐 외부 트리거와 이미지 조회를 위한 HTTP 서비스.
-- ⚡ 중복 OpenAI 호출을 줄이는 캐시 계층(`cache/`).
+- 🖼️ 다양한 콘텐츠 모드(한자, 일본어, 아랍어, 중국어, 이모지)를 지원하는 e-ink 렌더링 파이프라인.
+- 🗃️ 로컬 단어 데이터베이스(`words_phonetics.db`)와 `data/`의 CSV 기반 단어 목록.
+- 🤖 구조화된 JSON 출력 기반 OpenAI 단어 선택 및 음성 정보 보강.
+- 🌐 외부 트리거 및 이미지 조회용 HTTP 서비스.
+- ⚡ 반복 OpenAI 호출을 줄이는 캐시 계층(`cache/`).
 
+<a id="quick-start"></a>
 ## 빠른 시작
 | 목표 | 명령어 |
 |---|---|
 | HTTP 서버 시작 (포트 `8082`) | `python app.py` |
-| 단독 렌더러 실행 (CSV) | `python words_gpt.py --use_csv` |
-| OpenAI + CSV로 실행 | `python words_gpt.py --enable_openai --use_csv` |
+| 독립 렌더러 실행 (CSV) | `python words_gpt.py --use_csv` |
+| OpenAI + CSV 모드 실행 | `python words_gpt.py --enable_openai --use_csv` |
 | 이모지 + 간체 CJK 모드 | `python words_gpt.py --make_emoji --simplify` |
 | Raspberry Pi 자동 설정 | `bash scripts/setup_pi_wordscard.sh` |
 
+<a id="demos"></a>
 ## 데모
 <p align="center">
   <img src="demos/demo.jpg" alt="Demo" width="48%" />
   <img src="demos/words_card_arabic.JPG" alt="Arabic word card" width="48%" />
 </p>
 
+<a id="features"></a>
 ## 기능
-- `words_gpt.py`의 `EPaperHardware`, `EPaperDisplay`를 통한 하드웨어 + 가상 렌더링 흐름.
+- `words_gpt.py`의 하드웨어 + 가상 렌더링 흐름(`EPaperHardware`, `EPaperDisplay`).
 - `words_data.py`의 다국어 보강 파이프라인(IPA, 일본어 변형, 아랍어, 프랑스어, 중국어 필드).
-- `words_database.py`의 동적 필드 업데이트 헬퍼를 포함한 SQLite 영속화.
-- `openai_request_json.py`의 파일 캐시 기반 OpenAI 구조화 JSON 요청 헬퍼.
-- 경량 프론트엔드 설정/미리보기 워크플로를 위한 선택적 PWA 에셋(`pwa/`).
+- `words_database.py`의 SQLite 기반 영속성 및 동적 필드 업데이트 헬퍼.
+- `openai_request_json.py`의 OpenAI 구조화 JSON 요청 헬퍼와 파일 캐시.
+- 경량 프런트엔드 설정/미리보기 워크플로를 위한 선택적 PWA 자산(`pwa/`).
 
+<a id="project-structure"></a>
 ## 프로젝트 구조
 ```text
 words_gpt/
@@ -90,54 +129,57 @@ words_gpt/
 
 중요 런타임 파일:
 - `app.py`: Tornado 웹 서버(기본 포트 `8082`) 및 주기적 업데이트 루프.
-- `words_gpt.py`: 단독 렌더링 루프 및 디스플레이 클래스.
-- `words_data.py`: 단어 수집/보강 오케스트레이션의 핵심.
+- `words_gpt.py`: 독립 렌더링 루프 및 디스플레이 클래스.
+- `words_data.py`: 핵심 단어 수집/보강 오케스트레이션.
 - `words_database.py`: SQLite 저장소 헬퍼.
 - `scripts/*.sh`: Raspberry Pi 설정, 서비스 설치, tmux 라이프사이클 스크립트.
 
+<a id="prerequisites"></a>
 ## 사전 요구사항
 - Python `3.9+` (권장).
-- Raspberry Pi 대상 장치(하드웨어 모드).
+- Raspberry Pi 대상 환경(하드웨어 모드용).
 - 지원되는 Waveshare e-paper 패널.
 - Pi에서 SPI 활성화(`raspi-config`) 및 패널별 배선.
 
-이 프로젝트에서 사용하는 Python 패키지:
+이 프로젝트에서 사용하는 주요 Python 패키지:
 - `openai`, `tornado`, `Pillow`, `numpy`, `nltk`, `opencc`, `pykakasi`, `arabic_reshaper`, `python-bidi`, `pytz`.
-- 설정 스크립트가 추가로 설치: `json5`, `pandas`, `spidev`, `RPi.GPIO`, `gpiozero`, `lgpio`.
+- 설정 스크립트 추가 설치: `json5`, `pandas`, `spidev`, `RPi.GPIO`, `gpiozero`, `lgpio`.
 
+<a id="installation"></a>
 ## 설치
 
-### Option A: 최소/수동 설치
+### 옵션 A: 최소/수동 설치
 Waveshare 드라이버 패키지 설치:
 ```bash
 python setup.py install
 ```
 
-NLTK 단어 목록을 사용할 경우 1회 다운로드:
+NLTK 단어 목록을 사용하는 경우 1회 다운로드:
 ```bash
 python -m nltk.downloader words
 ```
 
-### Option B: Raspberry Pi 자동 설정 (장치에서 권장)
-리포지토리 루트에서 실행:
+### 옵션 B: Raspberry Pi 자동 설정 (디바이스 권장)
+저장소 루트에서 실행:
 ```bash
 bash scripts/setup_pi_wordscard.sh
 ```
 
 이 스크립트는 다음을 수행합니다:
 - apt 의존성 설치.
-- SPI 활성화 여부 확인.
+- SPI 활성화 보장.
 - `wordscard` 가상환경 생성 및 활성화.
 - Python 런타임 의존성 설치.
 - Waveshare 패키지 설치.
-- tmux 세션에서 `app.py` 시작.
+- tmux 세션 안에서 `app.py` 시작.
 
-## 구성
+<a id="configuration"></a>
+## 설정
 
 ### `.env` 동작
-이 저장소는 import 시점에 `.env`에서 환경 변수를 로드하고, 기존 셸 값을 **덮어씁니다**. 따라서 셸 프로필에 이미 값을 export해도 로컬 오버라이드가 결정적으로 적용됩니다.
+이 저장소는 import 시점에 `.env` 환경 변수를 로드하며, **기존 셸 값도 덮어씁니다**. 이미 셸 프로필에 값을 export 했더라도 로컬 오버라이드는 일관되게 적용됩니다.
 
-`.env` 생성 또는 업데이트:
+`.env` 생성 또는 수정:
 ```env
 OPENAI_API_KEY=sk-your-key-here
 OPENAI_ORG_ID=org-your-org-id
@@ -145,13 +187,13 @@ OPENAI_MODEL=gpt-4o-mini
 ```
 
 ### App 인자 전달
-systemd/tmux 스크립트는 다음을 지원합니다:
+systemd/tmux 스크립트에서 다음을 지원합니다:
 ```bash
 APP_ARGS="--enable_openai --use_csv" ./scripts/start_wordscard.sh
 ```
 
-### CLI 플래그 (서버 및 렌더러)
-`app.py`와 `words_gpt.py` 모두 지원:
+### CLI 플래그 (서버/렌더러 공통)
+`app.py`와 `words_gpt.py` 모두 다음 옵션을 지원합니다:
 - `--enable_openai`
 - `--make_emoji`
 - `--ignore_list`
@@ -160,10 +202,11 @@ APP_ARGS="--enable_openai --use_csv" ./scripts/start_wordscard.sh
 - `--complete_csv`
 - `--filename <csv_file>`
 
+<a id="usage"></a>
 ## 사용법
 
 ### HTTP 서버 실행
-서비스 시작(기본 포트 `8082`):
+서비스 시작 (기본 포트 `8082`):
 ```bash
 python app.py
 ```
@@ -176,9 +219,9 @@ python app.py
 - `POST /get_words_card`
 - `GET /static/(.*)` (`words_card_temp/`에서 제공)
 
-호환성 참고: 이전 문서에는 `GET /current_word`가 있었지만, 현재 `app.py` 라우트는 `GET /get_current_word`입니다.
+호환성 참고: 이전 문서에는 `GET /current_word`가 언급되었지만, 현재 `app.py` 라우트는 `GET /get_current_word`입니다.
 
-### 단독 렌더러 실행
+### 독립 렌더러 실행
 CSV 기반 목록:
 ```bash
 python words_gpt.py --use_csv
@@ -200,14 +243,15 @@ python words_gpt.py --make_emoji --simplify
 bash scripts/install_wordscard_service.sh
 ```
 
-그다음 실행:
+그다음:
 ```bash
 sudo systemctl start wordscard
 sudo systemctl status wordscard -n 50
 journalctl -u wordscard -n 100 --no-pager
 ```
 
-## 예시
+<a id="examples"></a>
+## 예제
 
 ### 다음 랜덤 단어 트리거
 ```bash
@@ -227,7 +271,7 @@ curl -X POST "http://127.0.0.1:8082/display_word" \
 ```
 
 ### 하드웨어 스모크 테스트
-디스플레이별 스크립트 사용:
+디스플레이별 스크립트 실행:
 ```bash
 python epd_7in3f_test.py
 ```
@@ -237,58 +281,69 @@ python epd_7in3f_test.py
 python epd_13in3k_test.py
 ```
 
-더 많은 예시는 `waveshare/examples/`에 있습니다.
+추가 예제는 `waveshare/examples/`에 있습니다.
 
+<a id="data-cache-and-logs"></a>
 ## 데이터, 캐시, 로그
 | 영역 | 경로 | 비고 |
 |---|---|---|
-| 단어 목록 | `data/` | `data/words_list.csv` 및 주제별 CSV 파일 포함 |
-| 영구 DB | `words_phonetics.db` | 로컬 발음/보강 저장소 |
-| OpenAI/캐시 아티팩트 | `cache/` | 반복 요청 감소 |
+| 단어 목록 | `data/` | `data/words_list.csv` 및 테마별 CSV 포함 |
+| 영구 DB | `words_phonetics.db` | 로컬 음성/보강 저장소 |
+| OpenAI/캐시 산출물 | `cache/` | 반복 요청 감소 |
 | 로그 | `logs/`, `logs-word-phonetics/` | 런타임 및 업데이트 로그 |
-| 생성 카드 | `words_card_temp/` | 이미지 출력 및 정적 제공 소스 |
+| 생성 카드 | `words_card_temp/` | 이미지 출력 및 정적 서빙 소스 |
 
+<a id="development-notes"></a>
 ## 개발 노트
-- 의존성 관리는 스크립트 우선(`scripts/setup_pi_wordscard.sh`) + `setup.py` 방식이며, 아직 `requirements.txt`나 `pyproject.toml`은 없습니다.
-- 백업/레거시 파일(`words_data_*`, `words_gpt_old.py`)이 여러 개 존재하며, 활성 런타임 경로는 주로 `app.py` + `words_gpt.py` + `words_data.py` + `words_database.py`입니다.
-- `env_loader.py`는 키가 존재할 때 `.env`의 환경 변수를 항상 덮어씁니다.
-- 서버 모드는 내부적으로 업데이트 엔드포인트를 호출할 수 있는 주기적 새로고침 흐름(약 5분마다)을 실행합니다.
+- 의존성 관리는 스크립트 중심(`scripts/setup_pi_wordscard.sh`) + `setup.py`이며, 아직 `requirements.txt` 또는 `pyproject.toml`은 없습니다.
+- 백업/레거시 파일(`words_data_*`, `words_gpt_old.py`)이 다수 존재하며, 활성 런타임 경로는 주로 `app.py` + `words_gpt.py` + `words_data.py` + `words_database.py`입니다.
+- `env_loader.py`는 키가 존재하면 `.env` 값으로 환경 변수를 항상 덮어씁니다.
+- 서버 모드는 주기적 새로고침 흐름(약 5분마다)을 실행하며 내부적으로 업데이트 엔드포인트를 호출할 수 있습니다.
 
+<a id="troubleshooting"></a>
 ## 문제 해결
 - `ModuleNotFoundError` 또는 import 문제:
-  - 가상환경이 활성화되어 있고 의존성이 설치되었는지 확인하세요.
+  - 가상환경 활성화 및 의존성 설치 여부를 확인하세요.
   - Pi에서 `bash scripts/setup_pi_wordscard.sh`를 다시 실행하세요.
-- OpenAI 오류(`401`, 모델/키 누락):
-  - `.env`의 `OPENAI_API_KEY`와 선택적 `OPENAI_MODEL`을 확인하세요.
-  - 장치의 네트워크 연결 상태를 확인하세요.
+- OpenAI 오류 (`401`, 모델/키 누락):
+  - `.env`의 `OPENAI_API_KEY` 및 선택적 `OPENAI_MODEL`을 확인하세요.
+  - 디바이스 네트워크 연결 상태를 확인하세요.
 - 디스플레이가 갱신되지 않음:
   - 패널 모델/배선을 확인하고 일치하는 테스트 스크립트(`epd_7in3f_test.py` 또는 `epd_13in3k_test.py`)를 실행하세요.
-  - SPI 활성화 여부를 확인하세요(`sudo raspi-config nonint do_spi 0`).
-  - Pi 5에서는 장치가 `/dev/spidev10.0`으로 노출될 경우 `/dev/spidev0.0` 호환 심볼릭 링크를 확인하세요.
+  - SPI 활성화 여부를 확인하세요 (`sudo raspi-config nonint do_spi 0`).
+  - Pi 5에서는 `/dev/spidev10.0`만 노출될 경우 `/dev/spidev0.0` 호환 심볼릭 링크가 필요할 수 있습니다.
 - OpenCC 설치 문제:
-  - 설정 스크립트처럼 배포판 호환 패키지(`libopencc1` 또는 `libopencc2`)를 사용하세요.
+  - 설정 스크립트와 동일하게 배포판 호환 패키지(`libopencc1` 또는 `libopencc2`)를 사용하세요.
 - API 라우트 불일치:
   - 현재 페이로드는 `/current_word`가 아니라 `/get_current_word`를 사용하세요.
 
-## OpenAI 사용 관련 참고
-OpenAI 접근은 선택 사항이지만 새로운 단어 생성과 발음 보강에는 권장됩니다. `openai_request_json.py`의 구조화 JSON 헬퍼는 `cache/` 아래에 결과를 캐시해 반복 호출을 줄입니다.
+<a id="notes-on-openai-usage"></a>
+## OpenAI 사용 메모
+OpenAI 연동은 선택 사항이지만, 새로운 단어 생성과 음성 정보 보강에는 권장됩니다. `openai_request_json.py`의 구조화 JSON 헬퍼는 `cache/`에 결과를 캐시하여 중복 호출을 줄입니다.
 
+<a id="roadmap"></a>
 ## 로드맵
-- 재현 가능한 설치를 위해 정식 의존성 매니페스트(`requirements.txt` 또는 `pyproject.toml`) 추가.
-- 유지보수되는 번역 README 변형을 `i18n/`에 확장.
-- 정식 흐름이 확정된 뒤 레거시/백업 스크립트 변형 통합.
-- 엔드포인트 예시와 스크린샷을 포함해 PWA 워크플로(`pwa/`) 문서화.
-- 데이터 및 라우트 단위 동작에 대한 반복 가능한 자동 테스트 추가.
+- 재현 가능한 설치를 위한 공식 의존성 매니페스트(`requirements.txt` 또는 `pyproject.toml`) 추가.
+- 유지 관리되는 번역 README 확장을 위해 `i18n/` 보강.
+- 정식 플로우 확정 후 레거시/백업 스크립트 변형 정리.
+- 엔드포인트 예시와 스크린샷을 포함한 PWA 워크플로(`pwa/`) 문서화.
+- 데이터 및 라우트 레벨 동작을 위한 반복 가능한 자동 테스트 추가.
 
-## 지원
+## ❤️ Support
 
-### 여러분의 지원으로 가능한 일
-- <b>도구를 계속 공개</b>: 호스팅, 추론, 데이터 저장, 커뮤니티 운영.  
-- <b>더 빠른 개발</b>: WordsCardEink 및 관련 학습 도구에 집중된 오픈소스 개발 시간.  
-- <b>디바이스 프로토타이핑</b>: e-ink 하드웨어 반복 실험과 디스플레이 레이아웃 연구.  
-- <b>모두를 위한 접근성</b>: 학생, 크리에이터, 커뮤니티 그룹을 위한 배포 지원.
+이 프로젝트가 도움이 되었다면, 아래 링크를 통해 유지보수와 하드웨어 개선 작업을 직접 지원할 수 있습니다.
 
-### 후원
+| Donate | PayPal | Stripe |
+|---|---|---|
+| [![Donate](https://img.shields.io/badge/Donate-LazyingArt-0EA5E9?style=for-the-badge&logo=ko-fi&logoColor=white)](https://chat.lazying.art/donate) | [![PayPal](https://img.shields.io/badge/PayPal-RongzhouChen-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/RongzhouChen) | [![Stripe](https://img.shields.io/badge/Stripe-Donate-635BFF?style=for-the-badge&logo=stripe&logoColor=white)](https://buy.stripe.com/aFadR8gIaflgfQV6T4fw400) |
+
+### 후원이 만드는 변화
+- <b>오픈 도구 유지</b>: 호스팅, 추론, 데이터 저장, 커뮤니티 운영 유지.  
+- <b>더 빠른 개발</b>: WordsCardEink 및 관련 학습 도구에 오픈소스 개발 시간을 집중.  
+- <b>디바이스 프로토타이핑</b>: e-ink 하드웨어 반복 개발 및 디스플레이 레이아웃 연구.  
+- <b>접근성 확대</b>: 학생, 크리에이터, 커뮤니티 그룹 대상 지원 배포.
+
+### Donate
 
 <div align="center">
 <table style="margin:0 auto; text-align:center; border-collapse:collapse;">
@@ -297,7 +352,7 @@ OpenAI 접근은 선택 사항이지만 새로운 단어 생성과 발음 보강
       <a href="https://chat.lazying.art/donate">https://chat.lazying.art/donate</a>
     </td>
     <td style="text-align:center; vertical-align:middle; padding:6px 12px;">
-      <a href="https://chat.lazying.art/donate"><img src="figs/donate_button.svg" alt="Donate" height="44"></a>
+      <a href="https://chat.lazying.art/donate"><img src="../figs/donate_button.svg" alt="Donate" height="44"></a>
     </td>
   </tr>
   <tr>
@@ -317,8 +372,8 @@ OpenAI 접근은 선택 사항이지만 새로운 단어 생성과 발음 보강
     <td style="text-align:center; vertical-align:middle; padding:6px 12px;"><strong>Alipay</strong></td>
   </tr>
   <tr>
-    <td style="text-align:center; vertical-align:middle; padding:6px 12px;"><img alt="WeChat QR" src="figs/donate_wechat.png" width="240"/></td>
-    <td style="text-align:center; vertical-align:middle; padding:6px 12px;"><img alt="Alipay QR" src="figs/donate_alipay.png" width="240"/></td>
+    <td style="text-align:center; vertical-align:middle; padding:6px 12px;"><img alt="WeChat QR" src="../figs/donate_wechat.png" width="240"/></td>
+    <td style="text-align:center; vertical-align:middle; padding:6px 12px;"><img alt="Alipay QR" src="../figs/donate_alipay.png" width="240"/></td>
   </tr>
 </table>
 </div>
@@ -329,16 +384,18 @@ OpenAI 접근은 선택 사항이지만 새로운 단어 생성과 발음 보강
 - 你的支持将用于研发与运维，帮助我持续公开分享更多项目与改进。  
 - Your support sustains my research, development, and ops so I can keep sharing more open projects and improvements.
 
+<a id="contributing"></a>
 ## 기여
 기여 가이드, 코딩 스타일, PR 기대사항은 `AGENTS.md`를 참고하세요.
 
-권장 기여 체크리스트:
+권장 체크리스트:
 - 디스플레이 변경 시 패널 모델 + 하드웨어 노트를 포함하세요.
-- 검증에 사용한 정확한 명령어를 나열하세요.
+- 검증에 사용한 정확한 명령어를 기재하세요.
 - UI 또는 e-ink 출력 변경 시 스크린샷/사진을 첨부하세요.
-- 데이터셋 수정 내용(파일 + 행/열 영향)을 설명하세요.
+- 데이터셋 수정 사항(파일 + 행/열 영향)을 설명하세요.
 
+<a id="license"></a>
 ## 라이선스
-저장소 루트에 `LICENSE` 파일이 현재 없습니다(이 초안 작성 시점 기준 관찰). 라이선스 파일이 추가되기 전까지는 재사용 권한이 명시적으로 부여되지 않습니다.
+현재 저장소 루트에는 `LICENSE` 파일이 없습니다(이 초안 시점 기준). 라이선스 파일이 추가되기 전까지는 재사용 권한이 명시적으로 부여되지 않습니다.
 
-가정: 유지관리자가 후속 업데이트에서 명시적인 오픈소스 라이선스를 추가할 수 있습니다.
+가정: 유지관리자가 후속 업데이트에서 명시적 오픈소스 라이선스를 추가할 수 있습니다.

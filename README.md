@@ -1,20 +1,28 @@
 [English](README.md) · [العربية](i18n/README.ar.md) · [Español](i18n/README.es.md) · [Français](i18n/README.fr.md) · [日本語](i18n/README.ja.md) · [한국어](i18n/README.ko.md) · [Tiếng Việt](i18n/README.vi.md) · [中文 (简体)](i18n/README.zh-Hans.md) · [中文（繁體）](i18n/README.zh-Hant.md) · [Deutsch](i18n/README.de.md) · [Русский](i18n/README.ru.md)
 
+
 [![LazyingArt banner](https://github.com/lachlanchen/lachlanchen/raw/main/figs/banner.png)](https://github.com/lachlanchen/lachlanchen/blob/main/figs/banner.png)
 
 # Eink Words GPT
 
 **Language options:** English (this draft)
 
-![Python](https://img.shields.io/badge/python-3.9%2B-blue)
-![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi-green)
-![Display](https://img.shields.io/badge/display-Waveshare%20e--Paper-black)
-![Status](https://img.shields.io/badge/status-active%20prototype-orange)
-![Server](https://img.shields.io/badge/http-Tornado-0A7EA4)
-![Storage](https://img.shields.io/badge/storage-SQLite-003B57)
-![AI](https://img.shields.io/badge/OpenAI-optional-412991)
+![Python](https://img.shields.io/badge/Python-3.9%2B-3776AB?style=flat-square&logo=python&logoColor=white)
+![Platform](https://img.shields.io/badge/Platform-Raspberry%20Pi-C51A4A?style=flat-square&logo=raspberrypi&logoColor=white)
+![Display](https://img.shields.io/badge/Display-Waveshare%20e--Paper-111111?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Active%20Prototype-F59E0B?style=flat-square)
+![Server](https://img.shields.io/badge/HTTP-Tornado-0A7EA4?style=flat-square)
+![Storage](https://img.shields.io/badge/Storage-SQLite-003B57?style=flat-square&logo=sqlite&logoColor=white)
+![AI](https://img.shields.io/badge/OpenAI-Optional-412991?style=flat-square&logo=openai&logoColor=white)
 
 A Raspberry Pi + Waveshare e-ink project that displays dynamically selected vocabulary with phonetics and multilingual synonyms. The system can fetch words from local datasets or OpenAI, render them into a layout, and push the result to supported e-paper panels. It also exposes a small HTTP service for triggering word updates and retrieving rendered images.
+
+| 🔎 At a Glance | Details |
+|---|---|
+| Core runtime | `app.py` (HTTP service) + `words_gpt.py` (renderer loop) |
+| Data path | CSV datasets in `data/` + SQLite store `words_phonetics.db` |
+| Output targets | Waveshare e-paper panels and virtual image outputs |
+| AI dependency | Optional (`--enable_openai`) with cache in `cache/` |
 
 ## 📚 Table of Contents
 - [Overview](#overview)
@@ -33,6 +41,7 @@ A Raspberry Pi + Waveshare e-ink project that displays dynamically selected voca
 - [Troubleshooting](#troubleshooting)
 - [Notes on OpenAI Usage](#notes-on-openai-usage)
 - [Roadmap](#roadmap)
+- [Support](#-support)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -304,6 +313,8 @@ OpenAI access is optional but recommended for fresh word generation and phonetic
 - Add repeatable automated tests for data and route-level behavior.
 
 ## ❤️ Support
+
+If this project is useful to you, these links directly support ongoing maintenance and hardware iteration.
 
 | Donate | PayPal | Stripe |
 |---|---|---|

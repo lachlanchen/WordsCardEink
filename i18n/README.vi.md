@@ -1,35 +1,67 @@
 [English](../README.md) · [العربية](README.ar.md) · [Español](README.es.md) · [Français](README.fr.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Tiếng Việt](README.vi.md) · [中文 (简体)](README.zh-Hans.md) · [中文（繁體）](README.zh-Hant.md) · [Deutsch](README.de.md) · [Русский](README.ru.md)
 
 
+[![LazyingArt banner](https://github.com/lachlanchen/lachlanchen/raw/main/figs/banner.png)](https://github.com/lachlanchen/lachlanchen/blob/main/figs/banner.png)
+
 # Eink Words GPT
 
-![Python](https://img.shields.io/badge/python-3.9%2B-blue)
-![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi-green)
-![Display](https://img.shields.io/badge/display-Waveshare%20e--Paper-black)
-![Status](https://img.shields.io/badge/status-active%20prototype-orange)
-![Server](https://img.shields.io/badge/http-Tornado-0A7EA4)
-![Storage](https://img.shields.io/badge/storage-SQLite-003B57)
-![AI](https://img.shields.io/badge/OpenAI-optional-412991)
+**Tùy chọn ngôn ngữ:** Tiếng Việt (bản dịch)
 
-Một dự án Raspberry Pi + mực điện tử Waveshare hiển thị từ vựng được chọn động kèm phiên âm và từ đồng nghĩa đa ngôn ngữ. Hệ thống có thể lấy từ từ bộ dữ liệu cục bộ hoặc OpenAI, dựng bố cục hiển thị, rồi đẩy kết quả lên các màn hình e-paper được hỗ trợ. Dự án cũng cung cấp một dịch vụ HTTP nhỏ để kích hoạt cập nhật từ và truy xuất ảnh đã dựng.
+![Python](https://img.shields.io/badge/Python-3.9%2B-3776AB?style=flat-square&logo=python&logoColor=white)
+![Platform](https://img.shields.io/badge/Platform-Raspberry%20Pi-C51A4A?style=flat-square&logo=raspberrypi&logoColor=white)
+![Display](https://img.shields.io/badge/Display-Waveshare%20e--Paper-111111?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Active%20Prototype-F59E0B?style=flat-square)
+![Server](https://img.shields.io/badge/HTTP-Tornado-0A7EA4?style=flat-square)
+![Storage](https://img.shields.io/badge/Storage-SQLite-003B57?style=flat-square&logo=sqlite&logoColor=white)
+![AI](https://img.shields.io/badge/OpenAI-Optional-412991?style=flat-square&logo=openai&logoColor=white)
+
+Dự án Raspberry Pi + e-ink Waveshare hiển thị từ vựng được chọn động kèm phiên âm và từ đồng nghĩa đa ngôn ngữ. Hệ thống có thể lấy từ từ bộ dữ liệu cục bộ hoặc OpenAI, dựng thành bố cục hiển thị và đẩy kết quả lên các màn hình e-paper được hỗ trợ. Dự án cũng cung cấp một dịch vụ HTTP nhỏ để kích hoạt cập nhật từ và truy xuất ảnh đã dựng.
+
+| 🔎 Tổng quan nhanh | Chi tiết |
+|---|---|
+| Runtime cốt lõi | `app.py` (dịch vụ HTTP) + `words_gpt.py` (vòng lặp dựng) |
+| Luồng dữ liệu | Bộ dữ liệu CSV trong `data/` + kho SQLite `words_phonetics.db` |
+| Mục tiêu đầu ra | Màn hình e-paper Waveshare và đầu ra ảnh ảo |
+| Phụ thuộc AI | Tùy chọn (`--enable_openai`) với cache trong `cache/` |
+
+## 📚 Mục lục
+- [Tổng quan](#tổng-quan)
+- [Điểm nổi bật](#điểm-nổi-bật)
+- [Bắt đầu nhanh](#bắt-đầu-nhanh)
+- [Demo](#demo)
+- [Tính năng](#tính-năng)
+- [Cấu trúc dự án](#cấu-trúc-dự-án)
+- [Điều kiện tiên quyết](#điều-kiện-tiên-quyết)
+- [Cài đặt](#cài-đặt)
+- [Cấu hình](#cấu-hình)
+- [Cách dùng](#cách-dùng)
+- [Ví dụ](#ví-dụ)
+- [Dữ liệu, Cache và Log](#dữ-liệu-cache-và-log)
+- [Ghi chú phát triển](#ghi-chú-phát-triển)
+- [Khắc phục sự cố](#khắc-phục-sự-cố)
+- [Ghi chú về việc dùng OpenAI](#ghi-chú-về-việc-dùng-openai)
+- [Lộ trình](#lộ-trình)
+- [Support](#-support)
+- [Đóng góp](#đóng-góp)
+- [Giấy phép](#giấy-phép)
 
 ## Tổng quan
-`words_gpt` là hệ thống tạo thẻ từ vựng bằng Python và hiển thị trên thiết bị e-ink.
+`words_gpt` là hệ thống tạo và hiển thị thẻ từ vựng trên thiết bị e-ink, được xây dựng bằng Python.
 
 Hệ thống kết hợp:
-- Nguồn từ từ CSV/bộ dữ liệu cục bộ và tuỳ chọn sinh từ bằng OpenAI.
+- Nguồn từ từ CSV/bộ dữ liệu cục bộ và tùy chọn sinh từ bằng OpenAI.
 - Làm giàu dữ liệu (phiên âm IPA + các trường từ đồng nghĩa đa ngôn ngữ).
 - Pipeline dựng hình cho cả phần cứng và đầu ra ảo.
-- Dịch vụ HTTP Tornado để kích hoạt từ xa và lấy ảnh.
+- Dịch vụ HTTP Tornado để kích hoạt từ xa và truy xuất ảnh.
 
-Mã nguồn hiện tại tập trung quanh `app.py`, `words_gpt.py`, `words_data.py`, `words_database.py`, và `openai_request_json.py`.
+Codebase hiện tập trung quanh `app.py`, `words_gpt.py`, `words_data.py`, `words_database.py`, và `openai_request_json.py`.
 
 ## Điểm nổi bật
 - 🖼️ Pipeline dựng hình e-ink với nhiều chế độ nội dung (kanji, tiếng Nhật, tiếng Ả Rập, tiếng Trung, emoji).
 - 🗃️ Cơ sở dữ liệu từ cục bộ (`words_phonetics.db`) với danh sách từ dựa trên CSV trong `data/`.
 - 🤖 Chọn từ và làm giàu phiên âm bằng OpenAI với đầu ra JSON có cấu trúc.
 - 🌐 Dịch vụ HTTP cho kích hoạt bên ngoài và truy xuất ảnh.
-- ⚡ Tầng bộ nhớ đệm (`cache/`) để giảm các lần gọi OpenAI lặp lại.
+- ⚡ Tầng cache (`cache/`) giúp giảm các lần gọi OpenAI lặp lại.
 
 ## Bắt đầu nhanh
 | Mục tiêu | Lệnh |
@@ -49,9 +81,9 @@ Mã nguồn hiện tại tập trung quanh `app.py`, `words_gpt.py`, `words_data
 ## Tính năng
 - Luồng dựng hình phần cứng + ảo (`EPaperHardware`, `EPaperDisplay`) từ `words_gpt.py`.
 - Pipeline làm giàu đa ngôn ngữ trong `words_data.py` (IPA, biến thể tiếng Nhật, tiếng Ả Rập, tiếng Pháp, các trường tiếng Trung).
-- Lưu trữ dùng SQLite với các hàm hỗ trợ cập nhật trường động trong `words_database.py`.
-- Trình trợ giúp request JSON có cấu trúc cho OpenAI kèm file cache trong `openai_request_json.py`.
-- Tài nguyên PWA tuỳ chọn trong `pwa/` cho cấu hình/preview frontend gọn nhẹ.
+- Lưu trữ SQLite với các hàm hỗ trợ cập nhật trường động trong `words_database.py`.
+- Trình hỗ trợ request JSON có cấu trúc cho OpenAI kèm cache tệp trong `openai_request_json.py`.
+- Tài nguyên PWA tùy chọn trong `pwa/` cho workflow cấu hình/preview frontend gọn nhẹ.
 
 ## Cấu trúc dự án
 ```text
@@ -88,7 +120,7 @@ words_gpt/
 └─ waveshare/
 ```
 
-Các tệp chạy quan trọng:
+Tệp runtime quan trọng:
 - `app.py`: web server Tornado (cổng mặc định `8082`) và vòng lặp cập nhật định kỳ.
 - `words_gpt.py`: vòng lặp dựng độc lập và các lớp hiển thị.
 - `words_data.py`: điều phối lõi cho lấy từ/làm giàu dữ liệu.
@@ -101,13 +133,13 @@ Các tệp chạy quan trọng:
 - Màn hình e-paper Waveshare được hỗ trợ.
 - Đã bật SPI trên Pi (`raspi-config`) và đấu dây theo đúng model panel.
 
-Các gói Python dùng trong dự án gồm:
+Các gói Python dùng trong dự án bao gồm:
 - `openai`, `tornado`, `Pillow`, `numpy`, `nltk`, `opencc`, `pykakasi`, `arabic_reshaper`, `python-bidi`, `pytz`.
 - Script setup còn cài thêm: `json5`, `pandas`, `spidev`, `RPi.GPIO`, `gpiozero`, `lgpio`.
 
 ## Cài đặt
 
-### Tuỳ chọn A: Cài tối thiểu/thủ công
+### Tùy chọn A: Cài tối thiểu/thủ công
 Cài gói driver Waveshare:
 ```bash
 python setup.py install
@@ -118,7 +150,7 @@ Nếu dùng danh sách từ của NLTK, tải một lần:
 python -m nltk.downloader words
 ```
 
-### Tuỳ chọn B: Thiết lập tự động cho Raspberry Pi (khuyến nghị trên thiết bị)
+### Tùy chọn B: Thiết lập tự động cho Raspberry Pi (khuyến nghị trên thiết bị)
 Từ thư mục gốc repo:
 ```bash
 bash scripts/setup_pi_wordscard.sh
@@ -130,12 +162,12 @@ Script này sẽ:
 - Tạo và kích hoạt virtual env `wordscard`.
 - Cài các phụ thuộc Python runtime.
 - Cài gói Waveshare.
-- Khởi chạy `app.py` trong một tmux session.
+- Khởi chạy `app.py` trong một phiên tmux.
 
 ## Cấu hình
 
 ### Hành vi của `.env`
-Repo này nạp biến môi trường từ `.env` ngay khi import và **ghi đè** mọi giá trị shell đang có. Cách này giúp các giá trị ghi đè cục bộ luôn xác định, kể cả khi bạn đã export biến trong profile shell.
+Repo này nạp biến môi trường từ `.env` ngay khi import và **ghi đè** mọi giá trị shell đang có. Cách này giúp giá trị ghi đè cục bộ luôn xác định, kể cả khi bạn đã export biến trong profile shell.
 
 Tạo hoặc cập nhật `.env`:
 ```env
@@ -259,7 +291,7 @@ Nhiều ví dụ khác nằm trong `waveshare/examples/`.
   - Đảm bảo virtual environment đang hoạt động và đã cài dependencies.
   - Chạy lại `bash scripts/setup_pi_wordscard.sh` trên Pi.
 - Lỗi OpenAI (`401`, thiếu model/key):
-  - Kiểm tra `OPENAI_API_KEY` và tuỳ chọn `OPENAI_MODEL` trong `.env`.
+  - Kiểm tra `OPENAI_API_KEY` và tùy chọn `OPENAI_MODEL` trong `.env`.
   - Xác nhận thiết bị có kết nối mạng.
 - Màn hình không cập nhật:
   - Kiểm tra model/đấu dây panel và chạy đúng script test (`epd_7in3f_test.py` hoặc `epd_13in3k_test.py`).
@@ -271,7 +303,7 @@ Nhiều ví dụ khác nằm trong `waveshare/examples/`.
   - Dùng `/get_current_word` cho payload hiện tại, không phải `/current_word`.
 
 ## Ghi chú về việc dùng OpenAI
-Truy cập OpenAI là tuỳ chọn, nhưng được khuyến nghị để sinh từ mới và làm giàu phiên âm. Trình trợ giúp JSON có cấu trúc trong `openai_request_json.py` lưu cache kết quả dưới `cache/` để giảm số lần gọi lặp lại.
+Truy cập OpenAI là tùy chọn, nhưng được khuyến nghị để sinh từ mới và làm giàu phiên âm. Trình hỗ trợ JSON có cấu trúc trong `openai_request_json.py` lưu cache kết quả dưới `cache/` để giảm số lần gọi lặp lại.
 
 ## Lộ trình
 - Thêm manifest phụ thuộc chính thức (`requirements.txt` hoặc `pyproject.toml`) để cài đặt có thể tái lập.
@@ -280,15 +312,21 @@ Truy cập OpenAI là tuỳ chọn, nhưng được khuyến nghị để sinh t
 - Tài liệu hóa quy trình PWA (`pwa/`) với ví dụ endpoint và ảnh chụp màn hình.
 - Thêm test tự động lặp lại được cho dữ liệu và hành vi ở mức route.
 
-## Hỗ trợ
+## ❤️ Support
+
+Nếu dự án này hữu ích với bạn, các liên kết dưới đây sẽ hỗ trợ trực tiếp cho việc bảo trì liên tục và thử nghiệm phần cứng.
+
+| Donate | PayPal | Stripe |
+|---|---|---|
+| [![Donate](https://img.shields.io/badge/Donate-LazyingArt-0EA5E9?style=for-the-badge&logo=ko-fi&logoColor=white)](https://chat.lazying.art/donate) | [![PayPal](https://img.shields.io/badge/PayPal-RongzhouChen-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/RongzhouChen) | [![Stripe](https://img.shields.io/badge/Stripe-Donate-635BFF?style=for-the-badge&logo=stripe&logoColor=white)](https://buy.stripe.com/aFadR8gIaflgfQV6T4fw400) |
 
 ### Sự hỗ trợ của bạn giúp thực hiện
-- <b>Duy trì công cụ mở</b>: hosting, suy luận, lưu trữ dữ liệu và vận hành cộng đồng.  
-- <b>Phát hành nhanh hơn</b>: dành thời gian nguồn mở tập trung cho WordsCardEink và các công cụ học tập liên quan.  
-- <b>Tạo mẫu thiết bị</b>: lặp thiết kế phần cứng e-ink và nghiên cứu bố cục hiển thị.  
+- <b>Duy trì công cụ mở</b>: hosting, suy luận, lưu trữ dữ liệu và vận hành cộng đồng.
+- <b>Phát hành nhanh hơn</b>: dành thời gian nguồn mở tập trung cho WordsCardEink và các công cụ học tập liên quan.
+- <b>Tạo mẫu thiết bị</b>: lặp thiết kế phần cứng e-ink và nghiên cứu bố cục hiển thị.
 - <b>Tiếp cận cho mọi người</b>: tài trợ triển khai cho học sinh/sinh viên, nhà sáng tạo và các nhóm cộng đồng.
 
-### Ủng hộ
+### Donate
 
 <div align="center">
 <table style="margin:0 auto; text-align:center; border-collapse:collapse;">
@@ -325,8 +363,8 @@ Truy cập OpenAI là tuỳ chọn, nhưng được khuyến nghị để sinh t
 
 **支援 / Donate**
 
-- ご支援は研究・開発と運用の継続に役立ち、より多くのオープンなプロジェクトを皆さんに届ける力になります。  
-- 你的支持将用于研发与运维，帮助我持续公开分享更多项目与改进。  
+- ご支援は研究・開発と運用の継続に役立ち、より多くのオープンなプロジェクトを皆さんに届ける力になります。
+- 你的支持将用于研发与运维，帮助我持续公开分享更多项目与改进。
 - Your support sustains my research, development, and ops so I can keep sharing more open projects and improvements.
 
 ## Đóng góp

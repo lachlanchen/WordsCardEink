@@ -1,17 +1,49 @@
 [English](../README.md) · [العربية](README.ar.md) · [Español](README.es.md) · [Français](README.fr.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Tiếng Việt](README.vi.md) · [中文 (简体)](README.zh-Hans.md) · [中文（繁體）](README.zh-Hant.md) · [Deutsch](README.de.md) · [Русский](README.ru.md)
 
 
+[![LazyingArt banner](https://github.com/lachlanchen/lachlanchen/raw/main/figs/banner.png)](https://github.com/lachlanchen/lachlanchen/blob/main/figs/banner.png)
+
 # Eink Words GPT
 
-![Python](https://img.shields.io/badge/python-3.9%2B-blue)
-![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi-green)
-![Display](https://img.shields.io/badge/display-Waveshare%20e--Paper-black)
-![Status](https://img.shields.io/badge/status-active%20prototype-orange)
-![Server](https://img.shields.io/badge/http-Tornado-0A7EA4)
-![Storage](https://img.shields.io/badge/storage-SQLite-003B57)
-![AI](https://img.shields.io/badge/OpenAI-optional-412991)
+**语言版本：** 中文（简体）
 
-这是一个基于 Raspberry Pi + Waveshare 电子墨水屏的项目，可动态显示带音标与多语言同义词的词汇。系统可从本地数据集或 OpenAI 获取单词，将其渲染为版式，并推送到受支持的电子纸面板。同时还提供一个轻量 HTTP 服务，用于触发单词更新和获取渲染图像。
+![Python](https://img.shields.io/badge/Python-3.9%2B-3776AB?style=flat-square&logo=python&logoColor=white)
+![Platform](https://img.shields.io/badge/Platform-Raspberry%20Pi-C51A4A?style=flat-square&logo=raspberrypi&logoColor=white)
+![Display](https://img.shields.io/badge/Display-Waveshare%20e--Paper-111111?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Active%20Prototype-F59E0B?style=flat-square)
+![Server](https://img.shields.io/badge/HTTP-Tornado-0A7EA4?style=flat-square)
+![Storage](https://img.shields.io/badge/Storage-SQLite-003B57?style=flat-square&logo=sqlite&logoColor=white)
+![AI](https://img.shields.io/badge/OpenAI-Optional-412991?style=flat-square&logo=openai&logoColor=white)
+
+这是一个基于 Raspberry Pi + Waveshare 电子墨水屏的项目，可动态显示带音标和多语言同义词的词汇。系统可以从本地数据集或 OpenAI 获取单词，将其渲染成卡片版式，并推送到受支持的电子纸面板。同时还提供一个轻量 HTTP 服务，用于触发单词更新和获取渲染图像。
+
+| 🔎 一览 | 详情 |
+|---|---|
+| 核心运行时 | `app.py`（HTTP 服务）+ `words_gpt.py`（渲染循环） |
+| 数据路径 | `data/` 中的 CSV 数据集 + SQLite 存储 `words_phonetics.db` |
+| 输出目标 | Waveshare 电子纸面板和虚拟图像输出 |
+| AI 依赖 | 可选（`--enable_openai`），缓存位于 `cache/` |
+
+## 📚 目录
+- [概览](#概览)
+- [亮点](#亮点)
+- [快速开始](#快速开始)
+- [演示](#演示)
+- [功能](#功能)
+- [项目结构](#项目结构)
+- [前置要求](#前置要求)
+- [安装](#安装)
+- [配置](#配置)
+- [使用](#使用)
+- [示例](#示例)
+- [数据、缓存与日志](#数据缓存与日志)
+- [开发说明](#开发说明)
+- [故障排查](#故障排查)
+- [OpenAI 使用说明](#openai-使用说明)
+- [路线图](#路线图)
+- [❤️ Support](#-support)
+- [贡献](#贡献)
+- [许可证](#许可证)
 
 ## 概览
 `words_gpt` 是一个面向电子墨水设备的 Python 词汇卡片生成与显示系统。
@@ -22,13 +54,13 @@
 - 面向硬件与虚拟输出的渲染流水线。
 - 用于远程触发与图像获取的 Tornado HTTP 服务。
 
-当前代码库核心包括 `app.py`、`words_gpt.py`、`words_data.py`、`words_database.py` 与 `openai_request_json.py`。
+当前代码库核心包括 `app.py`、`words_gpt.py`、`words_data.py`、`words_database.py` 和 `openai_request_json.py`。
 
 ## 亮点
-- 🖼️ 电子墨水渲染流水线，支持多种内容模式（汉字、日语、阿拉伯语、中文、emoji）。
+- 🖼️ 电子墨水渲染流水线，支持多种内容模式（kanji、日语、阿拉伯语、中文、emoji）。
 - 🗃️ 本地词库数据库（`words_phonetics.db`），词表来自 `data/` 中的 CSV。
 - 🤖 基于 OpenAI 的选词与音标增强，采用结构化 JSON 输出。
-- 🌐 供外部触发和图像获取的 HTTP 服务。
+- 🌐 供外部触发与图像获取的 HTTP 服务。
 - ⚡ 缓存层（`cache/`）减少重复 OpenAI 调用。
 
 ## 快速开始
@@ -36,7 +68,7 @@
 |---|---|
 | 启动 HTTP 服务（端口 `8082`） | `python app.py` |
 | 运行独立渲染器（CSV） | `python words_gpt.py --use_csv` |
-| OpenAI + CSV 模式运行 | `python words_gpt.py --enable_openai --use_csv` |
+| 以 OpenAI + CSV 运行 | `python words_gpt.py --enable_openai --use_csv` |
 | Emoji + 简体 CJK 模式 | `python words_gpt.py --make_emoji --simplify` |
 | Raspberry Pi 自动化安装 | `bash scripts/setup_pi_wordscard.sh` |
 
@@ -89,7 +121,7 @@ words_gpt/
 ```
 
 重要运行时文件：
-- `app.py`：Tornado Web 服务器（默认端口 `8082`）与周期更新循环。
+- `app.py`：Tornado Web 服务器（默认端口 `8082`）和周期更新循环。
 - `words_gpt.py`：独立渲染循环与显示类。
 - `words_data.py`：核心取词/增强编排。
 - `words_database.py`：SQLite 存储辅助函数。
@@ -102,8 +134,8 @@ words_gpt/
 - Pi 上已启用 SPI（`raspi-config`），并完成对应面板接线。
 
 本项目使用的 Python 包包括：
-- `openai`、`tornado`、`Pillow`、`numpy`、`nltk`、`opencc`、`pykakasi`、`arabic_reshaper`、`python-bidi`、`pytz`。
-- 安装脚本还会安装：`json5`、`pandas`、`spidev`、`RPi.GPIO`、`gpiozero`、`lgpio`。
+- `openai`, `tornado`, `Pillow`, `numpy`, `nltk`, `opencc`, `pykakasi`, `arabic_reshaper`, `python-bidi`, `pytz`。
+- 安装脚本还会安装：`json5`, `pandas`, `spidev`, `RPi.GPIO`, `gpiozero`, `lgpio`。
 
 ## 安装
 
@@ -242,15 +274,15 @@ python epd_13in3k_test.py
 ## 数据、缓存与日志
 | 区域 | 路径 | 说明 |
 |---|---|---|
-| 词表 | `data/` | 包含 `data/words_list.csv` 及主题 CSV 文件 |
+| 词表 | `data/` | 包含 `data/words_list.csv` 与主题 CSV 文件 |
 | 持久化数据库 | `words_phonetics.db` | 本地音标/增强存储 |
 | OpenAI/缓存产物 | `cache/` | 减少重复请求 |
-| 日志 | `logs/`、`logs-word-phonetics/` | 运行与更新日志 |
+| 日志 | `logs/`, `logs-word-phonetics/` | 运行与更新日志 |
 | 生成卡片 | `words_card_temp/` | 图像输出与静态资源服务来源 |
 
 ## 开发说明
 - 依赖管理目前以脚本优先（`scripts/setup_pi_wordscard.sh`）+ `setup.py`；尚无 `requirements.txt` 或 `pyproject.toml`。
-- 仓库中存在多份备份/历史文件（`words_data_*`、`words_gpt_old.py`）；当前主要运行路径是 `app.py` + `words_gpt.py` + `words_data.py` + `words_database.py`。
+- 仓库中存在多份备份/历史文件（`words_data_*`, `words_gpt_old.py`）；当前主要运行路径是 `app.py` + `words_gpt.py` + `words_data.py` + `words_database.py`。
 - `env_loader.py` 在键存在时总是用 `.env` 覆盖环境变量。
 - 服务模式会运行周期性刷新流程（约每 5 分钟），并可能在内部调用更新端点。
 
@@ -280,7 +312,13 @@ OpenAI 接入是可选的，但建议用于生成新词和音标增强。`openai
 - 为 `pwa/` 流程补充端点示例与截图文档。
 - 添加可重复的自动化测试，覆盖数据与路由级行为。
 
-## 支持
+## ❤️ Support
+
+If this project is useful to you, these links directly support ongoing maintenance and hardware iteration.
+
+| Donate | PayPal | Stripe |
+|---|---|---|
+| [![Donate](https://img.shields.io/badge/Donate-LazyingArt-0EA5E9?style=for-the-badge&logo=ko-fi&logoColor=white)](https://chat.lazying.art/donate) | [![PayPal](https://img.shields.io/badge/PayPal-RongzhouChen-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/RongzhouChen) | [![Stripe](https://img.shields.io/badge/Stripe-Donate-635BFF?style=for-the-badge&logo=stripe&logoColor=white)](https://buy.stripe.com/aFadR8gIaflgfQV6T4fw400) |
 
 ### 你的支持可以实现
 - <b>保持工具开放</b>：覆盖托管、推理、数据存储与社区运营。  

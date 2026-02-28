@@ -1,59 +1,91 @@
 [English](../README.md) · [العربية](README.ar.md) · [Español](README.es.md) · [Français](README.fr.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Tiếng Việt](README.vi.md) · [中文 (简体)](README.zh-Hans.md) · [中文（繁體）](README.zh-Hant.md) · [Deutsch](README.de.md) · [Русский](README.ru.md)
 
 
+[![LazyingArt banner](https://github.com/lachlanchen/lachlanchen/raw/main/figs/banner.png)](https://github.com/lachlanchen/lachlanchen/blob/main/figs/banner.png)
+
 # Eink Words GPT
 
-![Python](https://img.shields.io/badge/python-3.9%2B-blue)
-![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi-green)
-![Display](https://img.shields.io/badge/display-Waveshare%20e--Paper-black)
-![Status](https://img.shields.io/badge/status-active%20prototype-orange)
-![Server](https://img.shields.io/badge/http-Tornado-0A7EA4)
-![Storage](https://img.shields.io/badge/storage-SQLite-003B57)
-![AI](https://img.shields.io/badge/OpenAI-optional-412991)
+**خيارات اللغة:** العربية (هذه النسخة)
 
-مشروع Raspberry Pi + Waveshare e-ink يعرض مفردات يتم اختيارها ديناميكيًا مع النطق الصوتي ومرادفات متعددة اللغات. يستطيع النظام جلب الكلمات من مجموعات بيانات محلية أو من OpenAI، ثم تنسيقها ضمن تخطيط بصري ودفع النتيجة إلى شاشات e-paper المدعومة. كما يوفّر خدمة HTTP صغيرة لتشغيل تحديث الكلمات واسترجاع الصور المولّدة.
+![Python](https://img.shields.io/badge/Python-3.9%2B-3776AB?style=flat-square&logo=python&logoColor=white)
+![Platform](https://img.shields.io/badge/Platform-Raspberry%20Pi-C51A4A?style=flat-square&logo=raspberrypi&logoColor=white)
+![Display](https://img.shields.io/badge/Display-Waveshare%20e--Paper-111111?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Active%20Prototype-F59E0B?style=flat-square)
+![Server](https://img.shields.io/badge/HTTP-Tornado-0A7EA4?style=flat-square)
+![Storage](https://img.shields.io/badge/Storage-SQLite-003B57?style=flat-square&logo=sqlite&logoColor=white)
+![AI](https://img.shields.io/badge/OpenAI-Optional-412991?style=flat-square&logo=openai&logoColor=white)
 
-## نظرة عامة
+مشروع يعتمد على Raspberry Pi مع شاشة Waveshare e-ink لعرض مفردات يتم اختيارها ديناميكيًا مع النطق الصوتي (phonetics) ومرادفات متعددة اللغات. يمكن للنظام جلب الكلمات من بيانات محلية أو عبر OpenAI، ثم تنسيقها بصريًا ودفعها إلى شاشات e-paper المدعومة. كما يوفّر خدمة HTTP صغيرة لتشغيل تحديثات الكلمات واسترجاع الصور المولَّدة.
+
+| 🔎 نظرة سريعة | التفاصيل |
+|---|---|
+| التشغيل الأساسي | `app.py` (خدمة HTTP) + `words_gpt.py` (حلقة التصيير) |
+| مسار البيانات | ملفات CSV داخل `data/` + قاعدة SQLite باسم `words_phonetics.db` |
+| مخرجات العرض | شاشات Waveshare e-paper ومخرجات صور افتراضية |
+| اعتماد الذكاء الاصطناعي | اختياري (`--enable_openai`) مع كاش داخل `cache/` |
+
+## 📚 Table of Contents
+- [نظرة عامة](#overview)
+- [أهم النقاط](#highlights)
+- [بدء سريع](#quick-start)
+- [العروض](#demos)
+- [الميزات](#features)
+- [هيكل المشروع](#project-structure)
+- [المتطلبات المسبقة](#prerequisites)
+- [التثبيت](#installation)
+- [الإعداد](#configuration)
+- [الاستخدام](#usage)
+- [أمثلة](#examples)
+- [البيانات والكاش والسجلات](#data-cache-and-logs)
+- [ملاحظات التطوير](#development-notes)
+- [استكشاف الأخطاء وإصلاحها](#troubleshooting)
+- [ملاحظات حول استخدام OpenAI](#notes-on-openai-usage)
+- [خارطة الطريق](#roadmap)
+- [الدعم](#-support)
+- [المساهمة](#contributing)
+- [الترخيص](#license)
+
+## Overview
 `words_gpt` هو نظام مبني بلغة Python لتوليد بطاقات مفردات وعرضها على أجهزة e-ink.
 
 ويجمع بين:
-- جلب الكلمات من CSV/مجموعات بيانات محلية مع توليد اختياري عبر OpenAI.
-- الإثراء (النطق IPA + حقول مرادفات متعددة اللغات).
-- مسارات تصيير للمخرجات العتادية والافتراضية.
+- جلب الكلمات من CSV/بيانات محلية مع توليد اختياري عبر OpenAI.
+- الإثراء اللغوي (IPA + حقول مرادفات متعددة اللغات).
+- مسارات تصيير لمخرجات العتاد والمخرجات الافتراضية.
 - خدمة Tornado HTTP للتشغيل عن بُعد واسترجاع الصور.
 
-يرتكز الكود الحالي على `app.py` و`words_gpt.py` و`words_data.py` و`words_database.py` و`openai_request_json.py`.
+يرتكز الكود الحالي بشكل أساسي على `app.py` و`words_gpt.py` و`words_data.py` و`words_database.py` و`openai_request_json.py`.
 
-## المزايا البارزة
+## Highlights
 - 🖼️ مسار تصيير e-ink مع أوضاع محتوى متعددة (kanji، اليابانية، العربية، الصينية، emoji).
-- 🗃️ قاعدة كلمات محلية (`words_phonetics.db`) مع قوائم كلمات مدعومة بملفات CSV في `data/`.
-- 🤖 اختيار كلمات وإثراء صوتي عبر OpenAI مع مخرجات JSON منظّمة.
+- 🗃️ قاعدة كلمات محلية (`words_phonetics.db`) مع قوائم كلمات CSV داخل `data/`.
+- 🤖 اختيار كلمات وإثراء صوتي عبر OpenAI باستخدام مخرجات JSON منظَّمة.
 - 🌐 خدمة HTTP للتشغيل الخارجي واسترجاع الصور.
-- ⚡ طبقة تخزين مؤقت (`cache/`) لتقليل استدعاءات OpenAI المتكررة.
+- ⚡ طبقة كاش (`cache/`) لتقليل استدعاءات OpenAI المتكررة.
 
-## البدء السريع
+## Quick Start
 | الهدف | الأمر |
 |---|---|
 | تشغيل خادم HTTP (المنفذ `8082`) | `python app.py` |
 | تشغيل المصيّر المستقل (CSV) | `python words_gpt.py --use_csv` |
-| التشغيل مع OpenAI + CSV | `python words_gpt.py --enable_openai --use_csv` |
+| تشغيل مع OpenAI + CSV | `python words_gpt.py --enable_openai --use_csv` |
 | وضع Emoji + simplified CJK | `python words_gpt.py --make_emoji --simplify` |
 | إعداد Raspberry Pi تلقائيًا | `bash scripts/setup_pi_wordscard.sh` |
 
-## عروض توضيحية
+## Demos
 <p align="center">
   <img src="demos/demo.jpg" alt="Demo" width="48%" />
   <img src="demos/words_card_arabic.JPG" alt="Arabic word card" width="48%" />
 </p>
 
-## الميزات
-- تدفق تصيير عتادي + افتراضي (`EPaperHardware`, `EPaperDisplay`) من `words_gpt.py`.
-- مسار إثراء متعدد اللغات في `words_data.py` (IPA، تنويعات يابانية، حقول عربية وفرنسية وصينية).
-- تخزين دائم مبني على SQLite مع مساعدات تحديث ديناميكي للحقول في `words_database.py`.
-- مساعد طلبات JSON منظّمة لـ OpenAI مع تخزين مؤقت للملفات في `openai_request_json.py`.
-- أصول PWA اختيارية في `pwa/` لتدفقات إعداد/معاينة واجهة خفيفة.
+## Features
+- تدفق تصيير عتادي وافتراضي (`EPaperHardware`, `EPaperDisplay`) من `words_gpt.py`.
+- مسار إثراء متعدد اللغات في `words_data.py` (IPA، صيغ يابانية، عربية، فرنسية، وصينية).
+- تخزين دائم عبر SQLite مع مساعدات تحديث حقول ديناميكية في `words_database.py`.
+- مساعد طلبات OpenAI بصيغة JSON منظَّمة مع كاش ملفات في `openai_request_json.py`.
+- أصول PWA اختيارية داخل `pwa/` لسير عمل خفيف للإعداد/المعاينة على الواجهة الأمامية.
 
-## بنية المشروع
+## Project Structure
 ```text
 words_gpt/
 ├─ README.md
@@ -89,26 +121,26 @@ words_gpt/
 ```
 
 ملفات التشغيل المهمة:
-- `app.py`: خادم Tornado (المنفذ الافتراضي `8082`) وحلقة التحديث الدورية.
+- `app.py`: خادم Tornado (المنفذ الافتراضي `8082`) وحلقة تحديث دورية.
 - `words_gpt.py`: حلقة التصيير المستقلة وفئات العرض.
-- `words_data.py`: تنسيق جلب الكلمات وإثرائها.
+- `words_data.py`: تنسيق جلب/إثراء الكلمات الأساسي.
 - `words_database.py`: مساعدات تخزين SQLite.
-- `scripts/*.sh`: إعداد Raspberry Pi، تثبيت الخدمة، وسكربتات دورة حياة tmux.
+- `scripts/*.sh`: إعداد Raspberry Pi وتثبيت الخدمة وسكربتات دورة حياة tmux.
 
-## المتطلبات المسبقة
-- Python `3.9+` (موصى به).
+## Prerequisites
+- Python `3.9+` (مُوصى به).
 - جهاز Raspberry Pi مستهدف (لوضع العتاد).
 - شاشة Waveshare e-paper مدعومة.
-- تفعيل SPI على Pi (`raspi-config`) بالإضافة إلى التوصيلات الخاصة بكل لوحة.
+- تفعيل SPI على Pi (`raspi-config`) مع التوصيلات المناسبة لطراز الشاشة.
 
-حزم Python المستخدمة في هذا المشروع تشمل:
+تشمل حزم Python المستخدمة في هذا المشروع:
 - `openai`, `tornado`, `Pillow`, `numpy`, `nltk`, `opencc`, `pykakasi`, `arabic_reshaper`, `python-bidi`, `pytz`.
 - سكربت الإعداد يثبّت أيضًا: `json5`, `pandas`, `spidev`, `RPi.GPIO`, `gpiozero`, `lgpio`.
 
-## التثبيت
+## Installation
 
-### الخيار A: تثبيت يدوي/حد أدنى
-ثبّت حزمة تعريفات Waveshare:
+### Option A: Minimal/manual install
+تثبيت حزمة تعريف Waveshare:
 ```bash
 python setup.py install
 ```
@@ -118,24 +150,24 @@ python setup.py install
 python -m nltk.downloader words
 ```
 
-### الخيار B: إعداد Raspberry Pi آليًا (موصى به على الجهاز)
+### Option B: Raspberry Pi automated setup (recommended on device)
 من جذر المستودع:
 ```bash
 bash scripts/setup_pi_wordscard.sh
 ```
 
-هذا السكربت:
-- يثبّت تبعيات apt.
-- يتأكد من تفعيل SPI.
-- ينشئ ويفعّل بيئة افتراضية `wordscard`.
-- يثبّت تبعيات Python وقت التشغيل.
-- يثبّت حزمة Waveshare.
-- يشغّل `app.py` داخل جلسة tmux.
+يقوم هذا السكربت بما يلي:
+- تثبيت اعتماديات apt.
+- التأكد من تفعيل SPI.
+- إنشاء وتفعيل بيئة `wordscard` الافتراضية.
+- تثبيت اعتماديات Python التشغيلية.
+- تثبيت حزمة Waveshare.
+- تشغيل `app.py` داخل جلسة tmux.
 
-## الإعداد
+## Configuration
 
-### سلوك `.env`
-هذا المستودع يحمّل متغيرات البيئة من `.env` وقت الاستيراد ويقوم **بالكتابة فوق** أي قيم موجودة مسبقًا في shell. هذا يجعل التجاوزات المحلية حتمية حتى لو كانت القيم مُصدّرة مسبقًا في ملفات profile.
+### `.env` behavior
+هذا المستودع يحمّل متغيرات البيئة من `.env` وقت الاستيراد ويقوم **بالكتابة فوق** أي قيم موجودة مسبقًا في shell. هذا يجعل تجاوزات الإعداد المحلي حتمية حتى عند تصدير القيم مسبقًا في ملفات إعداد shell.
 
 أنشئ أو حدّث `.env`:
 ```env
@@ -144,13 +176,13 @@ OPENAI_ORG_ID=org-your-org-id
 OPENAI_MODEL=gpt-4o-mini
 ```
 
-### تمرير معاملات التطبيق
-سكربتات systemd/tmux تدعم:
+### App argument passthrough
+تدعم سكربتات systemd/tmux ما يلي:
 ```bash
 APP_ARGS="--enable_openai --use_csv" ./scripts/start_wordscard.sh
 ```
 
-### أعلام CLI (الخادم والمصيّر)
+### CLI flags (server and renderer)
 كل من `app.py` و`words_gpt.py` يدعمان:
 - `--enable_openai`
 - `--make_emoji`
@@ -160,15 +192,15 @@ APP_ARGS="--enable_openai --use_csv" ./scripts/start_wordscard.sh
 - `--complete_csv`
 - `--filename <csv_file>`
 
-## الاستخدام
+## Usage
 
-### تشغيل خادم HTTP
+### Running the HTTP server
 شغّل الخدمة (المنفذ الافتراضي `8082`):
 ```bash
 python app.py
 ```
 
-المسارات المرصودة في الكود:
+المسارات الملاحظة في الكود:
 - `POST /display_word`
 - `GET /get_current_word`
 - `GET /get_current_word_page`
@@ -176,10 +208,10 @@ python app.py
 - `POST /get_words_card`
 - `GET /static/(.*)` (من `words_card_temp/`)
 
-ملاحظة توافق: وثائق أقدم أشارت إلى `GET /current_word`؛ المسار الحالي في `app.py` هو `GET /get_current_word`.
+ملاحظة توافق: كانت وثائق أقدم تشير إلى `GET /current_word`، لكن المسار الحالي في `app.py` هو `GET /get_current_word`.
 
-### تشغيل المصيّر المستقل
-قائمة مبنية على CSV:
+### Running standalone renderer
+قائمة معتمدة على CSV:
 ```bash
 python words_gpt.py --use_csv
 ```
@@ -194,8 +226,8 @@ python words_gpt.py --enable_openai --use_csv
 python words_gpt.py --make_emoji --simplify
 ```
 
-### وضع الخدمة على Raspberry Pi
-ثبّت وحدة الخدمة:
+### Service mode on Raspberry Pi
+تثبيت وحدة الخدمة:
 ```bash
 bash scripts/install_wordscard_service.sh
 ```
@@ -207,27 +239,27 @@ sudo systemctl status wordscard -n 50
 journalctl -u wordscard -n 100 --no-pager
 ```
 
-## أمثلة
+## Examples
 
-### تشغيل كلمة عشوائية تالية
+### Trigger next random word
 ```bash
 curl "http://127.0.0.1:8082/next_random_word"
 ```
 
-### قراءة حمولة الكلمة الحالية
+### Read current word payload
 ```bash
 curl "http://127.0.0.1:8082/get_current_word"
 ```
 
-### إرسال كلمة محددة
+### Submit explicit word
 ```bash
 curl -X POST "http://127.0.0.1:8082/display_word" \
   -H "Content-Type: application/json" \
   -d '{"word":"serendipity"}'
 ```
 
-### اختبارات عتادية سريعة
-استخدم السكربت المطابق للشاشة:
+### Hardware smoke tests
+استخدم السكربت المخصص للشاشة:
 ```bash
 python epd_7in3f_test.py
 ```
@@ -237,56 +269,62 @@ python epd_7in3f_test.py
 python epd_13in3k_test.py
 ```
 
-المزيد من الأمثلة موجود في `waveshare/examples/`.
+يوجد المزيد من الأمثلة في `waveshare/examples/`.
 
-## البيانات والتخزين المؤقت والسجلات
-| المجال | المسار/المسارات | ملاحظات |
+## Data, Cache, and Logs
+| المنطقة | المسار/المسارات | ملاحظات |
 |---|---|---|
 | قوائم الكلمات | `data/` | تتضمن `data/words_list.csv` وملفات CSV موضوعية |
-| قاعدة بيانات دائمة | `words_phonetics.db` | مخزن محلي للنطق/الإثراء |
-| مخرجات OpenAI/التخزين المؤقت | `cache/` | يقلّل الطلبات المتكررة |
+| قاعدة البيانات الدائمة | `words_phonetics.db` | مخزن محلي للنطق والإثراء |
+| عناصر OpenAI/الكاش | `cache/` | يقلل الطلبات المتكررة |
 | السجلات | `logs/`, `logs-word-phonetics/` | سجلات التشغيل والتحديث |
-| البطاقات المولدة | `words_card_temp/` | مخرجات الصور ومصدر الخدمة الثابتة |
+| البطاقات المُولدة | `words_card_temp/` | مخرجات الصور ومصدر الخدمة الثابتة |
 
-## ملاحظات تطوير
-- إدارة التبعيات تعتمد على السكربتات أولًا (`scripts/setup_pi_wordscard.sh`) + `setup.py`؛ لا يوجد `requirements.txt` أو `pyproject.toml` بعد.
-- توجد عدة ملفات احتياطية/قديمة (`words_data_*`, `words_gpt_old.py`)؛ مسار التشغيل الفعّال يعتمد أساسًا على `app.py` + `words_gpt.py` + `words_data.py` + `words_database.py`.
+## Development Notes
+- إدارة الاعتماديات تعتمد على السكربتات أولًا (`scripts/setup_pi_wordscard.sh`) + `setup.py`؛ لا يوجد `requirements.txt` أو `pyproject.toml` حتى الآن.
+- توجد ملفات نسخ احتياطي/إرث متعددة (`words_data_*`, `words_gpt_old.py`)؛ مسار التشغيل النشط يتركز أساسًا في `app.py` + `words_gpt.py` + `words_data.py` + `words_database.py`.
 - `env_loader.py` يكتب دائمًا فوق متغيرات البيئة من `.env` عند وجود المفاتيح.
-- وضع الخادم يشغّل تدفق تحديث دوري (كل ~5 دقائق) ويمكن أن يستدعي نقطة التحديث داخليًا.
+- وضع الخادم يشغّل تدفق تحديث دوري (كل ~5 دقائق) ويمكنه استدعاء نقطة التحديث داخليًا.
 
-## استكشاف الأخطاء وإصلاحها
-- أخطاء `ModuleNotFoundError` أو الاستيراد:
-  - تأكد من تفعيل البيئة الافتراضية وتثبيت التبعيات.
+## Troubleshooting
+- `ModuleNotFoundError` أو مشاكل الاستيراد:
+  - تأكد من تفعيل البيئة الافتراضية وتثبيت الاعتماديات.
   - أعد تشغيل `bash scripts/setup_pi_wordscard.sh` على Pi.
 - أخطاء OpenAI (`401`، نموذج/مفتاح مفقود):
-  - تحقق من `OPENAI_API_KEY` و`OPENAI_MODEL` الاختياري في `.env`.
+  - تحقّق من `OPENAI_API_KEY` و`OPENAI_MODEL` الاختياري داخل `.env`.
   - تأكد من اتصال الشبكة من الجهاز.
 - الشاشة لا تتحدّث:
-  - تحقق من نموذج الشاشة/التوصيلات وشغّل سكربت الاختبار المطابق (`epd_7in3f_test.py` أو `epd_13in3k_test.py`).
+  - تحقّق من طراز الشاشة والتوصيلات وشغّل سكربت الاختبار المطابق (`epd_7in3f_test.py` أو `epd_13in3k_test.py`).
   - تأكد من تفعيل SPI (`sudo raspi-config nonint do_spi 0`).
-  - على Pi 5، تأكد من وصلة التوافق `/dev/spidev0.0` إذا كان الجهاز يوفّر `/dev/spidev10.0`.
-- مشكلات تثبيت OpenCC:
-  - استخدم الحزمة المتوافقة مع التوزيعة (`libopencc1` أو `libopencc2`) كما في سكربت الإعداد.
+  - على Pi 5، تأكد من وصلة التوافق `/dev/spidev0.0` إذا كان الجهاز يعرِض `/dev/spidev10.0`.
+- مشاكل تثبيت OpenCC:
+  - استخدم الحزمة المتوافقة مع توزيعتك (`libopencc1` أو `libopencc2`) كما في سكربت الإعداد.
 - عدم تطابق مسارات API:
-  - استخدم `/get_current_word` للحمولة الحالية، وليس `/current_word`.
+  - استخدم `/get_current_word` للحمولة الحالية وليس `/current_word`.
 
-## ملاحظات حول استخدام OpenAI
-الوصول إلى OpenAI اختياري لكنه موصى به لتوليد كلمات جديدة وإثراء النطق. مساعد JSON المنظّم في `openai_request_json.py` يخزن النتائج تحت `cache/` لتقليل الاستدعاءات المتكررة.
+## Notes on OpenAI Usage
+الوصول إلى OpenAI اختياري لكنه مفيد لتوليد كلمات جديدة وإثراء النطق. المساعد المعتمد على JSON المنظَّم في `openai_request_json.py` يخزن النتائج مؤقتًا داخل `cache/` لتقليل الاستدعاءات المتكررة.
 
-## خارطة الطريق
-- إضافة ملف تبعيات رسمي (`requirements.txt` أو `pyproject.toml`) لتثبيت قابل لإعادة الإنتاج.
-- توسيع `i18n/` بنسخ README مترجمة تتم صيانتها.
+## Roadmap
+- إضافة ملف اعتماديات رسمي (`requirements.txt` أو `pyproject.toml`) لتثبيتات قابلة لإعادة الإنتاج.
+- توسيع `i18n/` بنسخ README مترجمة ومُحافَظ عليها.
 - توحيد نسخ السكربتات القديمة/الاحتياطية بعد تثبيت المسار القياسي.
-- توثيق تدفق PWA (`pwa/`) مع أمثلة نقاط نهاية ولقطات شاشة.
-- إضافة اختبارات آلية قابلة للتكرار لسلوك البيانات ومسارات API.
+- توثيق سير عمل PWA (`pwa/`) مع أمثلة نقاط النهاية ولقطات شاشة.
+- إضافة اختبارات آلية قابلة للتكرار لسلوك البيانات والمسارات.
 
-## الدعم
+## ❤️ Support
+
+إذا كان هذا المشروع مفيدًا لك، فهذه الروابط تدعم مباشرةً الصيانة المستمرة وتكرار تطوير العتاد.
+
+| Donate | PayPal | Stripe |
+|---|---|---|
+| [![Donate](https://img.shields.io/badge/Donate-LazyingArt-0EA5E9?style=for-the-badge&logo=ko-fi&logoColor=white)](https://chat.lazying.art/donate) | [![PayPal](https://img.shields.io/badge/PayPal-RongzhouChen-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/RongzhouChen) | [![Stripe](https://img.shields.io/badge/Stripe-Donate-635BFF?style=for-the-badge&logo=stripe&logoColor=white)](https://buy.stripe.com/aFadR8gIaflgfQV6T4fw400) |
 
 ### ما الذي يتيحه دعمك
-- <b>إبقاء الأدوات متاحة</b>: الاستضافة، والاستدلال، وتخزين البيانات، وعمليات المجتمع.  
-- <b>تسريع التطوير</b>: وقت مفتوح المصدر مركز على WordsCardEink وأدوات التعلم ذات الصلة.  
-- <b>نمذجة الأجهزة</b>: تكرارات عتاد e-ink وأبحاث تخطيطات العرض.  
-- <b>إتاحة أوسع للجميع</b>: نشرات مدعومة للطلاب والمبدعين ومجموعات المجتمع.
+- <b>إبقاء الأدوات مفتوحة</b>: الاستضافة، الاستدلال، تخزين البيانات، وعمليات المجتمع.
+- <b>تطوير أسرع</b>: وقت أكثر تركيزًا للمصدر المفتوح على WordsCardEink وأدوات تعلم مرتبطة.
+- <b>نمذجة الأجهزة</b>: تكرارات عتاد e-ink وأبحاث تنسيقات العرض.
+- <b>وصول للجميع</b>: نشرات مدعومة للطلاب والمبدعين ومجموعات المجتمع.
 
 ### التبرع
 
@@ -329,16 +367,16 @@ python epd_13in3k_test.py
 - 你的支持将用于研发与运维，帮助我持续公开分享更多项目与改进。  
 - Your support sustains my research, development, and ops so I can keep sharing more open projects and improvements.
 
-## المساهمة
-راجع `AGENTS.md` لإرشادات المساهمة ونمط البرمجة وتوقعات PR.
+## Contributing
+اطّلع على `AGENTS.md` لإرشادات المساهمة وأسلوب كتابة الكود وتوقعات طلبات السحب (PR).
 
 قائمة تحقق مقترحة للمساهمة:
-- أدرج نموذج الشاشة + ملاحظات العتاد عند تغييرات العرض.
-- اذكر الأوامر الدقيقة التي شُغّلت للتحقق.
-- أرفق لقطات شاشة/صور لتغييرات واجهة المستخدم أو مخرجات e-ink.
-- صف تعديلات مجموعات البيانات (الملف + تأثير الصف/العمود).
+- تضمين طراز الشاشة وملاحظات العتاد عند تغيير العرض.
+- إدراج الأوامر الدقيقة التي استُخدمت للتحقق.
+- إرفاق لقطات شاشة/صور لأي تغييرات على واجهة المستخدم أو مخرجات e-ink.
+- وصف تعديلات البيانات (الملف + تأثير الصف/العمود).
 
-## الترخيص
-لا يوجد ملف `LICENSE` حاليًا في جذر المستودع (كما لوحظ في مسودة التمرير هذه). حتى تتم إضافة ملف ترخيص، لا يتم منح حقوق إعادة الاستخدام بشكل صريح.
+## License
+لا يوجد ملف `LICENSE` حاليًا في جذر المستودع (وفق الملاحظة في هذه المسودة). إلى أن يُضاف ملف ترخيص، لا توجد صلاحيات إعادة استخدام مصرح بها بشكل صريح.
 
-افتراض: قد يضيف المشرفون ترخيصًا مفتوح المصدر صريحًا في تحديث لاحق.
+افتراض: قد يضيف المشرفون ترخيصًا مفتوح المصدر بشكل صريح في تحديث لاحق.

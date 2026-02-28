@@ -1,59 +1,90 @@
 [English](../README.md) · [العربية](README.ar.md) · [Español](README.es.md) · [Français](README.fr.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Tiếng Việt](README.vi.md) · [中文 (简体)](README.zh-Hans.md) · [中文（繁體）](README.zh-Hant.md) · [Deutsch](README.de.md) · [Русский](README.ru.md)
 
 
+[![LazyingArt banner](https://github.com/lachlanchen/lachlanchen/raw/main/figs/banner.png)](https://github.com/lachlanchen/lachlanchen/blob/main/figs/banner.png)
+
 # Eink Words GPT
 
-![Python](https://img.shields.io/badge/python-3.9%2B-blue)
-![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi-green)
-![Display](https://img.shields.io/badge/display-Waveshare%20e--Paper-black)
-![Status](https://img.shields.io/badge/status-active%20prototype-orange)
-![Server](https://img.shields.io/badge/http-Tornado-0A7EA4)
-![Storage](https://img.shields.io/badge/storage-SQLite-003B57)
-![AI](https://img.shields.io/badge/OpenAI-optional-412991)
 
-Raspberry Pi + Waveshare e-ink を使い、動的に選ばれた語彙を発音情報と多言語類義語付きで表示するプロジェクトです。ローカルデータセットまたは OpenAI から単語を取得し、レイアウトにレンダリングして対応 e-paper パネルへ出力できます。さらに、単語更新のトリガーとレンダリング画像取得のための小規模 HTTP サービスも提供します。
+![Python](https://img.shields.io/badge/Python-3.9%2B-3776AB?style=flat-square&logo=python&logoColor=white)
+![Platform](https://img.shields.io/badge/Platform-Raspberry%20Pi-C51A4A?style=flat-square&logo=raspberrypi&logoColor=white)
+![Display](https://img.shields.io/badge/Display-Waveshare%20e--Paper-111111?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Active%20Prototype-F59E0B?style=flat-square)
+![Server](https://img.shields.io/badge/HTTP-Tornado-0A7EA4?style=flat-square)
+![Storage](https://img.shields.io/badge/Storage-SQLite-003B57?style=flat-square&logo=sqlite&logoColor=white)
+![AI](https://img.shields.io/badge/OpenAI-Optional-412991?style=flat-square&logo=openai&logoColor=white)
 
-## 概要
-`words_gpt` は、e-ink デバイス向けの Python 製ボキャブラリーカード生成・表示システムです。
+Raspberry Pi + Waveshare e-ink を使って、動的に選ばれた語彙を発音情報と多言語の類義語付きで表示するプロジェクトです。ローカルデータセットまたは OpenAI から単語を取得し、レイアウトにレンダリングして対応する e-paper パネルへ出力できます。さらに、単語更新のトリガーやレンダリング画像取得のための小規模 HTTP サービスも提供します。
 
-以下を組み合わせています:
-- CSV/ローカルデータセットからの単語取得と、任意で OpenAI 生成。
+| 🔎 At a Glance | Details |
+|---|---|
+| Core runtime | `app.py` (HTTP service) + `words_gpt.py` (renderer loop) |
+| Data path | CSV datasets in `data/` + SQLite store `words_phonetics.db` |
+| Output targets | Waveshare e-paper panels and virtual image outputs |
+| AI dependency | Optional (`--enable_openai`) with cache in `cache/` |
+
+## 📚 Table of Contents
+- [Overview](#overview)
+- [Highlights](#highlights)
+- [Quick Start](#quick-start)
+- [Demos](#demos)
+- [Features](#features)
+- [Project Structure](#project-structure)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Usage](#usage)
+- [Examples](#examples)
+- [Data, Cache, and Logs](#data-cache-and-logs)
+- [Development Notes](#development-notes)
+- [Troubleshooting](#troubleshooting)
+- [Notes on OpenAI Usage](#notes-on-openai-usage)
+- [Roadmap](#roadmap)
+- [Support](#-support)
+- [Contributing](#contributing)
+- [License](#license)
+
+## Overview
+`words_gpt` は、e-ink デバイス向けの Python ベース語彙カード生成・表示システムです。
+
+以下を組み合わせています。
+- CSV / ローカルデータセットからの単語取得と、任意の OpenAI 生成。
 - 拡張処理（IPA 発音記号 + 多言語類義語フィールド）。
 - ハードウェア出力と仮想出力のレンダリングパイプライン。
 - リモートトリガーと画像取得のための Tornado HTTP サービス。
 
-現在のコードベースは `app.py`、`words_gpt.py`、`words_data.py`、`words_database.py`、`openai_request_json.py` を中心に構成されています。
+現在のコードベースは `app.py`、`words_gpt.py`、`words_data.py`、`words_database.py`、`openai_request_json.py` が中心です。
 
-## ハイライト
-- 🖼️ 複数コンテンツモード（漢字、日本語、アラビア語、中国語、絵文字）に対応した e-ink レンダリングパイプライン。
-- 🗃️ `data/` 内の CSV 単語リストと連携するローカル単語データベース（`words_phonetics.db`）。
+## Highlights
+- 🖼️ 複数コンテンツモード（漢字、日本語、アラビア語、中国語、絵文字）対応の e-ink レンダリングパイプライン。
+- 🗃️ ローカル単語データベース（`words_phonetics.db`）と `data/` 配下の CSV 単語リスト。
 - 🤖 構造化 JSON 出力による OpenAI ベースの単語選定と発音拡張。
 - 🌐 外部トリガーと画像取得のための HTTP サービス。
 - ⚡ OpenAI の重複呼び出しを減らすキャッシュ層（`cache/`）。
 
-## クイックスタート
-| 目的 | コマンド |
+## Quick Start
+| Goal | Command |
 |---|---|
-| HTTP サーバーを起動（ポート `8082`） | `python app.py` |
-| スタンドアロンレンダラーを実行（CSV） | `python words_gpt.py --use_csv` |
-| OpenAI + CSV で実行 | `python words_gpt.py --enable_openai --use_csv` |
-| 絵文字 + 簡体 CJK モード | `python words_gpt.py --make_emoji --simplify` |
-| Raspberry Pi 自動セットアップ | `bash scripts/setup_pi_wordscard.sh` |
+| Start HTTP server (port `8082`) | `python app.py` |
+| Run standalone renderer (CSV) | `python words_gpt.py --use_csv` |
+| Run with OpenAI + CSV | `python words_gpt.py --enable_openai --use_csv` |
+| Emoji + simplified CJK mode | `python words_gpt.py --make_emoji --simplify` |
+| Raspberry Pi auto setup | `bash scripts/setup_pi_wordscard.sh` |
 
-## デモ
+## Demos
 <p align="center">
   <img src="demos/demo.jpg" alt="Demo" width="48%" />
   <img src="demos/words_card_arabic.JPG" alt="Arabic word card" width="48%" />
 </p>
 
-## 機能
-- `words_gpt.py` の `EPaperHardware`、`EPaperDisplay` によるハードウェア + 仮想レンダリングフロー。
+## Features
+- `words_gpt.py` の `EPaperHardware` と `EPaperDisplay` によるハードウェア + 仮想レンダリングフロー。
 - `words_data.py` の多言語拡張パイプライン（IPA、日本語バリアント、アラビア語、フランス語、中国語フィールド）。
 - `words_database.py` の動的フィールド更新ヘルパーを備えた SQLite 永続化。
 - `openai_request_json.py` のファイルキャッシュ付き OpenAI 構造化 JSON リクエストヘルパー。
-- 軽量フロントエンド設定/プレビュー向けの任意 PWA アセット（`pwa/`）。
+- 軽量なフロントエンド設定/プレビュー向けの任意 PWA アセット（`pwa/`）。
 
-## プロジェクト構成
+## Project Structure
 ```text
 words_gpt/
 ├─ README.md
@@ -95,47 +126,47 @@ words_gpt/
 - `words_database.py`: SQLite ストアヘルパー。
 - `scripts/*.sh`: Raspberry Pi セットアップ、サービス導入、tmux ライフサイクルスクリプト。
 
-## 前提条件
+## Prerequisites
 - Python `3.9+`（推奨）。
-- Raspberry Pi ターゲット（ハードウェアモード時）。
-- 対応 Waveshare e-paper パネル。
-- Pi で SPI を有効化（`raspi-config`）、加えてパネル別の配線設定。
+- Raspberry Pi ターゲット（ハードウェアモード用）。
+- 対応する Waveshare e-paper パネル。
+- Pi で SPI を有効化（`raspi-config`）し、パネル別の配線を設定。
 
-このプロジェクトで使用される主な Python パッケージ:
+このプロジェクトで使用する Python パッケージには以下が含まれます。
 - `openai`, `tornado`, `Pillow`, `numpy`, `nltk`, `opencc`, `pykakasi`, `arabic_reshaper`, `python-bidi`, `pytz`。
-- セットアップスクリプトで追加導入: `json5`, `pandas`, `spidev`, `RPi.GPIO`, `gpiozero`, `lgpio`。
+- セットアップスクリプトで追加インストール: `json5`, `pandas`, `spidev`, `RPi.GPIO`, `gpiozero`, `lgpio`。
 
-## インストール
+## Installation
 
-### Option A: 最小/手動インストール
+### Option A: Minimal/manual install
 Waveshare ドライバーパッケージをインストール:
 ```bash
 python setup.py install
 ```
 
-NLTK の単語リストを使う場合は一度だけダウンロード:
+NLTK 単語リストを使う場合は一度だけダウンロード:
 ```bash
 python -m nltk.downloader words
 ```
 
-### Option B: Raspberry Pi 自動セットアップ（デバイス上で推奨）
-リポジトリルートで実行:
+### Option B: Raspberry Pi automated setup (recommended on device)
+リポジトリルートから実行:
 ```bash
 bash scripts/setup_pi_wordscard.sh
 ```
 
-このスクリプトは次を実行します:
+このスクリプトで実行される内容:
 - apt 依存関係をインストール。
-- SPI が有効か確認。
+- SPI が有効であることを確認。
 - `wordscard` 仮想環境を作成して有効化。
 - Python 実行時依存関係をインストール。
 - Waveshare パッケージをインストール。
-- tmux セッション内で `app.py` を起動。
+- `app.py` を tmux セッション内で起動。
 
-## 設定
+## Configuration
 
-### `.env` の挙動
-このリポジトリは import 時点で `.env` から環境変数を読み込み、既存のシェル値を**上書き**します。これにより、シェルプロファイルで値を export 済みでも、ローカル上書きが決定的になります。
+### `.env` behavior
+このリポジトリは import 時に `.env` から環境変数を読み込み、既存のシェル値を**上書き**します。シェルプロファイルですでに export されていても、ローカル上書きが常に同じ結果になる設計です。
 
 `.env` を作成または更新:
 ```env
@@ -144,13 +175,13 @@ OPENAI_ORG_ID=org-your-org-id
 OPENAI_MODEL=gpt-4o-mini
 ```
 
-### App 引数の受け渡し
-systemd/tmux スクリプトでは以下をサポート:
+### App argument passthrough
+systemd / tmux スクリプトでは以下をサポート:
 ```bash
 APP_ARGS="--enable_openai --use_csv" ./scripts/start_wordscard.sh
 ```
 
-### CLI フラグ（サーバーおよびレンダラー）
+### CLI flags (server and renderer)
 `app.py` と `words_gpt.py` の両方でサポート:
 - `--enable_openai`
 - `--make_emoji`
@@ -160,9 +191,9 @@ APP_ARGS="--enable_openai --use_csv" ./scripts/start_wordscard.sh
 - `--complete_csv`
 - `--filename <csv_file>`
 
-## 使い方
+## Usage
 
-### HTTP サーバーを実行
+### Running the HTTP server
 サービスを起動（デフォルトポート `8082`）:
 ```bash
 python app.py
@@ -178,8 +209,8 @@ python app.py
 
 互換性メモ: 以前のドキュメントでは `GET /current_word` と記載されていましたが、現在の `app.py` のルートは `GET /get_current_word` です。
 
-### スタンドアロンレンダラーを実行
-CSV ベースリスト:
+### Running standalone renderer
+CSV ベースのリスト:
 ```bash
 python words_gpt.py --use_csv
 ```
@@ -194,7 +225,7 @@ python words_gpt.py --enable_openai --use_csv
 python words_gpt.py --make_emoji --simplify
 ```
 
-### Raspberry Pi のサービスモード
+### Service mode on Raspberry Pi
 サービスユニットをインストール:
 ```bash
 bash scripts/install_wordscard_service.sh
@@ -207,27 +238,27 @@ sudo systemctl status wordscard -n 50
 journalctl -u wordscard -n 100 --no-pager
 ```
 
-## 例
+## Examples
 
-### 次のランダム単語をトリガー
+### Trigger next random word
 ```bash
 curl "http://127.0.0.1:8082/next_random_word"
 ```
 
-### 現在の単語ペイロードを取得
+### Read current word payload
 ```bash
 curl "http://127.0.0.1:8082/get_current_word"
 ```
 
-### 単語を明示指定して送信
+### Submit explicit word
 ```bash
 curl -X POST "http://127.0.0.1:8082/display_word" \
   -H "Content-Type: application/json" \
   -d '{"word":"serendipity"}'
 ```
 
-### ハードウェア スモークテスト
-ディスプレイに対応するスクリプトを使用:
+### Hardware smoke tests
+ディスプレイに対応したスクリプトを使用:
 ```bash
 python epd_7in3f_test.py
 ```
@@ -237,56 +268,62 @@ python epd_7in3f_test.py
 python epd_13in3k_test.py
 ```
 
-追加例は `waveshare/examples/` にあります。
+追加の例は `waveshare/examples/` にあります。
 
-## データ・キャッシュ・ログ
-| 領域 | パス | メモ |
+## Data, Cache, and Logs
+| Area | Path(s) | Notes |
 |---|---|---|
-| 単語リスト | `data/` | `data/words_list.csv` とテーマ別 CSV を含む |
-| 永続 DB | `words_phonetics.db` | ローカル発音/拡張ストア |
-| OpenAI/キャッシュ成果物 | `cache/` | 重複リクエストを削減 |
-| ログ | `logs/`, `logs-word-phonetics/` | 実行時ログと更新ログ |
-| 生成カード | `words_card_temp/` | 画像出力および静的配信元 |
+| Word lists | `data/` | `data/words_list.csv` とテーマ別 CSV ファイルを含む |
+| Persistent DB | `words_phonetics.db` | ローカル発音/拡張ストア |
+| OpenAI/cache artifacts | `cache/` | 重複リクエストを削減 |
+| Logs | `logs/`, `logs-word-phonetics/` | 実行時ログと更新ログ |
+| Generated cards | `words_card_temp/` | 画像出力と静的配信のソース |
 
-## 開発メモ
-- 依存関係管理はスクリプト中心（`scripts/setup_pi_wordscard.sh`）+ `setup.py`。`requirements.txt` と `pyproject.toml` はまだありません。
+## Development Notes
+- 依存関係管理はスクリプト優先（`scripts/setup_pi_wordscard.sh`）+ `setup.py`。現時点では `requirements.txt` / `pyproject.toml` は未整備です。
 - 複数のバックアップ/レガシーファイル（`words_data_*`、`words_gpt_old.py`）が存在し、主要な実行経路は `app.py` + `words_gpt.py` + `words_data.py` + `words_database.py` です。
-- `env_loader.py` はキーが存在する場合、`.env` から環境変数を常に上書きします。
-- サーバーモードでは定期更新フロー（約 5 分ごと）が動作し、内部的に更新エンドポイントを呼び出す場合があります。
+- `env_loader.py` はキーが存在する場合、`.env` の環境変数で常に上書きします。
+- サーバーモードでは定期更新フロー（約 5 分ごと）が動作し、内部的に更新エンドポイントを呼ぶことがあります。
 
-## トラブルシューティング
+## Troubleshooting
 - `ModuleNotFoundError` や import 問題:
-  - 仮想環境が有効で、依存関係がインストール済みであることを確認してください。
+  - 仮想環境が有効で、依存関係がインストール済みか確認してください。
   - Pi 上で `bash scripts/setup_pi_wordscard.sh` を再実行してください。
 - OpenAI エラー（`401`、モデル/キー未設定）:
   - `.env` の `OPENAI_API_KEY` と任意の `OPENAI_MODEL` を確認してください。
   - デバイスのネットワーク接続を確認してください。
 - ディスプレイが更新されない:
   - パネル型番/配線を確認し、対応テストスクリプト（`epd_7in3f_test.py` または `epd_13in3k_test.py`）を実行してください。
-  - SPI が有効化されていることを確認してください（`sudo raspi-config nonint do_spi 0`）。
-  - Pi 5 では、デバイスが `/dev/spidev10.0` を公開している場合に `/dev/spidev0.0` 互換シンボリックリンクが必要です。
+  - SPI が有効化されているか確認してください（`sudo raspi-config nonint do_spi 0`）。
+  - Pi 5 では、デバイスが `/dev/spidev10.0` を公開する場合に `/dev/spidev0.0` 互換シンボリックリンクが必要です。
 - OpenCC インストール問題:
   - セットアップスクリプトと同様に、ディストリ互換パッケージ（`libopencc1` または `libopencc2`）を使用してください。
 - API ルート不一致:
-  - 現在のペイロード取得は `/current_word` ではなく `/get_current_word` を使用してください。
+  - 現在のペイロード取得は `/current_word` ではなく `/get_current_word` を使ってください。
 
-## OpenAI 利用に関するメモ
-OpenAI アクセスは任意ですが、新しい単語生成と発音拡張には推奨されます。`openai_request_json.py` の構造化 JSON ヘルパーは、重複呼び出しを減らすため `cache/` 配下に結果をキャッシュします。
+## Notes on OpenAI Usage
+OpenAI アクセスは任意ですが、新しい単語生成と発音拡張には推奨です。`openai_request_json.py` の構造化 JSON ヘルパーは、重複呼び出しを減らすため `cache/` 配下に結果をキャッシュします。
 
-## ロードマップ
-- 再現可能なインストールのため、正式な依存関係マニフェスト（`requirements.txt` または `pyproject.toml`）を追加。
+## Roadmap
+- 再現可能なインストールのための正式な依存関係マニフェスト（`requirements.txt` または `pyproject.toml`）を追加。
 - `i18n/` の翻訳 README バリアントを拡充し、継続保守。
-- 正式フロー確定後、レガシー/バックアップスクリプトのバリアントを統合。
+- 正式フロー確定後、レガシー/バックアップ系スクリプトを統合。
 - エンドポイント例とスクリーンショット付きで PWA ワークフロー（`pwa/`）を文書化。
-- データ処理とルート挙動向けに再現可能な自動テストを追加。
+- データ処理とルート挙動の再現可能な自動テストを追加。
 
-## サポート
+## ❤️ Support
 
-### ご支援で実現できること
-- <b>ツールをオープンに維持</b>: ホスティング、推論、データ保管、コミュニティ運営。  
-- <b>開発を加速</b>: WordsCardEink と関連学習ツールへの集中した OSS 開発時間。  
-- <b>デバイス試作</b>: e-ink ハードウェアの反復開発と表示レイアウト研究。  
-- <b>誰でもアクセス可能に</b>: 学生、クリエイター、コミュニティ向けの導入支援。
+| Donate | PayPal | Stripe |
+|---|---|---|
+| [![Donate](https://img.shields.io/badge/Donate-LazyingArt-0EA5E9?style=for-the-badge&logo=ko-fi&logoColor=white)](https://chat.lazying.art/donate) | [![PayPal](https://img.shields.io/badge/PayPal-RongzhouChen-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/RongzhouChen) | [![Stripe](https://img.shields.io/badge/Stripe-Donate-635BFF?style=for-the-badge&logo=stripe&logoColor=white)](https://buy.stripe.com/aFadR8gIaflgfQV6T4fw400) |
+
+このプロジェクトが役に立った場合、以下の支援リンクは継続的な保守とハードウェア改善に直接つながります。
+
+### What your support makes possible
+- <b>Keep tools open</b>: ホスティング、推論、データ保管、コミュニティ運営。  
+- <b>Ship faster</b>: WordsCardEink と関連学習ツールへ集中して OSS 開発。  
+- <b>Prototype devices</b>: e-ink ハードウェアの反復開発と表示レイアウト研究。  
+- <b>Access for all</b>: 学生、クリエイター、コミュニティ向け導入支援。  
 
 ### Donate
 
@@ -325,20 +362,20 @@ OpenAI アクセスは任意ですが、新しい単語生成と発音拡張に�
 
 **支援 / Donate**
 
-- ご支援は研究・開発と運用の継続に役立ち、より多くのオープンなプロジェクトを皆さんに届ける力になります。  
+- ご支援は研究・開発・運用の継続を支え、より多くのオープンプロジェクト公開につながります。  
 - 你的支持将用于研发与运维，帮助我持续公开分享更多项目与改进。  
 - Your support sustains my research, development, and ops so I can keep sharing more open projects and improvements.
 
-## コントリビュート
-コントリビューションガイド、コーディングスタイル、PR 要件は `AGENTS.md` を参照してください。
+## Contributing
+コントリビューションガイド、コーディングスタイル、PR の期待事項は `AGENTS.md` を参照してください。
 
-推奨コントリビュートチェックリスト:
-- ディスプレイ変更時はパネル型番 + ハードウェアメモを含める。
-- 検証で実行した正確なコマンドを列挙する。
+推奨コントリビューションチェックリスト:
+- ディスプレイ変更時はパネル型番とハードウェアメモを含める。
+- 検証時に実行したコマンドを正確に記載する。
 - UI または e-ink 出力変更にはスクリーンショット/写真を添付する。
-- データセット編集は内容（ファイル + 行/列への影響）を記述する。
+- データセット編集内容（ファイル + 行/列への影響）を説明する。
 
-## ライセンス
-このドラフト時点では、リポジトリルートに `LICENSE` ファイルが存在しません。ライセンスファイルが追加されるまでは、再利用権は明示的に許諾されていません。
+## License
+リポジトリルートには現在 `LICENSE` ファイルがありません（このドラフト時点の観測）。ライセンスファイルが追加されるまでは、再利用権は明示的に付与されていません。
 
-前提: メンテナーが後続アップデートで明示的なオープンソースライセンスを追加する可能性があります。
+前提: メンテナーは後続アップデートで明示的なオープンソースライセンスを追加する可能性があります。
