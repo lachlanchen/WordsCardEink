@@ -3,88 +3,83 @@
 
 [![LazyingArt banner](https://github.com/lachlanchen/lachlanchen/raw/main/figs/banner.png)](https://github.com/lachlanchen/lachlanchen/blob/main/figs/banner.png)
 
-# Eink Words GPT
+# 🖨️ Eink Words GPT
 
+**Language of this draft:** Русский
 
-![Python](https://img.shields.io/badge/Python-3.9%2B-3776AB?style=flat-square&logo=python&logoColor=white)
-![Platform](https://img.shields.io/badge/Platform-Raspberry%20Pi-C51A4A?style=flat-square&logo=raspberrypi&logoColor=white)
-![Display](https://img.shields.io/badge/Display-Waveshare%20e--Paper-111111?style=flat-square)
-![Status](https://img.shields.io/badge/Status-Active%20Prototype-F59E0B?style=flat-square)
-![Server](https://img.shields.io/badge/HTTP-Tornado-0A7EA4?style=flat-square)
-![Storage](https://img.shields.io/badge/Storage-SQLite-003B57?style=flat-square&logo=sqlite&logoColor=white)
-![AI](https://img.shields.io/badge/OpenAI-Optional-412991?style=flat-square&logo=openai&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.9%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Platform](https://img.shields.io/badge/Platform-Raspberry%20Pi-C51A4A?style=for-the-badge&logo=raspberrypi&logoColor=white)
+![Display](https://img.shields.io/badge/Display-Waveshare%20e--Paper-111111?style=for-the-badge&logo=raspberrypi&logoColor=white)
+![Status](https://img.shields.io/badge/Status-Active%20Prototype-F59E0B?style=for-the-badge&logo=githubactions&logoColor=white)
+![Server](https://img.shields.io/badge/HTTP-Tornado-0A7EA4?style=for-the-badge&logo=python&logoColor=white)
+![Storage](https://img.shields.io/badge/Storage-SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)
+![AI](https://img.shields.io/badge/OpenAI-Optional-412991?style=for-the-badge&logo=openai&logoColor=white)
 
-Проект для Raspberry Pi + Waveshare e-ink, который показывает динамически выбранную лексику с фонетикой и многоязычными синонимами. Система может получать слова из локальных датасетов или OpenAI, рендерить их в макет карточки и выводить результат на поддерживаемые e-paper панели. Также она предоставляет небольшой HTTP-сервис для запуска обновления слов и получения сгенерированных изображений.
+Проект для Raspberry Pi + e-ink Waveshare, который рендерит автоматически выбранные карточки слов с транскрипцией IPA и многоязычными подсказками. Поддерживаются локальные CSV-пайплайны, опциональное обогащение ИИ, вывод на e-paper и удалённое управление через HTTP.
 
-| 🔎 Кратко | Детали |
+| 🔎 На первый взгляд | Детали |
 |---|---|
-| Основной runtime | `app.py` (HTTP-сервис) + `words_gpt.py` (цикл рендеринга) |
-| Путь данных | CSV-датасеты в `data/` + SQLite-хранилище `words_phonetics.db` |
-| Целевые выходы | Waveshare e-paper панели и виртуционные изображения |
-| Зависимость от AI | Опционально (`--enable_openai`) с кэшем в `cache/` |
+| Основной runtime | `app.py` (HTTP-сервис) + `words_gpt.py` (цикл рендера) |
+| Путь данных | CSV-наборы в `data/` + SQLite-хранилище `words_phonetics.db` |
+| Форматы вывода | Панели Waveshare e-paper и виртуальный рендер в изображения |
+| Зависимость от ИИ | Необязательно (`--enable_openai`) с кешированием в `cache/` |
+| Значения цикла по умолчанию | Сервер на `8082`, периодическое обновление примерно раз в 5 минут |
 
-## 📚 Содержание
+## 📚 Table of Contents
 - [Обзор](#обзор)
 - [Ключевые возможности](#ключевые-возможности)
-- [Быстрый старт](#быстрый-старт)
 - [Демо](#демо)
-- [Функции](#функции)
 - [Структура проекта](#структура-проекта)
-- [Предварительные требования](#предварительные-требования)
+- [Требования](#требования)
 - [Установка](#установка)
-- [Конфигурация](#конфигурация)
+- [Настройка](#настройка)
 - [Использование](#использование)
 - [Примеры](#примеры)
-- [Данные, кэш и логи](#данные-кэш-и-логи)
-- [Заметки по разработке](#заметки-по-разработке)
+- [Данные, кеш и логи](#данные-кеш-и-логи)
+- [Замечания по разработке](#замечания-по-разработке)
 - [Устранение неполадок](#устранение-неполадок)
-- [Примечания по использованию OpenAI](#примечания-по-использованию-openai)
 - [Дорожная карта](#дорожная-карта)
-- [Support](#-support)
-- [Участие в разработке](#участие-в-разработке)
+- [Поддержка](#поддержка)
+- [Участие](#участие)
 - [Лицензия](#лицензия)
 
+---
+
 ## Обзор
-`words_gpt` — Python-система генерации и отображения словарных карточек для e-ink устройств.
 
-Она объединяет:
-- Получение слов из CSV/локальных датасетов и опциональную генерацию через OpenAI.
-- Обогащение данных (IPA-фонетика + многоязычные поля синонимов).
-- Конвейеры рендеринга для аппаратного и виртуального вывода.
-- HTTP-сервис Tornado для удаленного запуска и получения изображений.
+`words_gpt` — это стек генерации карточек слов для e-ink-дисплеев на Python. Он объединяет оркестрацию данных, фонетическое обогащение и рендер-процесс, предоставляя два режима выполнения:
 
-Текущая кодовая база сосредоточена вокруг `app.py`, `words_gpt.py`, `words_data.py`, `words_database.py` и `openai_request_json.py`.
+- Долгоживущая служба Tornado (`app.py`) для удалённого управления и выдачи изображений
+- Отдельный рендерер (`words_gpt.py`), работающий в режимах опроса, цикла или прямого рендера
+
+Ключевые модули:
+
+- `words_data.py` / `words_data_utils.py` для работы со словами и пайплайнами обогащения
+- `words_database.py` для работы с SQLite
+- `openai_request_json.py` для структурированных запросов к OpenAI с кешированием на диске
+- `env_loader.py` для детерминированной загрузки окружения
+- `words_update.py` для обслуживания БД и процедур перепроверки
+- `app.py` и `words_gpt.py` для жизненного цикла сервиса/рендера
 
 ## Ключевые возможности
-- 🖼️ Конвейер e-ink рендеринга с несколькими режимами контента (канзи, японский, арабский, китайский, emoji).
-- 🗃️ Локальная база слов (`words_phonetics.db`) со списками слов на базе CSV в `data/`.
-- 🤖 Выбор слов и фонетическое обогащение через OpenAI со структурированными JSON-ответами.
-- 🌐 HTTP-сервис для внешних триггеров и получения изображений.
-- ⚡ Слой кэширования (`cache/`) для уменьшения повторных обращений к OpenAI.
 
-## Быстрый старт
-| Цель | Команда |
-|---|---|
-| Запустить HTTP-сервер (порт `8082`) | `python app.py` |
-| Запустить автономный рендерер (CSV) | `python words_gpt.py --use_csv` |
-| Запуск с OpenAI + CSV | `python words_gpt.py --enable_openai --use_csv` |
-| Режим emoji + упрощенный CJK | `python words_gpt.py --make_emoji --simplify` |
-| Автонастройка Raspberry Pi | `bash scripts/setup_pi_wordscard.sh` |
+- Конвейер рендера для e-ink с несколькими языковыми/контентными режимами:
+  - Японские варианты, режим канжи, арабский, китайский, emoji-режим
+- Локальный и OpenAI-подход к поиску слов в одном workflow
+- Опциональный вывод упрощённого китайского в пути рендера
+- HTTP-роуты для прямого взаимодействия (`/next_random_word`, `/display_word` и др.)
+- Кеширование и персистентность, уменьшающие повторные сетевые запросы
+- Опциональные PWA-ресурсы в `pwa/` для лёгкого предпросмотра и конфигурации
 
 ## Демо
+
 <p align="center">
   <img src="demos/demo.jpg" alt="Demo" width="48%" />
   <img src="demos/words_card_arabic.JPG" alt="Arabic word card" width="48%" />
 </p>
 
-## Функции
-- Поток аппаратного и виртуального рендеринга (`EPaperHardware`, `EPaperDisplay`) из `words_gpt.py`.
-- Конвейер многоязычного обогащения в `words_data.py` (IPA, японские варианты, арабский, французский, китайские поля).
-- Хранилище на SQLite с помощниками динамического обновления полей в `words_database.py`.
-- Помощник структурированных JSON-запросов OpenAI с файловым кэшем в `openai_request_json.py`.
-- Опциональные PWA-ресурсы в `pwa/` для легкой настройки/предпросмотра frontend-потока.
-
 ## Структура проекта
+
 ```text
 words_gpt/
 ├─ README.md
@@ -98,10 +93,14 @@ words_gpt/
 ├─ env_loader.py
 ├─ words_update.py
 ├─ setup.py
+├─ scripts/
+│  ├─ setup_pi_wordscard.sh
+│  ├─ start_wordscard.sh
+│  ├─ stop_wordscard.sh
+│  └─ install_wordscard_service.sh
 ├─ epd_7in3f_test.py
 ├─ epd_13in3k_test.py
 ├─ words_phonetics.db
-├─ word_phonetics_processed.csv
 ├─ data/
 ├─ font/
 ├─ pic/
@@ -112,77 +111,99 @@ words_gpt/
 ├─ logs-word-phonetics/
 ├─ words_card_temp/
 ├─ pwa/
-├─ scripts/
+├─ i18n/
 ├─ utilities/
 ├─ references/
-├─ i18n/
 └─ waveshare/
+    ├─ setup.py
+    ├─ lib/
+    ├─ lib.old/
+    ├─ examples/
+    └─ pic/
 ```
 
 Важные runtime-файлы:
-- `app.py`: веб-сервер Tornado (порт по умолчанию `8082`) и цикл периодических обновлений.
-- `words_gpt.py`: автономный цикл рендеринга и классы отображения.
-- `words_data.py`: основная оркестрация получения/обогащения слов.
-- `words_database.py`: помощники SQLite-хранилища.
-- `scripts/*.sh`: настройка Raspberry Pi, установка сервиса и скрипты жизненного цикла tmux.
 
-## Предварительные требования
-- Python `3.9+` (рекомендуется).
-- Raspberry Pi как целевое устройство (для аппаратного режима).
-- Поддерживаемая панель Waveshare e-paper.
-- Включенный SPI на Pi (`raspi-config`) и корректное подключение под конкретную панель.
+- `app.py`: Tornado-приложение на порту `8082` и периодический триггер `next_random_word`.
+- `words_gpt.py`: самостоятельный рендерер и абстракции вывода (`EPaperHardware`, `EPaperDisplay`).
+- `words_data.py`: продвинутый fetch/enrichment workflow и вспомогательные утилиты.
+- `words_database.py`: SQLite-утилиты для метаданных и операций с кешем слов.
+- `scripts/*.sh`: установка/сервисный lifecycle и helper-скрипты для bootstrap на Raspberry Pi.
 
-Python-пакеты, используемые в проекте:
-- `openai`, `tornado`, `Pillow`, `numpy`, `nltk`, `opencc`, `pykakasi`, `arabic_reshaper`, `python-bidi`, `pytz`.
-- Setup-скрипт дополнительно устанавливает: `json5`, `pandas`, `spidev`, `RPi.GPIO`, `gpiozero`, `lgpio`.
+## Требования
+
+- Python `3.9+` (рекомендуется)
+- Raspberry Pi (обязательно для аппаратного режима)
+- Поддерживаемая e-paper панель Waveshare (например, семейства 7.3F / 13K)
+- Включён SPI (`raspi-config`), корректная распайка и стабильное питание
+- Корпус NLTK (`nltk`) должен быть доступен при использовании источников слов `nltk`
+
+Распространённые зависимости, встречающиеся в кодовой базе:
+`openai`, `tornado`, `Pillow`, `numpy`, `nltk`, `opencc`, `pykakasi`, `arabic_reshaper`, `python-bidi`, `pytz`.
 
 ## Установка
 
-### Вариант A: минимальная/ручная установка
-Установите пакет драйверов Waveshare:
+### Вариант 1 — Минимальная/ручная установка (desktop или Pi)
+
+Из корня репозитория:
+
 ```bash
 python setup.py install
 ```
 
-Если используете список слов NLTK, скачайте его один раз:
+При необходимости:
+
 ```bash
 python -m nltk.downloader words
 ```
 
-### Вариант B: автоматическая настройка Raspberry Pi (рекомендуется на устройстве)
+### Вариант 2 — Автоматическая установка на Raspberry Pi (рекомендуется на устройстве)
+
 Из корня репозитория:
+
 ```bash
 bash scripts/setup_pi_wordscard.sh
 ```
 
-Этот скрипт:
-- Устанавливает apt-зависимости.
-- Проверяет, что SPI включен.
-- Создает и активирует виртуальное окружение `wordscard`.
-- Устанавливает Python runtime-зависимости.
-- Устанавливает пакет Waveshare.
-- Запускает `app.py` внутри tmux-сессии.
+Скрипт выполняет:
 
-## Конфигурация
+- Зависимости под Pi
+- Включение SPI
+- Настройку виртуального окружения `wordscard`
+- Установку пакетов Python/runtime
+- Установку пакета Waveshare
+- Запуск процесса app через `tmux`
 
-### Поведение `.env`
-Этот репозиторий загружает переменные окружения из `.env` во время импорта и **переопределяет** любые уже существующие значения shell. Это делает локальные переопределения детерминированными, даже если значения уже экспортированы в профилях shell.
+### Вариант 3 — Установка как служба
 
-Создайте или обновите `.env`:
+Для регистрации жизненного цикла приложения через `systemd`:
+
+```bash
+bash scripts/install_wordscard_service.sh
+```
+
+Далее:
+
+```bash
+sudo systemctl start wordscard
+sudo systemctl status wordscard -n 50
+journalctl -u wordscard -n 100 --no-pager
+```
+
+## Настройка
+
+### Переменные окружения (`.env`)
+
+В репозитории используется загрузка `.env`, которая в текущей реализации перезаписывает ранее установленные переменные shell. Используйте это осознанно:
+
 ```env
 OPENAI_API_KEY=sk-your-key-here
 OPENAI_ORG_ID=org-your-org-id
 OPENAI_MODEL=gpt-4o-mini
 ```
 
-### Проброс аргументов приложения
-Скрипты systemd/tmux поддерживают:
-```bash
-APP_ARGS="--enable_openai --use_csv" ./scripts/start_wordscard.sh
-```
+### Флаги runtime (используются `app.py` и `words_gpt.py`)
 
-### CLI-флаги (сервер и рендерер)
-И `app.py`, и `words_gpt.py` поддерживают:
 - `--enable_openai`
 - `--make_emoji`
 - `--ignore_list`
@@ -191,191 +212,171 @@ APP_ARGS="--enable_openai --use_csv" ./scripts/start_wordscard.sh
 - `--complete_csv`
 - `--filename <csv_file>`
 
-## Использование
+Скрипты запуска Pi поддерживают проброс аргументов через `APP_ARGS` (пример):
 
-### Запуск HTTP-сервера
-Запустите сервис (порт по умолчанию `8082`):
 ```bash
-python app.py
+APP_ARGS="--enable_openai --use_csv" ./scripts/start_wordscard.sh
 ```
 
-Маршруты, обнаруженные в коде:
+### Поведение роутинга в режиме app
+
+Наблюдаемые роуты в текущем коде:
+
 - `POST /display_word`
 - `GET /get_current_word`
 - `GET /get_current_word_page`
 - `GET /next_random_word`
 - `POST /get_words_card`
-- `GET /static/(.*)` (из `words_card_temp/`)
+- `GET /static/(.*)` (доступен из `words_card_temp/`)
 
-Примечание по совместимости: в ранней документации упоминался `GET /current_word`; в текущем `app.py` маршрут — `GET /get_current_word`.
+Важно: в более ранних документах встречался `GET /current_word`; текущий роут — `GET /get_current_word`.
 
-### Запуск автономного рендерера
-Список на базе CSV:
+### Примечания по использованию OpenAI
+
+Функции OpenAI опциональны и управляются CLI/env-флагами. Кешированные ответы API полезны для воспроизводимости и контроля лимитов запросов. В ограниченных средах запускайте сначала CSV-режим (`--use_csv`), а OpenAI включайте выборочно (`--enable_openai`) только при необходимости обогащения.
+
+## Использование
+
+### Запуск HTTP-сервера
+
+```bash
+python app.py
+```
+
+Процесс хранит изображение в `words_card_temp/` и открывает HTTP-роуты для фронтендов или простых скриптов.
+
+### Запуск рендера напрямую
+
+CSV-режим:
+
 ```bash
 python words_gpt.py --use_csv
 ```
 
-Включить OpenAI:
+OpenAI-режим:
+
 ```bash
 python words_gpt.py --enable_openai --use_csv
 ```
 
-Рендеринг emoji + упрощенный CJK:
+Эмодзи + упрощённый китайский:
+
 ```bash
 python words_gpt.py --make_emoji --simplify
 ```
 
-### Режим сервиса на Raspberry Pi
-Установить unit сервиса:
+### Запуск на оборудовании Pi
+
+- Запуск через `tmux`-скрипт:
+
 ```bash
-bash scripts/install_wordscard_service.sh
+bash scripts/start_wordscard.sh
 ```
 
-Затем:
+- Остановка через `tmux`-скрипт:
+
 ```bash
-sudo systemctl start wordscard
-sudo systemctl status wordscard -n 50
-journalctl -u wordscard -n 100 --no-pager
+bash scripts/stop_wordscard.sh
 ```
 
 ## Примеры
 
-### Запустить следующее случайное слово
+Запрос следующей случайной карточки:
+
 ```bash
 curl "http://127.0.0.1:8082/next_random_word"
 ```
 
-### Прочитать текущий payload слова
+Получить текущую сохранённую карточку:
+
 ```bash
 curl "http://127.0.0.1:8082/get_current_word"
 ```
 
-### Отправить конкретное слово
+Запросать payload отрисованной страницы:
+
+```bash
+curl "http://127.0.0.1:8082/get_current_word_page"
+```
+
+Отправить конкретное слово:
+
 ```bash
 curl -X POST "http://127.0.0.1:8082/display_word" \
   -H "Content-Type: application/json" \
   -d '{"word":"serendipity"}'
 ```
 
-### Быстрые аппаратные тесты
-Используйте скрипт для конкретного дисплея:
+Запустить отрисовку карточки через endpoint в стиле form:
+
 ```bash
-python epd_7in3f_test.py
+curl -X POST "http://127.0.0.1:8082/get_words_card" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "word=bonjour&phonetic=%CB%88b%C9%94n%C9%93r%E2%80%AD"
 ```
 
-Или:
-```bash
-python epd_13in3k_test.py
-```
+## Данные, кеш и логи
 
-Больше примеров есть в `waveshare/examples/`.
+Типичные артефакты, используемые приложением:
 
-## Данные, кэш и логи
-| Область | Путь(и) | Примечания |
-|---|---|---|
-| Списки слов | `data/` | Включает `data/words_list.csv` и тематические CSV-файлы |
-| Постоянная БД | `words_phonetics.db` | Локальное хранилище фонетики/обогащения |
-| Артефакты OpenAI/кэша | `cache/` | Уменьшает количество повторных запросов |
-| Логи | `logs/`, `logs-word-phonetics/` | Runtime- и update-логи |
-| Сгенерированные карточки | `words_card_temp/` | Выходные изображения и источник для статической раздачи |
+- `data/`: подготовленные CSV-наборы
+- `words_phonetics.db`: SQLite-кеш/источник базы данных
+- `cache/`: кеш запросов и результатов OpenAI
+- `word_phonetics_processed.csv`: обработанный/производный датасет
+- `logs/`, `logs-word-phonetics/`: логи выполнения
+- `words_card_temp/`: сгенерированные карточки и временные файлы
 
-## Заметки по разработке
-- Управление зависимостями сейчас script-first (`scripts/setup_pi_wordscard.sh`) + `setup.py`; `requirements.txt` или `pyproject.toml` пока нет.
-- В репозитории есть несколько резервных/legacy-файлов (`words_data_*`, `words_gpt_old.py`); активный runtime-путь в основном `app.py` + `words_gpt.py` + `words_data.py` + `words_database.py`.
-- `env_loader.py` всегда перезаписывает переменные окружения из `.env`, когда ключи присутствуют.
-- В серверном режиме работает периодический refresh-процесс (каждые ~5 минут), который может внутренне вызывать endpoint обновления.
+## Замечания по разработке
+
+- В репозитории есть устаревшие/резервные файлы (например, `words_gpt_old.py`, `lib.old`), поэтому относитесь к ним как к справочнику, если вы не мигрируете и не поддерживаете обратную совместимость.
+- `words_update.py` содержит batch-утилиты обновления/перепроверки, полезные для проходов очистки качества данных.
+- Проверка аппаратной части выполняется через `epd_*_test.py` и демонстрации `waveshare/examples/*`.
+- В корне репозитория нет `requirements.txt` или lockfile; зависимости устанавливаются через setup-скрипт или непосредственную установку.
+- Автоматизированный test-suite в репозитории не настроен.
 
 ## Устранение неполадок
-- `ModuleNotFoundError` или проблемы импорта:
-  - Убедитесь, что виртуальное окружение активно и зависимости установлены.
-  - На Pi повторно запустите `bash scripts/setup_pi_wordscard.sh`.
-- Ошибки OpenAI (`401`, отсутствующая модель/ключ):
-  - Проверьте `OPENAI_API_KEY` и опционально `OPENAI_MODEL` в `.env`.
-  - Подтвердите сетевую доступность с устройства.
-- Дисплей не обновляется:
-  - Проверьте модель панели/подключение и запустите соответствующий тестовый скрипт (`epd_7in3f_test.py` или `epd_13in3k_test.py`).
-  - Проверьте, что SPI включен (`sudo raspi-config nonint do_spi 0`).
-  - На Pi 5 убедитесь в наличии compatibility symlink для `/dev/spidev0.0`, если устройство предоставляет `/dev/spidev10.0`.
-- Проблемы установки OpenCC:
-  - Используйте совместимый с дистрибутивом пакет (`libopencc1` или `libopencc2`), как в setup-скрипте.
-- Несовпадение API-маршрутов:
-  - Используйте `/get_current_word` для текущего payload, а не `/current_word`.
 
-## Примечания по использованию OpenAI
-Доступ к OpenAI опционален, но рекомендуется для генерации новых слов и фонетического обогащения. Помощник структурированного JSON в `openai_request_json.py` кэширует результаты в `cache/`, уменьшая количество повторных вызовов.
+- `ImportError` от модулей Raspberry Pi GPIO/SPI:
+  - Установить через путь Pi (`setup_pi_wordscard.sh`) или проверить `python setup.py install` на совместимом таргете.
+- `403/404` с image/static endpoint-ов:
+  - Проверьте использование `/get_current_word*` и права на запись `words_card_temp/`.
+- Пустой/невалидный payload слова из OpenAI-режима:
+  - Убедитесь, что загружены `OPENAI_API_KEY` и при необходимости org/model; проверьте `cache/` и логи.
+- Плохой рендер/обрезка текста:
+  - Проверьте путь к шрифтам и настройки разрешения панели внутри рендерного пути `words_gpt.py`.
+- API отдает устаревшие данные:
+  - Вручную вызовите `POST /next_random_word` и проверьте интервал периодического callback в `app.py`.
+- Аппаратное обновление выглядит «зависшим»:
+  - Проверьте tmux-сессию и логи systemd (`journalctl -u wordscard`).
+- Отсутствует датасет или записи в словаре:
+  - Проверьте CSV-файлы в `data/` и запустите workflow из `words_update.py` для обновления/очистки.
 
 ## Дорожная карта
-- Добавить формальный манифест зависимостей (`requirements.txt` или `pyproject.toml`) для воспроизводимой установки.
-- Расширить `i18n/` поддерживаемыми переводами README.
-- Консолидировать legacy/резервные варианты скриптов после финализации канонического потока.
-- Документировать PWA-процесс (`pwa/`) с примерами endpoint'ов и скриншотами.
-- Добавить повторяемые автоматизированные тесты для данных и поведения маршрутов.
 
-## ❤️ Support
+- Добавить минимальный `requirements.txt` / воспроизводимый манифест зависимостей.
+- Добавить более ясные runtime-режимы и явные CLI-документы `--help`.
+- Расширить схему документации рендера для каждого content-режима (`japanese_synonym`, `arabic_synonym`, `film`, и т.д.).
+- Стандартизировать обработку ошибок и схемы API-ответов для пользователя.
+- Добавить небольшие шаблоны smoke-test для валидации без оборудования в CI.
 
-Если этот проект полезен вам, эти ссылки напрямую поддерживают дальнейшую разработку и итерации по железу.
+## Поддержка
 
-| Donate | PayPal | Stripe |
+| Поддержка | Ссылка | Назначение |
 |---|---|---|
-| [![Donate](https://img.shields.io/badge/Donate-LazyingArt-0EA5E9?style=for-the-badge&logo=ko-fi&logoColor=white)](https://chat.lazying.art/donate) | [![PayPal](https://img.shields.io/badge/PayPal-RongzhouChen-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/RongzhouChen) | [![Stripe](https://img.shields.io/badge/Stripe-Donate-635BFF?style=for-the-badge&logo=stripe&logoColor=white)](https://buy.stripe.com/aFadR8gIaflgfQV6T4fw400) |
+| GitHub Sponsors | https://github.com/sponsors/lachlanchen | Постоянная или разовая поддержка проекта |
+| Lazying Art | https://lazying.art | Бренд и связанные ресурсы |
+| Chat | https://chat.lazying.art | Обсуждение и поддержка |
+| Only Ideas | https://onlyideas.art | Креативные исследования и побочные проекты |
 
-### Что делает возможной ваша поддержка
-- <b>Сохраняет инструменты открытыми</b>: хостинг, инференс, хранение данных и работа сообщества.  
-- <b>Ускоряет разработку</b>: сфокусированное open-source время на WordsCardEink и связанных образовательных инструментах.  
-- <b>Помогает прототипировать устройства</b>: итерации e-ink-аппаратуры и исследования макетов дисплея.  
-- <b>Расширяет доступ</b>: субсидируемые внедрения для студентов, авторов и локальных сообществ.
+## Участие
 
-### Donate
+Приветствуется вклад в проект. Рекомендуемый процесс:
 
-<div align="center">
-<table style="margin:0 auto; text-align:center; border-collapse:collapse;">
-  <tr>
-    <td style="text-align:center; vertical-align:middle; padding:6px 12px;">
-      <a href="https://chat.lazying.art/donate">https://chat.lazying.art/donate</a>
-    </td>
-    <td style="text-align:center; vertical-align:middle; padding:6px 12px;">
-      <a href="https://chat.lazying.art/donate"><img src="figs/donate_button.svg" alt="Donate" height="44"></a>
-    </td>
-  </tr>
-  <tr>
-    <td style="text-align:center; vertical-align:middle; padding:6px 12px;">
-      <a href="https://paypal.me/RongzhouChen">
-        <img src="https://img.shields.io/badge/PayPal-Donate-003087?logo=paypal&logoColor=white" alt="Donate with PayPal">
-      </a>
-    </td>
-    <td style="text-align:center; vertical-align:middle; padding:6px 12px;">
-      <a href="https://buy.stripe.com/aFadR8gIaflgfQV6T4fw400">
-        <img src="https://img.shields.io/badge/Stripe-Donate-635bff?logo=stripe&logoColor=white" alt="Donate with Stripe">
-      </a>
-    </td>
-  </tr>
-  <tr>
-    <td style="text-align:center; vertical-align:middle; padding:6px 12px;"><strong>WeChat</strong></td>
-    <td style="text-align:center; vertical-align:middle; padding:6px 12px;"><strong>Alipay</strong></td>
-  </tr>
-  <tr>
-    <td style="text-align:center; vertical-align:middle; padding:6px 12px;"><img alt="WeChat QR" src="figs/donate_wechat.png" width="240"/></td>
-    <td style="text-align:center; vertical-align:middle; padding:6px 12px;"><img alt="Alipay QR" src="figs/donate_alipay.png" width="240"/></td>
-  </tr>
-</table>
-</div>
-
-**支援 / Donate**
-
-- ご支援は研究・開発と運用の継続に役立ち、より多くのオープンなプロジェクトを皆さんに届ける力になります。  
-- 你的支持将用于研发与运维，帮助我持续公开分享更多项目与改进。  
-- Your support sustains my research, development, and ops so I can keep sharing more open projects and improvements.
-
-## Участие в разработке
-См. `AGENTS.md` для рекомендаций по участию, стилю кода и ожиданиям по PR.
-
-Рекомендуемый чеклист для вкладов:
-- Указывайте модель панели и аппаратные примечания для изменений дисплея.
-- Перечисляйте точные команды, использованные для валидации.
-- Прикладывайте скриншоты/фото для изменений UI или e-ink-вывода.
-- Описывайте изменения в датасетах (файл + влияние на строки/столбцы).
+1. Держите изменения в пределах одной области поведения (рендер, данные, API, скрипты).
+2. Обновляйте usage-документацию и команды для изменений, затрагивающих пользовательское поведение.
+3. Сохраняйте совместимость существующих CLI-флагов и маршрутов, где это возможно.
+4. Если меняются hardware-скрипты, документируйте протестированное устройство/модель и точные команды.
 
 ## Лицензия
-В корне репозитория сейчас отсутствует файл `LICENSE` (зафиксировано в этой версии чернового прохода). Пока файл лицензии не добавлен, права на повторное использование явно не предоставлены.
 
-Предположение: мейнтейнеры могут добавить явную open-source лицензию в следующем обновлении.
+Файл `LICENSE` отсутствует в текущем корне репозитория. Эффективная лицензия на момент этого черновика в дереве кода не определена. Добавьте файл лицензии, если вам нужны явные условия распространения и повторного использования.

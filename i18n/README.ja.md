@@ -3,88 +3,83 @@
 
 [![LazyingArt banner](https://github.com/lachlanchen/lachlanchen/raw/main/figs/banner.png)](https://github.com/lachlanchen/lachlanchen/blob/main/figs/banner.png)
 
-# Eink Words GPT
+# 🖨️ Eink Words GPT
 
+**この版の言語:** 日本語
 
-![Python](https://img.shields.io/badge/Python-3.9%2B-3776AB?style=flat-square&logo=python&logoColor=white)
-![Platform](https://img.shields.io/badge/Platform-Raspberry%20Pi-C51A4A?style=flat-square&logo=raspberrypi&logoColor=white)
-![Display](https://img.shields.io/badge/Display-Waveshare%20e--Paper-111111?style=flat-square)
-![Status](https://img.shields.io/badge/Status-Active%20Prototype-F59E0B?style=flat-square)
-![Server](https://img.shields.io/badge/HTTP-Tornado-0A7EA4?style=flat-square)
-![Storage](https://img.shields.io/badge/Storage-SQLite-003B57?style=flat-square&logo=sqlite&logoColor=white)
-![AI](https://img.shields.io/badge/OpenAI-Optional-412991?style=flat-square&logo=openai&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.9%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Platform](https://img.shields.io/badge/Platform-Raspberry%20Pi-C51A4A?style=for-the-badge&logo=raspberrypi&logoColor=white)
+![Display](https://img.shields.io/badge/Display-Waveshare%20e--Paper-111111?style=for-the-badge&logo=raspberrypi&logoColor=white)
+![Status](https://img.shields.io/badge/Status-Active%20Prototype-F59E0B?style=for-the-badge&logo=githubactions&logoColor=white)
+![Server](https://img.shields.io/badge/HTTP-Tornado-0A7EA4?style=for-the-badge&logo=python&logoColor=white)
+![Storage](https://img.shields.io/badge/Storage-SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)
+![AI](https://img.shields.io/badge/OpenAI-Optional-412991?style=for-the-badge&logo=openai&logoColor=white)
 
-Raspberry Pi + Waveshare e-ink を使って、動的に選ばれた語彙を発音情報と多言語の類義語付きで表示するプロジェクトです。ローカルデータセットまたは OpenAI から単語を取得し、レイアウトにレンダリングして対応する e-paper パネルへ出力できます。さらに、単語更新のトリガーやレンダリング画像取得のための小規模 HTTP サービスも提供します。
+Raspberry Pi + Waveshare e-ink 向けの語彙カード生成プロジェクトで、IPA 表記と多言語ヒントを付与した単語カードを動的にレンダリングします。ローカル CSV ワークフロー、AI 補完（任意）、e-paper レンダリング、リモート HTTP 制御をサポートします。
 
 | 🔎 At a Glance | Details |
 |---|---|
-| Core runtime | `app.py` (HTTP service) + `words_gpt.py` (renderer loop) |
-| Data path | CSV datasets in `data/` + SQLite store `words_phonetics.db` |
-| Output targets | Waveshare e-paper panels and virtual image outputs |
-| AI dependency | Optional (`--enable_openai`) with cache in `cache/` |
+| Core runtime | `app.py` (HTTP サービス) + `words_gpt.py` (レンダーループ) |
+| Data path | `data/` の CSV データセット + SQLite ストア `words_phonetics.db` |
+| Output targets | Waveshare e-paper パネルと仮想画像出力 |
+| AI dependency | オプション (`--enable_openai`) と `cache/` のキャッシュ |
+| Main loop defaults | サーバーは `8082`、更新周期は約 5 分 |
 
-## 📚 Table of Contents
-- [Overview](#overview)
-- [Highlights](#highlights)
-- [Quick Start](#quick-start)
-- [Demos](#demos)
-- [Features](#features)
-- [Project Structure](#project-structure)
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Usage](#usage)
-- [Examples](#examples)
-- [Data, Cache, and Logs](#data-cache-and-logs)
-- [Development Notes](#development-notes)
-- [Troubleshooting](#troubleshooting)
-- [Notes on OpenAI Usage](#notes-on-openai-usage)
-- [Roadmap](#roadmap)
-- [Support](#-support)
-- [Contributing](#contributing)
-- [License](#license)
+## 📚 目次
+- [概要](#概要)
+- [ハイライト](#ハイライト)
+- [デモ](#デモ)
+- [プロジェクト構成](#プロジェクト構成)
+- [前提条件](#前提条件)
+- [インストール](#インストール)
+- [設定](#設定)
+- [使い方](#使い方)
+- [使用例](#使用例)
+- [データ・キャッシュ・ログ](#データ・キャッシュ・ログ)
+- [開発ノート](#開発ノート)
+- [トラブルシューティング](#トラブルシューティング)
+- [ロードマップ](#ロードマップ)
+- [サポート](#サポート)
+- [コントリビューション](#コントリビューション)
+- [ライセンス](#ライセンス)
 
-## Overview
-`words_gpt` は、e-ink デバイス向けの Python ベース語彙カード生成・表示システムです。
+---
 
-以下を組み合わせています。
-- CSV / ローカルデータセットからの単語取得と、任意の OpenAI 生成。
-- 拡張処理（IPA 発音記号 + 多言語類義語フィールド）。
-- ハードウェア出力と仮想出力のレンダリングパイプライン。
-- リモートトリガーと画像取得のための Tornado HTTP サービス。
+## 概要
 
-現在のコードベースは `app.py`、`words_gpt.py`、`words_data.py`、`words_database.py`、`openai_request_json.py` が中心です。
+`words_gpt` は、e-ink 表示向けに語彙カードを生成する Python スタックです。データ連携、音声表記の補完、レンダリング制御を 2 つの実行モードでまとめて提供します。
 
-## Highlights
-- 🖼️ 複数コンテンツモード（漢字、日本語、アラビア語、中国語、絵文字）対応の e-ink レンダリングパイプライン。
-- 🗃️ ローカル単語データベース（`words_phonetics.db`）と `data/` 配下の CSV 単語リスト。
-- 🤖 構造化 JSON 出力による OpenAI ベースの単語選定と発音拡張。
-- 🌐 外部トリガーと画像取得のための HTTP サービス。
-- ⚡ OpenAI の重複呼び出しを減らすキャッシュ層（`cache/`）。
+- 長時間稼働の Tornado サービス (`app.py`)（リモート制御と画像提供）
+- 単独実行レンダラー (`words_gpt.py`)（ポーリング、ループ、直接描画モード）
 
-## Quick Start
-| Goal | Command |
-|---|---|
-| Start HTTP server (port `8082`) | `python app.py` |
-| Run standalone renderer (CSV) | `python words_gpt.py --use_csv` |
-| Run with OpenAI + CSV | `python words_gpt.py --enable_openai --use_csv` |
-| Emoji + simplified CJK mode | `python words_gpt.py --make_emoji --simplify` |
-| Raspberry Pi auto setup | `bash scripts/setup_pi_wordscard.sh` |
+主要モジュール:
 
-## Demos
+- `words_data.py` / `words_data_utils.py`（単語取得と補完ワークフロー）
+- `words_database.py`（SQLite 連携）
+- `openai_request_json.py`（ディスクキャッシュ付き OpenAI 構造化リクエスト）
+- `env_loader.py`（決定論的な環境読み込み）
+- `words_update.py`（DB メンテナンスと再確認ワークフロー）
+- `app.py` と `words_gpt.py`（サービス/レンダリング寿命）
+
+## ハイライト
+
+- 多言語・多コンテンツモードを持つ e-ink レンダーパイプライン
+  - 日本語変種、漢字モード、アラビア語、中国語、絵文字モード
+- ローカル単語ソースと OpenAI ソースを単一フローで併用可能
+- レンダーパスでの簡体字出力モード（`--simplify`）がオプション
+- 直接操作用 API (`/next_random_word`、`/display_word` など)
+- キャッシュと永続化で API 呼び出しを抑制
+- `pwa/` 以下の軽量プレビュー・設定フロー向け PWA アセット（任意）
+
+## デモ
+
 <p align="center">
   <img src="demos/demo.jpg" alt="Demo" width="48%" />
   <img src="demos/words_card_arabic.JPG" alt="Arabic word card" width="48%" />
 </p>
 
-## Features
-- `words_gpt.py` の `EPaperHardware` と `EPaperDisplay` によるハードウェア + 仮想レンダリングフロー。
-- `words_data.py` の多言語拡張パイプライン（IPA、日本語バリアント、アラビア語、フランス語、中国語フィールド）。
-- `words_database.py` の動的フィールド更新ヘルパーを備えた SQLite 永続化。
-- `openai_request_json.py` のファイルキャッシュ付き OpenAI 構造化 JSON リクエストヘルパー。
-- 軽量なフロントエンド設定/プレビュー向けの任意 PWA アセット（`pwa/`）。
+## プロジェクト構成
 
-## Project Structure
 ```text
 words_gpt/
 ├─ README.md
@@ -98,10 +93,14 @@ words_gpt/
 ├─ env_loader.py
 ├─ words_update.py
 ├─ setup.py
+├─ scripts/
+│  ├─ setup_pi_wordscard.sh
+│  ├─ start_wordscard.sh
+│  ├─ stop_wordscard.sh
+│  └─ install_wordscard_service.sh
 ├─ epd_7in3f_test.py
 ├─ epd_13in3k_test.py
 ├─ words_phonetics.db
-├─ word_phonetics_processed.csv
 ├─ data/
 ├─ font/
 ├─ pic/
@@ -112,77 +111,99 @@ words_gpt/
 ├─ logs-word-phonetics/
 ├─ words_card_temp/
 ├─ pwa/
-├─ scripts/
+├─ i18n/
 ├─ utilities/
 ├─ references/
-├─ i18n/
 └─ waveshare/
+    ├─ setup.py
+    ├─ lib/
+    ├─ lib.old/
+    ├─ examples/
+    └─ pic/
 ```
 
-重要な実行時ファイル:
-- `app.py`: Tornado Web サーバー（デフォルトポート `8082`）と定期更新ループ。
-- `words_gpt.py`: スタンドアロンのレンダリングループと表示クラス。
-- `words_data.py`: 単語取得/拡張オーケストレーションの中核。
-- `words_database.py`: SQLite ストアヘルパー。
-- `scripts/*.sh`: Raspberry Pi セットアップ、サービス導入、tmux ライフサイクルスクリプト。
+重要な実行ファイル:
 
-## Prerequisites
-- Python `3.9+`（推奨）。
-- Raspberry Pi ターゲット（ハードウェアモード用）。
-- 対応する Waveshare e-paper パネル。
-- Pi で SPI を有効化（`raspi-config`）し、パネル別の配線を設定。
+- `app.py`: ポート `8082` で Tornado アプリを起動し、定期的に `next_random_word` をトリガーします。
+- `words_gpt.py`: 単体レンダラーと表示抽象化（`EPaperHardware`、`EPaperDisplay`）。
+- `words_data.py`: 進化した単語取得/補完ワークフローとヘルパー。
+- `words_database.py`: メタデータ保管と単語キャッシュ操作のための SQLite ヘルパー。
+- `scripts/*.sh`: サービス運用と Raspberry Pi 初期化ヘルパー。
 
-このプロジェクトで使用する Python パッケージには以下が含まれます。
-- `openai`, `tornado`, `Pillow`, `numpy`, `nltk`, `opencc`, `pykakasi`, `arabic_reshaper`, `python-bidi`, `pytz`。
-- セットアップスクリプトで追加インストール: `json5`, `pandas`, `spidev`, `RPi.GPIO`, `gpiozero`, `lgpio`。
+## 前提条件
 
-## Installation
+- Python `3.9+`（推奨）
+- Raspberry Pi（ハードウェアモードでは必須）
+- 対応する Waveshare e-paper パネル（例: 7.3F / 13K ファミリー）
+- SPI 有効化 (`raspi-config`)、配線、電源が安定した実行環境
+- `nltk` 単語ソースを使う場合は NLTK corpus の準備
 
-### Option A: Minimal/manual install
-Waveshare ドライバーパッケージをインストール:
+コードベースで使用されている主な依存パッケージ:
+`openai`、`tornado`、`Pillow`、`numpy`、`nltk`、`opencc`、`pykakasi`、`arabic_reshaper`、`python-bidi`、`pytz`。
+
+## インストール
+
+### オプション 1 — 最小構成 / 手動インストール（PC または Pi）
+
+リポジトリルートから:
+
 ```bash
 python setup.py install
 ```
 
-NLTK 単語リストを使う場合は一度だけダウンロード:
+必要な場合:
+
 ```bash
 python -m nltk.downloader words
 ```
 
-### Option B: Raspberry Pi automated setup (recommended on device)
-リポジトリルートから実行:
+### オプション 2 — Raspberry Pi 自動セットアップ（本体推奨）
+
+リポジトリルートから:
+
 ```bash
 bash scripts/setup_pi_wordscard.sh
 ```
 
-このスクリプトで実行される内容:
-- apt 依存関係をインストール。
-- SPI が有効であることを確認。
-- `wordscard` 仮想環境を作成して有効化。
-- Python 実行時依存関係をインストール。
-- Waveshare パッケージをインストール。
-- `app.py` を tmux セッション内で起動。
+このスクリプトは次を実行します:
 
-## Configuration
+- Pi 固有の依存関係
+- SPI 有効化
+- `wordscard` 仮想環境のセットアップ
+- Python / runtime パッケージのインストール
+- Waveshare パッケージのインストール
+- `tmux` によるアプリ起動
 
-### `.env` behavior
-このリポジトリは import 時に `.env` から環境変数を読み込み、既存のシェル値を**上書き**します。シェルプロファイルですでに export されていても、ローカル上書きが常に同じ結果になる設計です。
+### オプション 3 — systemd サービス化
 
-`.env` を作成または更新:
+`systemd` でアプリのライフサイクルを登録します:
+
+```bash
+bash scripts/install_wordscard_service.sh
+```
+
+続けて:
+
+```bash
+sudo systemctl start wordscard
+sudo systemctl status wordscard -n 50
+journalctl -u wordscard -n 100 --no-pager
+```
+
+## 設定
+
+### 環境変数（`.env`）
+
+本リポジトリは、既存のシェル変数を上書きする `.env` ローダーを利用します。意図して使用してください:
+
 ```env
 OPENAI_API_KEY=sk-your-key-here
 OPENAI_ORG_ID=org-your-org-id
 OPENAI_MODEL=gpt-4o-mini
 ```
 
-### App argument passthrough
-systemd / tmux スクリプトでは以下をサポート:
-```bash
-APP_ARGS="--enable_openai --use_csv" ./scripts/start_wordscard.sh
-```
+### 実行フラグ（`app.py` と `words_gpt.py` の両方で使用）
 
-### CLI flags (server and renderer)
-`app.py` と `words_gpt.py` の両方でサポート:
 - `--enable_openai`
 - `--make_emoji`
 - `--ignore_list`
@@ -191,15 +212,16 @@ APP_ARGS="--enable_openai --use_csv" ./scripts/start_wordscard.sh
 - `--complete_csv`
 - `--filename <csv_file>`
 
-## Usage
+Pi 起動スクリプトは `APP_ARGS` で引数を受け渡せます（例）:
 
-### Running the HTTP server
-サービスを起動（デフォルトポート `8082`）:
 ```bash
-python app.py
+APP_ARGS="--enable_openai --use_csv" ./scripts/start_wordscard.sh
 ```
 
-コード上で確認できるルート:
+### app モードのルーティング
+
+現在の実装で確認されるルート:
+
 - `POST /display_word`
 - `GET /get_current_word`
 - `GET /get_current_word_page`
@@ -207,175 +229,154 @@ python app.py
 - `POST /get_words_card`
 - `GET /static/(.*)`（`words_card_temp/` から配信）
 
-互換性メモ: 以前のドキュメントでは `GET /current_word` と記載されていましたが、現在の `app.py` のルートは `GET /get_current_word` です。
+互換性メモ: 旧仕様で参照されていた `GET /current_word` は、現在は `GET /get_current_word` に統一されています。
 
-### Running standalone renderer
-CSV ベースのリスト:
+### OpenAI 利用に関する注意
+
+OpenAI 機能は任意で、CLI/env フラグで制御します。API 応答はキャッシュされるため、再現性とレート制御に有効です。リソースの限られた環境では、まず CSV モード（`--use_csv`）で起動し、必要時のみ `--enable_openai` を有効にする運用が推奨です。
+
+## 使い方
+
+### HTTP サーバーを起動
+
+```bash
+python app.py
+```
+
+プロセスは `words_card_temp/` に画像を保持し、フロントエンドや簡易スクリプト向けに HTTP エンドポイントを提供します。
+
+### レンダラーを直接実行
+
+CSV モード:
+
 ```bash
 python words_gpt.py --use_csv
 ```
 
-OpenAI を有効化:
+OpenAI モード:
+
 ```bash
 python words_gpt.py --enable_openai --use_csv
 ```
 
-絵文字レンダリング + 簡体 CJK:
+絵文字 + 簡体字対応:
+
 ```bash
 python words_gpt.py --make_emoji --simplify
 ```
 
-### Service mode on Raspberry Pi
-サービスユニットをインストール:
+### Pi ハードウェアで実行
+
+- `tmux` 起動スクリプトで開始:
+
 ```bash
-bash scripts/install_wordscard_service.sh
+bash scripts/start_wordscard.sh
 ```
 
-次に実行:
+- `tmux` 停止スクリプトで終了:
+
 ```bash
-sudo systemctl start wordscard
-sudo systemctl status wordscard -n 50
-journalctl -u wordscard -n 100 --no-pager
+bash scripts/stop_wordscard.sh
 ```
 
-## Examples
+## 使用例
 
-### Trigger next random word
+次のランダムカードのメタデータを取得:
+
 ```bash
 curl "http://127.0.0.1:8082/next_random_word"
 ```
 
-### Read current word payload
+保存済みの現在語を取得:
+
 ```bash
 curl "http://127.0.0.1:8082/get_current_word"
 ```
 
-### Submit explicit word
+レンダリング済みページ画像のペイロードを要求:
+
+```bash
+curl "http://127.0.0.1:8082/get_current_word_page"
+```
+
+明示的な単語を送信:
+
 ```bash
 curl -X POST "http://127.0.0.1:8082/display_word" \
   -H "Content-Type: application/json" \
   -d '{"word":"serendipity"}'
 ```
 
-### Hardware smoke tests
-ディスプレイに対応したスクリプトを使用:
+フォーム形式エンドポイントでレンダリングをトリガー:
+
 ```bash
-python epd_7in3f_test.py
+curl -X POST "http://127.0.0.1:8082/get_words_card" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "word=bonjour&phonetic=%CB%88b%C9%94n%C9%93r%E2%80%AD"
 ```
 
-または:
-```bash
-python epd_13in3k_test.py
-```
+## データ・キャッシュ・ログ
 
-追加の例は `waveshare/examples/` にあります。
+アプリで使用される主な成果物:
 
-## Data, Cache, and Logs
-| Area | Path(s) | Notes |
+- `data/`: 監修済み CSV データセット
+- `words_phonetics.db`: SQLite のキャッシュ/ソース DB
+- `cache/`: OpenAI リクエストと結果のキャッシュ
+- `word_phonetics_processed.csv`: 加工済み/派生データセット
+- `logs/`, `logs-word-phonetics/`: 実行ログ
+- `words_card_temp/`: 生成済みカードと一時出力
+
+## 開発ノート
+
+- 過去互換・バックアップ用ファイルが存在します（例: `words_gpt_old.py`、`lib.old`）。互換性維持や移行作業を行う場合を除き参照用として扱ってください。
+- `words_update.py` には、DB の品質向上に使えるバッチ更新・再確認ヘルパーがあります。
+- ハードウェア検証は `epd_*_test.py` と `waveshare/examples/*` のデモで実施します。
+- リポジトリルートには `requirements.txt` やロックファイルはありません。依存関係はセットアップスクリプトか直接インストールで管理します。
+- 本リポジトリには自動化されたテストスイートはありません。
+
+## トラブルシューティング
+
+- Raspberry Pi GPIO/SPI モジュール由来の `ImportError`
+  - Pi 向け手順 (`setup_pi_wordscard.sh`) でインストール、またはターゲット互換環境で `python setup.py install` を実行
+- 画像/静的配信で `403/404` が返る
+  - `/get_current_word*` の使い方を確認し、`words_card_temp/` の書き込み権限を確認
+- OpenAI モードで空/不正なペイロード
+  - `OPENAI_API_KEY` と任意の org/model が正しく読み込まれているか確認。`cache/` とログを確認
+- レンダリング不具合（文字欠け・切れ）
+  - `words_gpt.py` の描画フロー内でフォントパスとパネル解像度の設定を確認
+- API が古いデータを返す
+  - `POST /next_random_word` を手動実行し、`app.py` の定期コールバック間隔を確認
+- ハードウェア更新が停止したように見える
+  - tmux セッションと systemd ログ（`journalctl -u wordscard`）を確認
+- データセットや辞書項目が不足する
+  - `data/` の CSV を検証し、`words_update.py` で更新/クリーンアップを実施
+
+## ロードマップ
+
+- `requirements.txt` / 再現可能なインストールマニフェストを追加
+- 実行モードを明確化し、CLI `--help` ドキュメントを充実
+- 各コンテンツモード（`japanese_synonym`、`arabic_synonym`、`film` など）のレンダリング仕様を拡張
+- エラー処理とユーザー向け API 応答スキーマを標準化
+- 非ハードウェア環境での簡易 CI 確認向けスモークテストスクリプトを追加
+
+## サポート
+
+| Support option | Link | Purpose |
 |---|---|---|
-| Word lists | `data/` | `data/words_list.csv` とテーマ別 CSV ファイルを含む |
-| Persistent DB | `words_phonetics.db` | ローカル発音/拡張ストア |
-| OpenAI/cache artifacts | `cache/` | 重複リクエストを削減 |
-| Logs | `logs/`, `logs-word-phonetics/` | 実行時ログと更新ログ |
-| Generated cards | `words_card_temp/` | 画像出力と静的配信のソース |
+| GitHub Sponsors | https://github.com/sponsors/lachlanchen | 継続的・一回限りのプロジェクト支援 |
+| Lazying Art | https://lazying.art | ブランド情報と関連リソース |
+| Chat | https://chat.lazying.art | 質問・サポート |
+| Only Ideas | https://onlyideas.art | クリエイティブ研究とサイドプロジェクト |
 
-## Development Notes
-- 依存関係管理はスクリプト優先（`scripts/setup_pi_wordscard.sh`）+ `setup.py`。現時点では `requirements.txt` / `pyproject.toml` は未整備です。
-- 複数のバックアップ/レガシーファイル（`words_data_*`、`words_gpt_old.py`）が存在し、主要な実行経路は `app.py` + `words_gpt.py` + `words_data.py` + `words_database.py` です。
-- `env_loader.py` はキーが存在する場合、`.env` の環境変数で常に上書きします。
-- サーバーモードでは定期更新フロー（約 5 分ごと）が動作し、内部的に更新エンドポイントを呼ぶことがあります。
+## コントリビューション
 
-## Troubleshooting
-- `ModuleNotFoundError` や import 問題:
-  - 仮想環境が有効で、依存関係がインストール済みか確認してください。
-  - Pi 上で `bash scripts/setup_pi_wordscard.sh` を再実行してください。
-- OpenAI エラー（`401`、モデル/キー未設定）:
-  - `.env` の `OPENAI_API_KEY` と任意の `OPENAI_MODEL` を確認してください。
-  - デバイスのネットワーク接続を確認してください。
-- ディスプレイが更新されない:
-  - パネル型番/配線を確認し、対応テストスクリプト（`epd_7in3f_test.py` または `epd_13in3k_test.py`）を実行してください。
-  - SPI が有効化されているか確認してください（`sudo raspi-config nonint do_spi 0`）。
-  - Pi 5 では、デバイスが `/dev/spidev10.0` を公開する場合に `/dev/spidev0.0` 互換シンボリックリンクが必要です。
-- OpenCC インストール問題:
-  - セットアップスクリプトと同様に、ディストリ互換パッケージ（`libopencc1` または `libopencc2`）を使用してください。
-- API ルート不一致:
-  - 現在のペイロード取得は `/current_word` ではなく `/get_current_word` を使ってください。
+コントリビューションは歓迎します。推奨フロー:
 
-## Notes on OpenAI Usage
-OpenAI アクセスは任意ですが、新しい単語生成と発音拡張には推奨です。`openai_request_json.py` の構造化 JSON ヘルパーは、重複呼び出しを減らすため `cache/` 配下に結果をキャッシュします。
+1. 変更範囲は 1 つの動作領域（レンダリング、データ、API、スクリプト）に絞る
+2. ユーザー向け挙動変更はコマンド利用法とドキュメントを更新
+3. 可能な限り既存 CLI フラグとエンドポイント互換性を維持
+4. ハードウェア関連スクリプトを変更する場合、デバイス/モデル名と実行コマンドを明示
 
-## Roadmap
-- 再現可能なインストールのための正式な依存関係マニフェスト（`requirements.txt` または `pyproject.toml`）を追加。
-- `i18n/` の翻訳 README バリアントを拡充し、継続保守。
-- 正式フロー確定後、レガシー/バックアップ系スクリプトを統合。
-- エンドポイント例とスクリーンショット付きで PWA ワークフロー（`pwa/`）を文書化。
-- データ処理とルート挙動の再現可能な自動テストを追加。
+## ライセンス
 
-## ❤️ Support
-
-| Donate | PayPal | Stripe |
-|---|---|---|
-| [![Donate](https://img.shields.io/badge/Donate-LazyingArt-0EA5E9?style=for-the-badge&logo=ko-fi&logoColor=white)](https://chat.lazying.art/donate) | [![PayPal](https://img.shields.io/badge/PayPal-RongzhouChen-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/RongzhouChen) | [![Stripe](https://img.shields.io/badge/Stripe-Donate-635BFF?style=for-the-badge&logo=stripe&logoColor=white)](https://buy.stripe.com/aFadR8gIaflgfQV6T4fw400) |
-
-このプロジェクトが役に立った場合、以下の支援リンクは継続的な保守とハードウェア改善に直接つながります。
-
-### What your support makes possible
-- <b>Keep tools open</b>: ホスティング、推論、データ保管、コミュニティ運営。  
-- <b>Ship faster</b>: WordsCardEink と関連学習ツールへ集中して OSS 開発。  
-- <b>Prototype devices</b>: e-ink ハードウェアの反復開発と表示レイアウト研究。  
-- <b>Access for all</b>: 学生、クリエイター、コミュニティ向け導入支援。  
-
-### Donate
-
-<div align="center">
-<table style="margin:0 auto; text-align:center; border-collapse:collapse;">
-  <tr>
-    <td style="text-align:center; vertical-align:middle; padding:6px 12px;">
-      <a href="https://chat.lazying.art/donate">https://chat.lazying.art/donate</a>
-    </td>
-    <td style="text-align:center; vertical-align:middle; padding:6px 12px;">
-      <a href="https://chat.lazying.art/donate"><img src="figs/donate_button.svg" alt="Donate" height="44"></a>
-    </td>
-  </tr>
-  <tr>
-    <td style="text-align:center; vertical-align:middle; padding:6px 12px;">
-      <a href="https://paypal.me/RongzhouChen">
-        <img src="https://img.shields.io/badge/PayPal-Donate-003087?logo=paypal&logoColor=white" alt="Donate with PayPal">
-      </a>
-    </td>
-    <td style="text-align:center; vertical-align:middle; padding:6px 12px;">
-      <a href="https://buy.stripe.com/aFadR8gIaflgfQV6T4fw400">
-        <img src="https://img.shields.io/badge/Stripe-Donate-635bff?logo=stripe&logoColor=white" alt="Donate with Stripe">
-      </a>
-    </td>
-  </tr>
-  <tr>
-    <td style="text-align:center; vertical-align:middle; padding:6px 12px;"><strong>WeChat</strong></td>
-    <td style="text-align:center; vertical-align:middle; padding:6px 12px;"><strong>Alipay</strong></td>
-  </tr>
-  <tr>
-    <td style="text-align:center; vertical-align:middle; padding:6px 12px;"><img alt="WeChat QR" src="figs/donate_wechat.png" width="240"/></td>
-    <td style="text-align:center; vertical-align:middle; padding:6px 12px;"><img alt="Alipay QR" src="figs/donate_alipay.png" width="240"/></td>
-  </tr>
-</table>
-</div>
-
-**支援 / Donate**
-
-- ご支援は研究・開発・運用の継続を支え、より多くのオープンプロジェクト公開につながります。  
-- 你的支持将用于研发与运维，帮助我持续公开分享更多项目与改进。  
-- Your support sustains my research, development, and ops so I can keep sharing more open projects and improvements.
-
-## Contributing
-コントリビューションガイド、コーディングスタイル、PR の期待事項は `AGENTS.md` を参照してください。
-
-推奨コントリビューションチェックリスト:
-- ディスプレイ変更時はパネル型番とハードウェアメモを含める。
-- 検証時に実行したコマンドを正確に記載する。
-- UI または e-ink 出力変更にはスクリーンショット/写真を添付する。
-- データセット編集内容（ファイル + 行/列への影響）を説明する。
-
-## License
-リポジトリルートには現在 `LICENSE` ファイルがありません（このドラフト時点の観測）。ライセンスファイルが追加されるまでは、再利用権は明示的に付与されていません。
-
-前提: メンテナーは後続アップデートで明示的なオープンソースライセンスを追加する可能性があります。
+現在のリポジトリルートには `LICENSE` ファイルがありません。したがってこの版では、このリポジトリ内で有効なライセンスが未定義です。明示的な再配布・再利用条件を設ける場合は追加してください。

@@ -3,89 +3,86 @@
 
 [![LazyingArt banner](https://github.com/lachlanchen/lachlanchen/raw/main/figs/banner.png)](https://github.com/lachlanchen/lachlanchen/blob/main/figs/banner.png)
 
-# Eink Words GPT
+# 🖨️ Eink Words GPT
 
 **语言版本：** 中文（简体）
 
-![Python](https://img.shields.io/badge/Python-3.9%2B-3776AB?style=flat-square&logo=python&logoColor=white)
-![Platform](https://img.shields.io/badge/Platform-Raspberry%20Pi-C51A4A?style=flat-square&logo=raspberrypi&logoColor=white)
-![Display](https://img.shields.io/badge/Display-Waveshare%20e--Paper-111111?style=flat-square)
-![Status](https://img.shields.io/badge/Status-Active%20Prototype-F59E0B?style=flat-square)
-![Server](https://img.shields.io/badge/HTTP-Tornado-0A7EA4?style=flat-square)
-![Storage](https://img.shields.io/badge/Storage-SQLite-003B57?style=flat-square&logo=sqlite&logoColor=white)
-![AI](https://img.shields.io/badge/OpenAI-Optional-412991?style=flat-square&logo=openai&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.9%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Platform](https://img.shields.io/badge/Platform-Raspberry%20Pi-C51A4A?style=for-the-badge&logo=raspberrypi&logoColor=white)
+![Display](https://img.shields.io/badge/Display-Waveshare%20e--Paper-111111?style=for-the-badge&logo=raspberrypi&logoColor=white)
+![Status](https://img.shields.io/badge/Status-Active%20Prototype-F59E0B?style=for-the-badge&logo=githubactions&logoColor=white)
+![Server](https://img.shields.io/badge/HTTP-Tornado-0A7EA4?style=for-the-badge&logo=python&logoColor=white)
+![Storage](https://img.shields.io/badge/Storage-SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)
+![AI](https://img.shields.io/badge/OpenAI-Optional-412991?style=for-the-badge&logo=openai&logoColor=white)
 
-这是一个基于 Raspberry Pi + Waveshare 电子墨水屏的项目，可动态显示带音标和多语言同义词的词汇。系统可以从本地数据集或 OpenAI 获取单词，将其渲染成卡片版式，并推送到受支持的电子纸面板。同时还提供一个轻量 HTTP 服务，用于触发单词更新和获取渲染图像。
+Raspberry Pi + Waveshare 电子墨水屏项目，可动态渲染带 IPA 音标和多语言提示的词汇卡片。它支持本地 CSV 工作流、可选 AI 增强、电子纸渲染以及远程 HTTP 控制。
 
 | 🔎 一览 | 详情 |
 |---|---|
-| 核心运行时 | `app.py`（HTTP 服务）+ `words_gpt.py`（渲染循环） |
+| 核心运行时 | `app.py`（HTTP 服务） + `words_gpt.py`（渲染循环） |
 | 数据路径 | `data/` 中的 CSV 数据集 + SQLite 存储 `words_phonetics.db` |
-| 输出目标 | Waveshare 电子纸面板和虚拟图像输出 |
+| 输出目标 | Waveshare 电子纸面板与虚拟图像输出 |
 | AI 依赖 | 可选（`--enable_openai`），缓存位于 `cache/` |
+| 主循环默认 | 服务器端口 `8082`，约每 5 分钟刷新一次 |
 
 ## 📚 目录
-- [概览](#概览)
-- [亮点](#亮点)
-- [快速开始](#快速开始)
-- [演示](#演示)
-- [功能](#功能)
-- [项目结构](#项目结构)
-- [前置要求](#前置要求)
-- [安装](#安装)
-- [配置](#配置)
-- [使用](#使用)
-- [示例](#示例)
-- [数据、缓存与日志](#数据缓存与日志)
-- [开发说明](#开发说明)
-- [故障排查](#故障排查)
-- [OpenAI 使用说明](#openai-使用说明)
-- [路线图](#路线图)
-- [❤️ Support](#-support)
-- [贡献](#贡献)
-- [许可证](#许可证)
+- [概览](#overview)
+- [亮点](#highlights)
+- [演示](#demos)
+- [项目结构](#project-structure)
+- [先决条件](#prerequisites)
+- [安装](#installation)
+- [配置](#configuration)
+- [使用方法](#usage)
+- [示例](#examples)
+- [数据、缓存与日志](#data-cache-and-logs)
+- [开发说明](#development-notes)
+- [故障排查](#troubleshooting)
+- [路线图](#roadmap)
+- [支持](#support)
+- [贡献](#contributing)
+- [许可](#license)
 
+---
+
+<a id="overview"></a>
 ## 概览
-`words_gpt` 是一个面向电子墨水设备的 Python 词汇卡片生成与显示系统。
 
-它结合了：
-- 从 CSV/本地数据集取词，以及可选的 OpenAI 生成。
-- 内容增强（IPA 音标 + 多语言同义词字段）。
-- 面向硬件与虚拟输出的渲染流水线。
-- 用于远程触发与图像获取的 Tornado HTTP 服务。
+`words_gpt` 是一个面向电子墨水显示器的 Python 词汇卡片生成系统。它将数据编排、音标增强和渲染调度整合在两个运行模式下：
 
-当前代码库核心包括 `app.py`、`words_gpt.py`、`words_data.py`、`words_database.py` 和 `openai_request_json.py`。
+- 长驻运行的 Tornado 服务（`app.py`），用于远程控制与图片服务
+- 独立渲染器（`words_gpt.py`），支持轮询、循环或直接渲染模式
 
+主要模块：
+
+- `words_data.py` / `words_data_utils.py`：词条与增强工作流
+- `words_database.py`：SQLite 交互
+- `openai_request_json.py`：带磁盘缓存的结构化 OpenAI 请求
+- `env_loader.py`：确定性的环境变量加载
+- `words_update.py`：数据库维护与复检工作流
+- `app.py` 与 `words_gpt.py`：服务与渲染生命周期
+
+<a id="highlights"></a>
 ## 亮点
-- 🖼️ 电子墨水渲染流水线，支持多种内容模式（kanji、日语、阿拉伯语、中文、emoji）。
-- 🗃️ 本地词库数据库（`words_phonetics.db`），词表来自 `data/` 中的 CSV。
-- 🤖 基于 OpenAI 的选词与音标增强，采用结构化 JSON 输出。
-- 🌐 供外部触发与图像获取的 HTTP 服务。
-- ⚡ 缓存层（`cache/`）减少重复 OpenAI 调用。
 
-## 快速开始
-| 目标 | 命令 |
-|---|---|
-| 启动 HTTP 服务（端口 `8082`） | `python app.py` |
-| 运行独立渲染器（CSV） | `python words_gpt.py --use_csv` |
-| 以 OpenAI + CSV 运行 | `python words_gpt.py --enable_openai --use_csv` |
-| Emoji + 简体 CJK 模式 | `python words_gpt.py --make_emoji --simplify` |
-| Raspberry Pi 自动化安装 | `bash scripts/setup_pi_wordscard.sh` |
+- 多语言/多内容模式的电子纸渲染流水线：
+  - 日语变体、汉字模式、阿拉伯语、中文、emoji 模式
+- 本地词库与 OpenAI 词源并行的单词来源
+- 直接交互接口（`/next_random_word`、`/display_word` 等）
+- 缓存与持久化，减少重复网络请求
+- `pwa/` 下提供可选的 PWA 资源，用于轻量级预览/配置流程
 
+<a id="demos"></a>
 ## 演示
+
 <p align="center">
   <img src="demos/demo.jpg" alt="Demo" width="48%" />
   <img src="demos/words_card_arabic.JPG" alt="Arabic word card" width="48%" />
 </p>
 
-## 功能
-- 来自 `words_gpt.py` 的硬件 + 虚拟渲染流程（`EPaperHardware`、`EPaperDisplay`）。
-- `words_data.py` 中的多语言增强流水线（IPA、日语变体、阿拉伯语、法语、中文字段）。
-- `words_database.py` 中基于 SQLite 的持久化与动态字段更新辅助函数。
-- `openai_request_json.py` 中带文件缓存的 OpenAI 结构化 JSON 请求辅助工具。
-- `pwa/` 下可选的 PWA 资源，用于轻量前端配置/预览流程。
-
+<a id="project-structure"></a>
 ## 项目结构
+
 ```text
 words_gpt/
 ├─ README.md
@@ -99,10 +96,14 @@ words_gpt/
 ├─ env_loader.py
 ├─ words_update.py
 ├─ setup.py
+├─ scripts/
+│  ├─ setup_pi_wordscard.sh
+│  ├─ start_wordscard.sh
+│  ├─ stop_wordscard.sh
+│  └─ install_wordscard_service.sh
 ├─ epd_7in3f_test.py
 ├─ epd_13in3k_test.py
 ├─ words_phonetics.db
-├─ word_phonetics_processed.csv
 ├─ data/
 ├─ font/
 ├─ pic/
@@ -113,77 +114,102 @@ words_gpt/
 ├─ logs-word-phonetics/
 ├─ words_card_temp/
 ├─ pwa/
-├─ scripts/
+├─ i18n/
 ├─ utilities/
 ├─ references/
-├─ i18n/
 └─ waveshare/
+    ├─ setup.py
+    ├─ lib/
+    ├─ lib.old/
+    ├─ examples/
+    └─ pic/
 ```
 
-重要运行时文件：
-- `app.py`：Tornado Web 服务器（默认端口 `8082`）和周期更新循环。
-- `words_gpt.py`：独立渲染循环与显示类。
-- `words_data.py`：核心取词/增强编排。
-- `words_database.py`：SQLite 存储辅助函数。
-- `scripts/*.sh`：Raspberry Pi 安装、服务安装与 tmux 生命周期脚本。
+关键运行文件：
 
-## 前置要求
-- Python `3.9+`（推荐）。
-- Raspberry Pi 目标设备（硬件模式）。
-- 受支持的 Waveshare 电子纸面板。
-- Pi 上已启用 SPI（`raspi-config`），并完成对应面板接线。
+- `app.py`：监听端口 `8082` 的 Tornado 应用，并周期触发 `next_random_word`
+- `words_gpt.py`：独立渲染器与显示抽象（`EPaperHardware`、`EPaperDisplay`）
+- `words_data.py`：高级取词/增强工作流和辅助工具
+- `words_database.py`：用于已存元数据与词条缓存的 SQLite 工具
+- `scripts/*.sh`：安装与服务生命周期、Raspberry Pi 引导脚本
 
-本项目使用的 Python 包包括：
-- `openai`, `tornado`, `Pillow`, `numpy`, `nltk`, `opencc`, `pykakasi`, `arabic_reshaper`, `python-bidi`, `pytz`。
-- 安装脚本还会安装：`json5`, `pandas`, `spidev`, `RPi.GPIO`, `gpiozero`, `lgpio`。
+<a id="prerequisites"></a>
+## 先决条件
 
+- Python `3.9+`（推荐）
+- Raspberry Pi（硬件模式需要）
+- 支持的 Waveshare 电子纸型号（例如 7.3F / 13K 系列）
+- 已开启 SPI（`raspi-config`）、接线正确，并保持运行电源稳定
+- 使用 `nltk` 词源时需准备 NLTK 语料
+
+仓库中常见依赖（示例）：
+`openai`, `tornado`, `Pillow`, `numpy`, `nltk`, `opencc`, `pykakasi`, `arabic_reshaper`, `python-bidi`, `pytz`。
+
+<a id="installation"></a>
 ## 安装
 
-### 方案 A：最小/手动安装
-安装 Waveshare 驱动包：
+### 方案 1 — 最小/手动安装（桌面或树莓派）
+
+在仓库根目录执行：
+
 ```bash
 python setup.py install
 ```
 
-如果你使用 NLTK 词表，需下载一次：
+如需要：
+
 ```bash
 python -m nltk.downloader words
 ```
 
-### 方案 B：Raspberry Pi 自动化安装（设备上推荐）
+### 方案 2 — Raspberry Pi 自动化安装（设备内推荐）
+
 在仓库根目录执行：
+
 ```bash
 bash scripts/setup_pi_wordscard.sh
 ```
 
-该脚本会：
-- 安装 apt 依赖。
-- 确保 SPI 已启用。
-- 创建并激活 `wordscard` 虚拟环境。
-- 安装 Python 运行时依赖。
-- 安装 Waveshare 包。
-- 在 tmux 会话中启动 `app.py`。
+该脚本会完成：
 
+- 树莓派专用依赖安装
+- SPI 启用
+- `wordscard` 虚拟环境搭建
+- Python 与运行时包安装
+- Waveshare 包安装
+- 使用 `tmux` 启动应用进程
+
+### 方案 3 — 安装服务
+
+将应用生命周期接入 `systemd`：
+
+```bash
+bash scripts/install_wordscard_service.sh
+```
+
+然后执行：
+
+```bash
+sudo systemctl start wordscard
+sudo systemctl status wordscard -n 50
+journalctl -u wordscard -n 100 --no-pager
+```
+
+<a id="configuration"></a>
 ## 配置
 
-### `.env` 行为
-此仓库在导入阶段会从 `.env` 加载环境变量，并**覆盖** shell 中已有值。即使你已经在 shell 配置中导出变量，也能保证本地覆盖行为可预测。
+### 环境变量（`.env`）
 
-创建或更新 `.env`：
+仓库使用 `.env` 加载，并会覆盖已有 shell 变量。请按需配置：
+
 ```env
 OPENAI_API_KEY=sk-your-key-here
 OPENAI_ORG_ID=org-your-org-id
 OPENAI_MODEL=gpt-4o-mini
 ```
 
-### App 参数透传
-systemd/tmux 脚本支持：
-```bash
-APP_ARGS="--enable_openai --use_csv" ./scripts/start_wordscard.sh
-```
+### 运行参数（`app.py` 与 `words_gpt.py` 共用）
 
-### CLI 标志（服务端与渲染器）
-`app.py` 和 `words_gpt.py` 均支持：
 - `--enable_openai`
 - `--make_emoji`
 - `--ignore_list`
@@ -192,191 +218,180 @@ APP_ARGS="--enable_openai --use_csv" ./scripts/start_wordscard.sh
 - `--complete_csv`
 - `--filename <csv_file>`
 
-## 使用
+树莓派启动脚本支持通过 `APP_ARGS` 透传参数（示例）：
 
-### 运行 HTTP 服务
-启动服务（默认端口 `8082`）：
 ```bash
-python app.py
+APP_ARGS="--enable_openai --use_csv" ./scripts/start_wordscard.sh
 ```
 
-代码中可见的路由：
+### 应用模式下路由行为
+
+当前代码中的路由：
+
 - `POST /display_word`
 - `GET /get_current_word`
 - `GET /get_current_word_page`
 - `GET /next_random_word`
 - `POST /get_words_card`
-- `GET /static/(.*)`（来自 `words_card_temp/`）
+- `GET /static/(.*)`（来源于 `words_card_temp/`）
 
-兼容性说明：早期文档写的是 `GET /current_word`；当前 `app.py` 路由为 `GET /get_current_word`。
+兼容性说明：早期文档中出现过 `GET /current_word`，当前路由是 `GET /get_current_word`。
 
-### 运行独立渲染器
-基于 CSV 词表：
+### OpenAI 使用说明
+
+OpenAI 功能可选，并由 CLI/环境变量控制。缓存的 API 请求体有助于复现和限流控制。在受限环境下，建议先使用 CSV 模式（`--use_csv`），按需再开启 `--enable_openai` 进行增强。
+
+<a id="usage"></a>
+## 使用方法
+
+### 启动 HTTP 服务
+
+```bash
+python app.py
+```
+
+进程会在 `words_card_temp/` 中持续保留一张图片，并为前端工具或脚本提供 HTTP 接口。
+
+### 直接运行渲染器
+
+CSV 模式：
+
 ```bash
 python words_gpt.py --use_csv
 ```
 
-启用 OpenAI：
+OpenAI 模式：
+
 ```bash
 python words_gpt.py --enable_openai --use_csv
 ```
 
-Emoji 渲染 + 简体 CJK：
+Emoji + 简化 CJK：
+
 ```bash
 python words_gpt.py --make_emoji --simplify
 ```
 
-### Raspberry Pi 上的服务模式
-安装服务单元：
+### 在 Raspberry Pi 上运行
+
+- 通过 tmux 启动脚本启动：
+
 ```bash
-bash scripts/install_wordscard_service.sh
+bash scripts/start_wordscard.sh
 ```
 
-然后：
+- 通过 tmux 停止脚本关闭：
+
 ```bash
-sudo systemctl start wordscard
-sudo systemctl status wordscard -n 50
-journalctl -u wordscard -n 100 --no-pager
+bash scripts/stop_wordscard.sh
 ```
 
+<a id="examples"></a>
 ## 示例
 
-### 触发下一条随机单词
+获取下一条随机卡片元数据：
+
 ```bash
 curl "http://127.0.0.1:8082/next_random_word"
 ```
 
-### 读取当前单词载荷
+获取当前存储词条：
+
 ```bash
 curl "http://127.0.0.1:8082/get_current_word"
 ```
 
-### 提交指定单词
+请求当前页面图片负载：
+
+```bash
+curl "http://127.0.0.1:8082/get_current_word_page"
+```
+
+提交明确词条：
+
 ```bash
 curl -X POST "http://127.0.0.1:8082/display_word" \
   -H "Content-Type: application/json" \
   -d '{"word":"serendipity"}'
 ```
 
-### 硬件冒烟测试
-使用对应显示型号脚本：
+通过表单风格端点触发卡片渲染：
+
 ```bash
-python epd_7in3f_test.py
+curl -X POST "http://127.0.0.1:8082/get_words_card" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "word=bonjour&phonetic=%CB%88b%C9%94n%C9%93r%E2%80%AD"
 ```
 
-或：
-```bash
-python epd_13in3k_test.py
-```
-
-更多示例见 `waveshare/examples/`。
-
+<a id="data-cache-and-logs"></a>
 ## 数据、缓存与日志
-| 区域 | 路径 | 说明 |
-|---|---|---|
-| 词表 | `data/` | 包含 `data/words_list.csv` 与主题 CSV 文件 |
-| 持久化数据库 | `words_phonetics.db` | 本地音标/增强存储 |
-| OpenAI/缓存产物 | `cache/` | 减少重复请求 |
-| 日志 | `logs/`, `logs-word-phonetics/` | 运行与更新日志 |
-| 生成卡片 | `words_card_temp/` | 图像输出与静态资源服务来源 |
 
+应用常用产物：
+
+- `data/`：精选 CSV 数据集
+- `words_phonetics.db`：SQLite 缓存/源数据库
+- `cache/`：OpenAI 请求与结果缓存
+- `word_phonetics_processed.csv`：处理后的衍生数据集
+- `logs/`, `logs-word-phonetics/`：运行日志
+- `words_card_temp/`：生成的卡片和临时输出
+
+<a id="development-notes"></a>
 ## 开发说明
-- 依赖管理目前以脚本优先（`scripts/setup_pi_wordscard.sh`）+ `setup.py`；尚无 `requirements.txt` 或 `pyproject.toml`。
-- 仓库中存在多份备份/历史文件（`words_data_*`, `words_gpt_old.py`）；当前主要运行路径是 `app.py` + `words_gpt.py` + `words_data.py` + `words_database.py`。
-- `env_loader.py` 在键存在时总是用 `.env` 覆盖环境变量。
-- 服务模式会运行周期性刷新流程（约每 5 分钟），并可能在内部调用更新端点。
 
+- 存在历史/备份文件（如 `words_gpt_old.py`、`lib.old`），除非你正在迁移或维护兼容性，否则可将其当作参考。
+- `words_update.py` 提供批量刷新/复检辅助，适用于数据库数据质量处理。
+- 硬件验证通过 `epd_*_test.py` 和 `waveshare/examples/*` 示例。
+- 仓库根目录未配置 `requirements.txt` 或锁文件；依赖由安装脚本或手动安装完成。
+- 仓库未内置自动化测试框架。
+
+<a id="troubleshooting"></a>
 ## 故障排查
-- `ModuleNotFoundError` 或导入问题：
-  - 确认虚拟环境已激活且依赖已安装。
-  - 在 Pi 上重新运行 `bash scripts/setup_pi_wordscard.sh`。
-- OpenAI 错误（`401`、模型/密钥缺失）：
-  - 在 `.env` 中检查 `OPENAI_API_KEY` 和可选的 `OPENAI_MODEL`。
-  - 确认设备网络连通性。
-- 显示未更新：
-  - 确认面板型号/接线，并运行匹配测试脚本（`epd_7in3f_test.py` 或 `epd_13in3k_test.py`）。
-  - 确认 SPI 已启用（`sudo raspi-config nonint do_spi 0`）。
-  - 在 Pi 5 上，若设备暴露为 `/dev/spidev10.0`，请确保存在 `/dev/spidev0.0` 兼容性符号链接。
-- OpenCC 安装问题：
-  - 使用发行版兼容包（`libopencc1` 或 `libopencc2`），与安装脚本一致。
-- API 路由不匹配：
-  - 当前载荷请使用 `/get_current_word`，而不是 `/current_word`。
 
-## OpenAI 使用说明
-OpenAI 接入是可选的，但建议用于生成新词和音标增强。`openai_request_json.py` 中的结构化 JSON 辅助器会将结果缓存到 `cache/` 以减少重复调用。
+- 来自 Raspberry Pi GPIO/SPI 模块的 `ImportError`：
+  - 使用 Pi 安装流程 (`setup_pi_wordscard.sh`)，或在兼容目标上执行 `python setup.py install`
+- 图片/静态端点返回 `403/404`：
+  - 确认 `/get_current_word*` 路由用法，并检查 `words_card_temp/` 是否可写
+- OpenAI 模式下返回空或无效词条：
+  - 确认 `OPENAI_API_KEY` 及可选组织/模型参数已加载；检查 `cache/` 与日志
+- 渲染/文字截断异常：
+  - 检查 `words_gpt.py` 渲染路径中的字体路径与面板分辨率配置
+- 接口返回旧数据：
+  - 手动调用 `POST /next_random_word`，并检查 `app.py` 中周期回调间隔
+- 硬件更新似乎冻结：
+  - 查看 tmux 会话和 systemd 日志（`journalctl -u wordscard`）
+- 数据集或词典条目缺失：
+  - 校验 `data/` 中的 CSV 文件，并运行 `words_update.py` 刷新/清理流程
 
+<a id="roadmap"></a>
 ## 路线图
-- 增加正式依赖清单（`requirements.txt` 或 `pyproject.toml`），支持可复现安装。
-- 扩展 `i18n/` 并维护多语言 README 版本。
-- 在规范流程确定后，整合历史/备份脚本变体。
-- 为 `pwa/` 流程补充端点示例与截图文档。
-- 添加可重复的自动化测试，覆盖数据与路由级行为。
 
-## ❤️ Support
+- 增加最小化 `requirements.txt` / 可复现安装清单。
+- 明确运行模式并补充 `--help` 文档。
+- 扩展各内容模式的渲染模式说明（`japanese_synonym`、`arabic_synonym`、`film` 等）。
+- 统一错误处理与用户端 API 响应结构。
+- 为非硬件 CI 增加轻量化烟雾测试脚本框架。
 
-If this project is useful to you, these links directly support ongoing maintenance and hardware iteration.
+<a id="support"></a>
+## 支持
 
-| Donate | PayPal | Stripe |
+| 支持方式 | 链接 | 作用 |
 |---|---|---|
-| [![Donate](https://img.shields.io/badge/Donate-LazyingArt-0EA5E9?style=for-the-badge&logo=ko-fi&logoColor=white)](https://chat.lazying.art/donate) | [![PayPal](https://img.shields.io/badge/PayPal-RongzhouChen-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/RongzhouChen) | [![Stripe](https://img.shields.io/badge/Stripe-Donate-635BFF?style=for-the-badge&logo=stripe&logoColor=white)](https://buy.stripe.com/aFadR8gIaflgfQV6T4fw400) |
+| GitHub Sponsors | https://github.com/sponsors/lachlanchen | 持续支持与一次性项目资助 |
+| Lazying Art | https://lazying.art | 品牌与相关资源 |
+| Chat | https://chat.lazying.art | 讨论与支持 |
+| Only Ideas | https://onlyideas.art | 创意研究与副项目 |
 
-### 你的支持可以实现
-- <b>保持工具开放</b>：覆盖托管、推理、数据存储与社区运营。  
-- <b>更快交付</b>：将更多开源时间投入 WordsCardEink 及相关学习工具。  
-- <b>设备原型迭代</b>：支持电子墨水硬件迭代与版式研究。  
-- <b>让更多人可用</b>：为学生、创作者和社区团体提供补贴部署。
-
-### 捐赠
-
-<div align="center">
-<table style="margin:0 auto; text-align:center; border-collapse:collapse;">
-  <tr>
-    <td style="text-align:center; vertical-align:middle; padding:6px 12px;">
-      <a href="https://chat.lazying.art/donate">https://chat.lazying.art/donate</a>
-    </td>
-    <td style="text-align:center; vertical-align:middle; padding:6px 12px;">
-      <a href="https://chat.lazying.art/donate"><img src="figs/donate_button.svg" alt="Donate" height="44"></a>
-    </td>
-  </tr>
-  <tr>
-    <td style="text-align:center; vertical-align:middle; padding:6px 12px;">
-      <a href="https://paypal.me/RongzhouChen">
-        <img src="https://img.shields.io/badge/PayPal-Donate-003087?logo=paypal&logoColor=white" alt="Donate with PayPal">
-      </a>
-    </td>
-    <td style="text-align:center; vertical-align:middle; padding:6px 12px;">
-      <a href="https://buy.stripe.com/aFadR8gIaflgfQV6T4fw400">
-        <img src="https://img.shields.io/badge/Stripe-Donate-635bff?logo=stripe&logoColor=white" alt="Donate with Stripe">
-      </a>
-    </td>
-  </tr>
-  <tr>
-    <td style="text-align:center; vertical-align:middle; padding:6px 12px;"><strong>WeChat</strong></td>
-    <td style="text-align:center; vertical-align:middle; padding:6px 12px;"><strong>Alipay</strong></td>
-  </tr>
-  <tr>
-    <td style="text-align:center; vertical-align:middle; padding:6px 12px;"><img alt="WeChat QR" src="figs/donate_wechat.png" width="240"/></td>
-    <td style="text-align:center; vertical-align:middle; padding:6px 12px;"><img alt="Alipay QR" src="figs/donate_alipay.png" width="240"/></td>
-  </tr>
-</table>
-</div>
-
-**支援 / Donate**
-
-- ご支援は研究・開発と運用の継続に役立ち、より多くのオープンなプロジェクトを皆さんに届ける力になります。  
-- 你的支持将用于研发与运维，帮助我持续公开分享更多项目与改进。  
-- Your support sustains my research, development, and ops so I can keep sharing more open projects and improvements.
-
+<a id="contributing"></a>
 ## 贡献
-贡献指南、代码风格与 PR 预期请见 `AGENTS.md`。
 
-建议的贡献检查清单：
-- 涉及显示改动时附上面板型号与硬件说明。
-- 列出用于验证的精确命令。
-- 对 UI 或电子墨水输出改动附上截图/照片。
-- 描述数据集修改（文件 + 行/列影响）。
+欢迎参与贡献。建议流程：
 
+1. 保持改动聚焦到单一行为域（渲染、数据、API、脚本）。
+2. 对面向用户的行为变更同步更新命令使用说明。
+3. 尽量保持现有 CLI 参数与端点兼容。
+4. 硬件脚本变更时，记录测试设备/型号和执行命令。
+
+<a id="license"></a>
 ## 许可证
-当前仓库根目录中尚未发现 `LICENSE` 文件（以本次草稿扫描为准）。在补充许可证文件之前，项目复用权限尚未被明确授予。
 
-假设：维护者可能会在后续更新中补充明确的开源许可证。
+当前仓库根目录未包含 `LICENSE` 文件，因此本草稿内的仓库许可证在树内未明确声明。若需明确的再发布/复用条款，请补充许可证文件。
