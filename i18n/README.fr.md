@@ -1,19 +1,48 @@
 [English](../README.md) · [العربية](README.ar.md) · [Español](README.es.md) · [Français](README.fr.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Tiếng Việt](README.vi.md) · [中文 (简体)](README.zh-Hans.md) · [中文（繁體）](README.zh-Hant.md) · [Deutsch](README.de.md) · [Русский](README.ru.md)
 
+[![LazyingArt banner](https://github.com/lachlanchen/lachlanchen/raw/main/figs/banner.png)](https://github.com/lachlanchen/lachlanchen/blob/main/figs/banner.png)
 
 # Eink Words GPT
 
-**Options de langue :** Français
+**Options de langue :** Français (cette version)
 
-![Python](https://img.shields.io/badge/python-3.9%2B-blue)
-![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi-green)
-![Display](https://img.shields.io/badge/display-Waveshare%20e--Paper-black)
-![Status](https://img.shields.io/badge/status-active%20prototype-orange)
-![Server](https://img.shields.io/badge/http-Tornado-0A7EA4)
-![Storage](https://img.shields.io/badge/storage-SQLite-003B57)
-![AI](https://img.shields.io/badge/OpenAI-optional-412991)
+![Python](https://img.shields.io/badge/Python-3.9%2B-3776AB?style=flat-square&logo=python&logoColor=white)
+![Platform](https://img.shields.io/badge/Platform-Raspberry%20Pi-C51A4A?style=flat-square&logo=raspberrypi&logoColor=white)
+![Display](https://img.shields.io/badge/Display-Waveshare%20e--Paper-111111?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Active%20Prototype-F59E0B?style=flat-square)
+![Server](https://img.shields.io/badge/HTTP-Tornado-0A7EA4?style=flat-square)
+![Storage](https://img.shields.io/badge/Storage-SQLite-003B57?style=flat-square&logo=sqlite&logoColor=white)
+![AI](https://img.shields.io/badge/OpenAI-Optional-412991?style=flat-square&logo=openai&logoColor=white)
 
-Un projet Raspberry Pi + e-ink Waveshare qui affiche du vocabulaire sélectionné dynamiquement, avec phonétique et synonymes multilingues. Le système peut récupérer des mots depuis des jeux de données locaux ou OpenAI, les rendre dans une mise en page, puis envoyer le résultat vers des panneaux e-paper compatibles. Il expose aussi un petit service HTTP pour déclencher des mises à jour de mots et récupérer les images rendues.
+Un projet Raspberry Pi + e-ink Waveshare qui affiche du vocabulaire sélectionné dynamiquement, avec phonétique et synonymes multilingues. Le système peut récupérer des mots depuis des jeux de données locaux ou OpenAI, les rendre dans une mise en page, puis envoyer le résultat vers des panneaux e-paper compatibles. Il expose aussi un petit service HTTP pour déclencher des mises à jour de mots et récupérer les images générées.
+
+| 🔎 En bref | Détails |
+|---|---|
+| Runtime principal | `app.py` (service HTTP) + `words_gpt.py` (boucle de rendu) |
+| Chemin des données | Jeux de données CSV dans `data/` + base SQLite `words_phonetics.db` |
+| Cibles de sortie | Panneaux e-paper Waveshare et sorties d’images virtuelles |
+| Dépendance IA | Optionnelle (`--enable_openai`) avec cache dans `cache/` |
+
+## 📚 Table des matières
+- [Vue d’ensemble](#vue-densemble)
+- [Points forts](#points-forts)
+- [Démarrage rapide](#démarrage-rapide)
+- [Démos](#démos)
+- [Fonctionnalités](#fonctionnalités)
+- [Structure du projet](#structure-du-projet)
+- [Prérequis](#prérequis)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Utilisation](#utilisation)
+- [Exemples](#exemples)
+- [Données, cache et logs](#données-cache-et-logs)
+- [Notes de développement](#notes-de-développement)
+- [Dépannage](#dépannage)
+- [Notes sur l’utilisation d’OpenAI](#notes-sur-lutilisation-dopenai)
+- [Feuille de route](#feuille-de-route)
+- [Support](#-support)
+- [Contribution](#contribution)
+- [Licence](#licence)
 
 ## Vue d’ensemble
 `words_gpt` est un système Python de génération et d’affichage de cartes de vocabulaire pour appareils e-ink.
@@ -256,7 +285,7 @@ D’autres exemples se trouvent dans `waveshare/examples/`.
 - `env_loader.py` écrase toujours les variables d’environnement depuis `.env` lorsque les clés sont présentes.
 - Le mode serveur exécute un flux de rafraîchissement périodique (toutes les ~5 minutes) qui peut appeler le endpoint de mise à jour en interne.
 
-## Résolution de problèmes
+## Dépannage
 - `ModuleNotFoundError` ou problèmes d’import :
   - Vérifiez que l’environnement virtuel est actif et que les dépendances sont installées.
   - Relancez `bash scripts/setup_pi_wordscard.sh` sur le Pi.
@@ -273,7 +302,7 @@ D’autres exemples se trouvent dans `waveshare/examples/`.
   - Utilisez `/get_current_word` pour la charge utile courante, pas `/current_word`.
 
 ## Notes sur l’utilisation d’OpenAI
-L’accès OpenAI est optionnel mais recommandé pour la génération de mots récents et l’enrichissement phonétique. Le helper JSON structuré dans `openai_request_json.py` met en cache les résultats dans `cache/` pour réduire les appels répétés.
+L’accès OpenAI est optionnel mais recommandé pour la génération de nouveaux mots et l’enrichissement phonétique. Le helper JSON structuré dans `openai_request_json.py` met en cache les résultats dans `cache/` pour réduire les appels répétés.
 
 ## Feuille de route
 - Ajouter un manifeste formel de dépendances (`requirements.txt` ou `pyproject.toml`) pour des installations reproductibles.
@@ -282,7 +311,11 @@ L’accès OpenAI est optionnel mais recommandé pour la génération de mots r�
 - Documenter le workflow PWA (`pwa/`) avec exemples d’endpoints et captures d’écran.
 - Ajouter des tests automatisés reproductibles pour les données et le comportement au niveau des routes.
 
-## Support
+## ❤️ Support
+
+| Donate | PayPal | Stripe |
+|---|---|---|
+| [![Donate](https://img.shields.io/badge/Donate-LazyingArt-0EA5E9?style=for-the-badge&logo=ko-fi&logoColor=white)](https://chat.lazying.art/donate) | [![PayPal](https://img.shields.io/badge/PayPal-RongzhouChen-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/RongzhouChen) | [![Stripe](https://img.shields.io/badge/Stripe-Donate-635BFF?style=for-the-badge&logo=stripe&logoColor=white)](https://buy.stripe.com/aFadR8gIaflgfQV6T4fw400) |
 
 ### Ce que votre soutien rend possible
 - <b>Garder les outils ouverts</b> : hébergement, inférence, stockage des données et opérations communautaires.  
