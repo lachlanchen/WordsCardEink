@@ -2,5 +2,8 @@ images*/
 archived*/
 emoji*/
 cache/*
+.env
+.env.*
+!.env.example
 .DS_Store
 ._*
